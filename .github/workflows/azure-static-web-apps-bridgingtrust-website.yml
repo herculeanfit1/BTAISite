@@ -31,12 +31,11 @@ jobs:
 
       - name: Clean and build application
         run: |
-          rm -rf .next out
-          npm run build:static
-          ls -la out/
+          rm -rf .next
+          npm run build
           echo "Verifying build output..."
-          if [ ! -f "out/index.html" ]; then
-            echo "❌ Build failed - no index.html found"
+          if [ ! -d ".next" ]; then
+            echo "❌ Build failed - no .next directory found"
             exit 1
           fi
           echo "✅ Build verification passed"
@@ -49,10 +48,10 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           ###### Repository/Build Configurations ######
-          app_location: "out" # App source code path
-          api_location: "" # No API functions
-          output_location: "out" # Built app content directory - optional
-          skip_app_build: true # Skip building since we build above
+          app_location: "/" # App source code path
+          api_location: "" # No API functions (using Next.js API routes)
+          output_location: "" # Let Azure handle the build output
+          skip_app_build: false # Let Azure build the app
           ###### End of Repository/Build Configurations ######
 
       - name: Verify deployment
@@ -74,4 +73,4 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE }}
           action: "close"
-          app_location: "out" 
+          app_location: "/" 

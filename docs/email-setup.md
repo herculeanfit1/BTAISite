@@ -1,161 +1,197 @@
-# Email Setup for Bridging Trust AI
+# Email System Setup - Bridging Trust AI
 
 ## Overview
 
-The Bridging Trust AI website uses **Resend.com** for transactional email delivery. This setup handles contact form submissions with automatic confirmation emails to users and notification emails to the admin team.
+The Bridging Trust AI website uses a custom email relay system built with Resend for handling contact form submissions. This system provides:
 
-## Email Service Provider: Resend
+- Professional email templates for user confirmations and admin notifications
+- Rate limiting (5 requests per hour per IP)
+- Circuit breaker pattern for reliability
+- Bot protection with honeypot fields
+- Comprehensive logging and error handling
 
-- **Service**: [Resend.com](https://resend.com) - Modern transactional email API
-- **Domain**: `bridgingtrust.ai` (needs to be verified in Resend dashboard)
-- **API Integration**: Resend JavaScript SDK
+## Architecture
 
-## Environment Variables Configuration
+```
+Contact Form → Next.js API Route → Resend API → Email Delivery
+     ↓              ↓                  ↓            ↓
+  Validation   Rate Limiting      Email Templates  Recipients
+```
 
-Add these environment variables to your `.env.local` file for development and to your production environment:
+## Required Environment Variables
+
+Set these in your Azure Static Web Apps configuration:
 
 ```bash
-# Core Email Configuration
-RESEND_API_KEY=your_resend_api_key
-EMAIL_FROM=Bridging Trust AI <hello@bridgingtrust.ai>
-EMAIL_REPLY_TO=support@bridgingtrust.ai
+RESEND_API_KEY=re_VfqTfjKa_8H68ZhmoMGw8rSAmBrqwj1TC
+EMAIL_FROM=hello@bridgingtrust.ai
+EMAIL_TO=sales@bridgingtrust.ai
 EMAIL_ADMIN=admin@bridgingtrust.ai
-
-# Email Usage Limits & Protection
-EMAIL_DAILY_LIMIT=100
-EMAIL_MONTHLY_LIMIT=1000
-EMAIL_HOURLY_LIMIT=10
-EMAIL_MAX_FAILURES=5
-EMAIL_CIRCUIT_BREAKER_TIMEOUT=300000
-
-# Development/Debug Settings
-SEND_EMAILS_IN_DEVELOPMENT=true
-DEBUG_EMAIL=false  # Set to true to redirect all emails to delivered@resend.dev
+RESEND_TEST_MODE=true  # Set to false in production
 ```
 
-## Email Architecture
+## Email Addresses Setup
 
-### 1. Core Email Service (`lib/email.ts`)
-- Centralized email sending with Resend API
-- Built-in usage monitoring and rate limiting
-- Circuit breaker pattern for failure handling
-- Quota checking before sending
+The following email addresses have been created and configured:
 
-### 2. Email Templates (`lib/email-templates/`)
-- **Contact Confirmation**: Welcome email for contact form submissions
-- **Admin Notifications**: Internal alerts for new contact submissions
-- Responsive HTML + plain text versions
-- Reusable template system
+- **hello@bridgingtrust.ai** - Sender address for all outgoing emails
+- **sales@bridgingtrust.ai** - Primary recipient for contact form submissions
+- **admin@bridgingtrust.ai** - CC recipient for admin notifications
 
-### 3. Email Types Implemented
-- **Contact Confirmation**: Sent to users who submit the contact form
-- **Admin Notifications**: Sent to admin team for new contact submissions
+## Components
 
-## API Integration
+### 1. Email Service (`src/lib/email.ts`)
 
-### Contact Form Endpoint (`/api/contact`)
-- **Rate Limited**: 5 submissions per hour per IP
-- **Validates input**: Uses Zod schema validation
-- **Sends dual emails**: Confirmation + admin notification
-- **Handles failures gracefully**: Detailed logging and error handling
+Core email functionality with:
+- Lazy initialization of Resend client
+- Rate limiting implementation
+- Circuit breaker pattern
+- Development mode simulation
 
-### Email Configuration Check (`/api/email-config`)
-- Returns email service status without exposing secrets
-- Used by frontend to show/hide email-dependent features
+### 2. Email Templates
 
-## Domain & DNS Configuration
+#### User Confirmation (`src/lib/email-templates/contact-confirmation.ts`)
+- Professional HTML template
+- Branded styling with company colors
+- Next steps information
+- Contact information
 
-### Resend Domain Setup
-1. **Domain**: `bridgingtrust.ai` must be verified in Resend dashboard
-2. **DNS Records**: Configure SPF, DKIM, and DMARC records for deliverability
-3. **Verification**: Complete domain verification process in Resend
+#### Admin Notification (`src/lib/email-templates/admin-notification.ts`)
+- Detailed contact information
+- Technical details (IP, User-Agent)
+- Recommended next steps
+- Quick reply functionality
 
-### Required DNS Records (to be added to bridgingtrust.ai)
-```
-# SPF Record
-TXT @ "v=spf1 include:_spf.resend.com ~all"
+### 3. API Route (`app/api/contact/route.ts`)
 
-# DKIM Record (provided by Resend after domain verification)
-TXT resend._domainkey "v=DKIM1; k=rsa; p=[public_key_from_resend]"
+Next.js API route that handles:
+- Form validation with Zod schema
+- Bot protection via honeypot field
+- Rate limiting enforcement
+- Email sending coordination
+- Error handling and logging
 
-# DMARC Record
-TXT _dmarc "v=DMARC1; p=quarantine; rua=mailto:dmarc@bridgingtrust.ai"
-```
+### 4. Contact Form Components
 
-## Email Addresses Used
-
-### Primary Addresses
-- **From**: `hello@bridgingtrust.ai` (verified sender)
-- **Reply-To**: `support@bridgingtrust.ai`
-- **Admin**: `admin@bridgingtrust.ai` (internal notifications)
-
-### Additional Addresses (recommended)
-- **DMARC Reports**: `dmarc@bridgingtrust.ai`
-- **Sales**: `sales@bridgingtrust.ai`
-- **Info**: `info@bridgingtrust.ai`
-
-## Azure Static Web Apps Integration
-
-### Environment Variables in Azure
-Set these via Azure Portal or Azure CLI:
-
-```bash
-# Set via Azure CLI
-az staticwebapp appsettings set --name bridging-trust-ai \
-  --setting-names \
-    RESEND_API_KEY=your_resend_api_key \
-    EMAIL_FROM="Bridging Trust AI <hello@bridgingtrust.ai>" \
-    EMAIL_REPLY_TO=support@bridgingtrust.ai \
-    EMAIL_ADMIN=admin@bridgingtrust.ai \
-    EMAIL_DAILY_LIMIT=100 \
-    EMAIL_MONTHLY_LIMIT=1000 \
-    EMAIL_HOURLY_LIMIT=10 \
-    SEND_EMAILS_IN_DEVELOPMENT=false \
-    DEBUG_EMAIL=false
-```
-
-## Security Features
-
-- **Rate Limiting**: IP-based rate limiting (5 submissions/hour)
-- **Bot Protection**: Honeypot field detection
-- **Input Validation**: Zod schema validation
-- **Error Handling**: Graceful failure handling
-- **Audit Logging**: All submissions logged with IP and user agent
+Both `app/components/home/ContactSection.tsx` and `src/components/home/ContactSection.tsx` have been updated to:
+- Submit to `/api/contact` endpoint
+- Handle success/error states
+- Include honeypot field for bot protection
+- Provide user feedback
 
 ## Testing
 
-### Development Testing
-1. Set `SEND_EMAILS_IN_DEVELOPMENT=true`
-2. Set `DEBUG_EMAIL=true` to redirect emails to Resend's test inbox
-3. Submit test contact forms to verify functionality
+### Local Testing
+
+1. Set up environment variables in `.env.local`:
+```bash
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM=hello@bridgingtrust.ai
+EMAIL_TO=sales@bridgingtrust.ai
+EMAIL_ADMIN=admin@bridgingtrust.ai
+RESEND_TEST_MODE=true
+```
+
+2. Run the test script:
+```bash
+node scripts/test-email.js
+```
+
+3. Test the contact form locally:
+```bash
+npm run dev
+# Navigate to http://localhost:3000/#contact
+```
 
 ### Production Testing
-1. Verify domain is properly configured in Resend
-2. Test with real email addresses
-3. Monitor Resend dashboard for delivery status
-4. Check spam folders for initial emails
 
-## Monitoring & Maintenance
+1. Verify environment variables are set in Azure Static Web Apps
+2. Test the contact form on the live website
+3. Check email delivery to both user and admin addresses
 
-### Resend Dashboard
-- Monitor email delivery rates
-- Check bounce and complaint rates
-- Review sending statistics
-- Manage domain reputation
+## Rate Limiting
 
-### Application Logs
-- Monitor rate limiting effectiveness
-- Track email sending success/failure rates
-- Review bot detection accuracy
-- Monitor API response times
+- **Limit**: 5 requests per hour per IP address
+- **Storage**: In-memory (for production, consider Redis)
+- **Response**: HTTP 429 with appropriate error message
+
+## Circuit Breaker
+
+- **Threshold**: 5 consecutive failures
+- **Timeout**: 5 minutes
+- **Response**: HTTP 503 with service unavailable message
+
+## Security Features
+
+1. **Input Validation**: Zod schema validation for all form fields
+2. **Bot Protection**: Honeypot field (`_gotcha`) to catch automated submissions
+3. **Rate Limiting**: Prevents spam and abuse
+4. **CORS Headers**: Proper cross-origin request handling
+5. **Error Handling**: No sensitive information exposed in error messages
+
+## Monitoring
+
+### Development Mode
+
+When `RESEND_TEST_MODE=true`:
+- Emails are simulated (not actually sent)
+- Console logging shows what would be sent
+- Useful for development and testing
+
+### Production Monitoring
+
+- Check Azure Static Web Apps logs for API route execution
+- Monitor Resend dashboard for email delivery status
+- Review rate limiting and circuit breaker metrics
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Emails not sending**: Check RESEND_API_KEY and domain verification
-2. **Emails in spam**: Verify SPF, DKIM, and DMARC records
-3. **Rate limiting**: Adjust limits or implement Redis for production
-4. **Template errors**: Check template data structure and HTML validity
 
-### Debug Mode
-Set `DEBUG_EMAIL=true` to redirect all emails to `delivered@resend.dev` for testing. 
+1. **"Missing required environment variable: RESEND_API_KEY"**
+   - Verify the API key is set in Azure Static Web Apps configuration
+   - Check the key is valid in Resend dashboard
+
+2. **"Rate limit exceeded"**
+   - Normal behavior for testing
+   - Wait 1 hour or restart the application to reset
+
+3. **"Service temporarily unavailable"**
+   - Circuit breaker is open due to failures
+   - Check Resend API status and credentials
+
+4. **Emails not being received**
+   - Verify email addresses are correct
+   - Check spam folders
+   - Confirm Resend domain verification
+
+### Debug Steps
+
+1. Check environment variables:
+```bash
+node scripts/test-email.js
+```
+
+2. Test API endpoint directly:
+```bash
+curl -X POST https://your-site.azurestaticapps.net/api/contact \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Test","lastName":"User","email":"test@example.com","message":"Test message"}'
+```
+
+3. Review Azure Static Web Apps logs in the Azure Portal
+
+## Deployment Notes
+
+- The system uses Next.js API routes (not Azure Functions)
+- Static export is disabled to support API routes
+- Azure Static Web Apps handles the Next.js build automatically
+- Environment variables must be set in Azure Static Web Apps configuration
+
+## Future Enhancements
+
+1. **Database Storage**: Replace in-memory rate limiting with Redis or database
+2. **Email Templates**: Add more template variations for different use cases
+3. **Analytics**: Add email delivery tracking and analytics
+4. **Webhooks**: Implement Resend webhooks for delivery status updates
+5. **Queue System**: Add email queue for high-volume scenarios 

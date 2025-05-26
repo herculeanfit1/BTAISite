@@ -4,39 +4,62 @@ import { useState } from "react";
 
 /**
  * Contact Section Component
- * Displays the contact form for visitors to reach out with Formspree integration
+ * Displays the contact form for visitors to reach out with Resend email integration
  */
 export const ContactSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitResult, setSubmitResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitStatus('idle');
+    setSubmitResult(null);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    // Convert FormData to JSON
+    const data = {
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      company: formData.get('company') as string,
+      message: formData.get('message') as string,
+      _gotcha: formData.get('_gotcha') as string, // Honeypot field
+    };
+
     try {
-      // Using Formspree for static site contact forms
-      const response = await fetch('https://formspree.io/f/xdkogqpb', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
-        body: formData,
         headers: {
-          'Accept': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        setSubmitStatus('success');
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSubmitResult({
+          success: true,
+          message: result.message || 'Thank you for your message! We\'ll get back to you soon.',
+        });
         form.reset();
       } else {
-        setSubmitStatus('error');
+        setSubmitResult({
+          success: false,
+          message: result.message || 'There was a problem sending your message. Please try again.',
+        });
       }
     } catch (error) {
       console.error('Form submission error:', error);
-      setSubmitStatus('error');
+      setSubmitResult({
+        success: false,
+        message: 'There was a problem connecting to our servers. Please try again later.',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -56,18 +79,18 @@ export const ContactSection = () => {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            {submitStatus === 'success' && (
+            {submitResult && submitResult.success && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800">
-                  Thank you for your message! We'll get back to you soon.
+                  {submitResult.message}
                 </p>
               </div>
             )}
 
-            {submitStatus === 'error' && (
+            {submitResult && !submitResult.success && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-800">
-                  There was a problem sending your message. Please try again later.
+                  {submitResult.message}
                 </p>
               </div>
             )}

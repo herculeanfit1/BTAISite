@@ -19,14 +19,8 @@ const nextConfig = {
   // Enable HTTP compression for better performance
   compress: true,
 
-  // Conditional static export configuration
-  // Only enable static export in production builds, not during development
-  ...(process.env.NODE_ENV === "production" && {
-    output: "export",
-    skipTrailingSlashRedirect: true,
-    skipMiddlewareUrlNormalize: true,
-    trailingSlash: true,
-  }),
+  // Removed static export to enable API routes for email functionality
+  // This allows Next.js API routes to work properly with Azure Static Web Apps
 
   // Handle specific build-time route exclusions
   // This helps prevent the build from trying to render pages that can't be generated statically

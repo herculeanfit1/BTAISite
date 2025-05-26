@@ -9,7 +9,7 @@ interface ContactSectionProps {
 
 /**
  * Contact Section Component
- * Displays the contact form for visitors to reach out with Formspree integration
+ * Displays the contact form for visitors to reach out with Resend email integration
  */
 export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
   // Form submission states
@@ -28,26 +28,37 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    // Convert FormData to JSON
+    const data = {
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      company: formData.get('company') as string,
+      message: formData.get('message') as string,
+      _gotcha: formData.get('_gotcha') as string, // Honeypot field
+    };
+
     try {
-      // Using Formspree for static site contact forms
-      const response = await fetch('https://formspree.io/f/xdkogqpb', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
-        body: formData,
         headers: {
-          'Accept': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setSubmitResult({
           success: true,
-          message: "Thank you for your message! We'll get back to you soon.",
+          message: result.message || 'Thank you for your message! We\'ll get back to you soon.',
         });
         form.reset();
       } else {
         setSubmitResult({
           success: false,
-          message: "Something went wrong. Please try again.",
+          message: result.message || 'There was a problem sending your message. Please try again.',
         });
       }
     } catch (err) {
