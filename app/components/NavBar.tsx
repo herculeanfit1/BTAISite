@@ -52,6 +52,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
 
   return (
     <header
+      role="navigation"
       className={`fixed top-0 right-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled ? "shadow-lg" : "shadow-sm"}`}
       style={{
         backgroundColor: "rgba(255, 255, 255, 0.98)",

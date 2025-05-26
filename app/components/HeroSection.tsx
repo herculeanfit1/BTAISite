@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "./Button";
 import { AnimatedBackground } from "./hero/AnimatedBackground";
 import { TrustIndicator } from "./hero/TrustIndicator";
+import { PlaceholderImage } from "./hero/PlaceholderImage";
 import { Route } from "next";
 
 interface HeroSectionProps {

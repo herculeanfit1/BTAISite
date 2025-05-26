@@ -43,6 +43,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
 
   return (
     <header
+      role="navigation"
       className={`fixed top-0 right-0 left-0 z-30 w-full bg-white py-3 transition-all duration-300 ${
         isScrolled ? "border-b border-gray-200 shadow-md" : ""
       }`}

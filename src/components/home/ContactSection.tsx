@@ -9,19 +9,9 @@ interface ContactSectionProps {
 
 /**
  * Contact Section Component
- * Displays the contact form for visitors to reach out with Resend email integration
+ * Displays the contact form for visitors to reach out with Formspree integration
  */
 export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
-  // Form state
-  const [formState, setFormState] = useState({
-    firstName: "",
-    lastName: "",
-    company: "",
-    email: "",
-    message: "",
-    honeypot: "", // Bot detection field
-  });
-
   // Form submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
@@ -29,60 +19,35 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
     message: string;
   } | null>(null);
 
-  // Handle form input changes
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormState({
-      ...formState,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitResult(null);
 
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
     try {
-      // Use our new email API endpoint
-      const response = await fetch("/api/contact", {
-        method: "POST",
+      // Using Formspree for static site contact forms
+      const response = await fetch('https://formspree.io/f/xdkogqpb', {
+        method: 'POST',
+        body: formData,
         headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: `${formState.firstName} ${formState.lastName}`.trim(),
-          email: formState.email,
-          company: formState.company,
-          message: formState.message,
-          honeypot: formState.honeypot, // Include honeypot for bot detection
-        }),
+          'Accept': 'application/json'
+        }
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (response.ok) {
         setSubmitResult({
           success: true,
-          message: data.message || "Thank you for your message! We'll get back to you soon.",
+          message: "Thank you for your message! We'll get back to you soon.",
         });
-
-        // Clear form on success
-        setFormState({
-          firstName: "",
-          lastName: "",
-          company: "",
-          email: "",
-          message: "",
-          honeypot: "",
-        });
+        form.reset();
       } else {
-        // Handle API errors
         setSubmitResult({
           success: false,
-          message: data.error || "Something went wrong. Please try again.",
+          message: "Something went wrong. Please try again.",
         });
       }
     } catch (err) {
@@ -128,7 +93,7 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
             is the best way to reach our team.
           </p>
 
-          {/* Contact Form with Resend email integration */}
+          {/* Contact Form with Formspree integration */}
           {submitResult && (
             <div
               style={{
@@ -150,18 +115,13 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
             onSubmit={handleSubmit}
           >
             {/* Honeypot field for bot detection - hidden from users */}
-            <div style={{ display: "none" }}>
-              <label htmlFor="honeypot">Leave this field empty</label>
-              <input
-                type="text"
-                id="honeypot"
-                name="honeypot"
-                value={formState.honeypot}
-                onChange={handleChange}
-                tabIndex={-1}
-                autoComplete="off"
-              />
-            </div>
+            <input
+              type="text"
+              name="_gotcha"
+              style={{ display: "none" }}
+              tabIndex={-1}
+              autoComplete="off"
+            />
 
             <div
               style={{
@@ -178,8 +138,6 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
                   id="firstName"
                   name="firstName"
                   style={styles.contactInput}
-                  value={formState.firstName}
-                  onChange={handleChange}
                   required
                   disabled={isSubmitting}
                 />
@@ -194,8 +152,6 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
                   id="lastName"
                   name="lastName"
                   style={styles.contactInput}
-                  value={formState.lastName}
-                  onChange={handleChange}
                   required
                   disabled={isSubmitting}
                 />
@@ -211,8 +167,6 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
                 id="company"
                 name="company"
                 style={styles.contactInput}
-                value={formState.company}
-                onChange={handleChange}
                 disabled={isSubmitting}
               />
             </div>
@@ -226,8 +180,6 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
                 id="email"
                 name="email"
                 style={styles.contactInput}
-                value={formState.email}
-                onChange={handleChange}
                 required
                 disabled={isSubmitting}
               />
@@ -243,8 +195,6 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
                 name="message"
                 rows={5}
                 style={styles.contactTextarea}
-                value={formState.message}
-                onChange={handleChange}
                 required
                 disabled={isSubmitting}
               ></textarea>

@@ -1244,3 +1244,35 @@ These updates maintain the site's clean, professional aesthetic while delivering
 - Need to complete Azure deployment troubleshooting
 
 **Status**: Contact form ✅ Working, Azure deployment issue in progress
+
+## 2025-05-26 20:50:00
+
+**User:** Before we go any further, can you make sure that the documentation shows that anytime we go to commit, we have to push it through all of the tests so that we are validating the code before we push it out? Once you have updated the documentation, it will explicitly tell a future agent to do this every time we make a code change. Then, make sure we have all the comprehensive tests necessary in place and finally continue with the tests.
+
+**Context:** Establishing mandatory testing protocol before any code commits to prevent failed deployments and save GitHub Actions minutes.
+
+**CRITICAL REQUIREMENT ESTABLISHED:**
+🚨 **MANDATORY PRE-COMMIT TESTING PROTOCOL** 🚨
+
+**ALL FUTURE AGENTS MUST FOLLOW THIS PROCESS:**
+
+1. **BEFORE ANY COMMIT OR PUSH:**
+   - Run `npm run test:ci-basic` to validate core functionality
+   - Run `npm run build:static` to ensure static build works
+   - Fix any failing tests before proceeding
+   - Only commit after ALL tests pass
+
+2. **COMPREHENSIVE TEST SUITE REQUIREMENTS:**
+   - Unit tests for all components (`__tests__/components/`)
+   - API endpoint tests (`__tests__/api/`)
+   - Middleware and configuration tests
+   - Static build validation
+   - No commits allowed with failing tests
+
+3. **RATIONALE:**
+   - Prevents failed GitHub Actions deployments
+   - Saves on GitHub Actions minutes/costs
+   - Ensures code quality and stability
+   - Maintains deployment pipeline integrity
+
+**This is now a MANDATORY requirement for all code changes in this project.**
