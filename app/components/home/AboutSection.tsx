@@ -21,18 +21,13 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
           <div style={styles.sectionBlock}>
             <h3 style={styles.heading3}>Our Story</h3>
             <p style={styles.paragraph}>
-              Bridging Trust AI was born when two highly experienced consulting
-              engineers joined forces with a shared vision: to make advanced AI
-              technology accessible to businesses of all sizes, not just
-              industry giants.
+              Bridging Trust AI began with a simple observation: the breakthroughs we delivered for global enterprises should not be reserved for organizations with nine-figure IT budgets. Drawing on decades of combined experience architecting secure, AI-enabled solutions for complex, highly regulated environments, our founders set out to translate that same caliber of innovation into pragmatic, right-sized programs for growth-minded companies.
             </p>
             <p style={styles.paragraph}>
-              After decades of combined experience working with Fortune 100
-              companies, our founders witnessed firsthand how cutting-edge AI
-              technologies were creating unprecedented competitive
-              advantages—but these tools remained inaccessible to smaller and
-              mid-sized businesses due to cost, complexity, and implementation
-              challenges.
+              We have led large-scale transformations—modernizing data estates, automating business processes, and hardening cloud infrastructures—so we understand both the promise and the pitfalls of enterprise AI. Today, we package that institutional knowledge into streamlined engagements that remove the typical barriers of cost, complexity, and change-management risk.
+            </p>
+            <p style={styles.paragraph}>
+              Our mission is straightforward: empower leadership teams to adopt AI with confidence, governance, and measurable ROI. Whether you're piloting Microsoft Copilot, evaluating ethical guardrails, or scaling a new AI-driven product, we bridge the gap between visionary strategy and operational reality—so your organization can compete at enterprise speed without losing its agility.
             </p>
           </div>
 

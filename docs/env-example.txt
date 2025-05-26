@@ -1,28 +1,34 @@
-# Bridging Trust AI - Environment Variables Example
-# Copy this content to .env.local for development
+# Bridging Trust AI - Environment Variables Configuration
+# Copy this to .env.local for development or set in Azure Static Web Apps for production
 
-# ===== EMAIL CONFIGURATION =====
-# Resend API key from https://resend.com/api-keys
-RESEND_API_KEY=re_your_api_key_here
-
-# Email addresses (must be verified in Resend dashboard)
-EMAIL_FROM=Bridging Trust AI <hello@bridgingtrust.ai>
-EMAIL_REPLY_TO=support@bridgingtrust.ai
+# ===== REQUIRED EMAIL CONFIGURATION =====
+RESEND_API_KEY=re_your_resend_api_key_here
+EMAIL_FROM=hello@bridgingtrust.ai
 EMAIL_ADMIN=admin@bridgingtrust.ai
 
-# Email rate limiting and protection
+# ===== OPTIONAL EMAIL CONFIGURATION =====
+EMAIL_REPLY_TO=support@bridgingtrust.ai
+
+# ===== EMAIL RATE LIMITING =====
 EMAIL_DAILY_LIMIT=100
 EMAIL_MONTHLY_LIMIT=1000
 EMAIL_HOURLY_LIMIT=10
 EMAIL_MAX_FAILURES=5
 EMAIL_CIRCUIT_BREAKER_TIMEOUT=300000
 
-# Development settings
+# ===== DEVELOPMENT SETTINGS =====
 SEND_EMAILS_IN_DEVELOPMENT=true
 DEBUG_EMAIL=false
 
 # ===== NEXT.JS CONFIGURATION =====
 NEXT_PUBLIC_APP_URL=https://bridgingtrust.ai
+
+# ===== NOTES =====
+# 1. Get your Resend API key from: https://resend.com/api-keys
+# 2. Verify your domain in Resend dashboard before sending emails
+# 3. Set DEBUG_EMAIL=true to redirect all emails to delivered@resend.dev during testing
+# 4. SEND_EMAILS_IN_DEVELOPMENT=false will disable email sending in development mode
+# 5. Rate limits are per IP address to prevent abuse
 
 # ===== DEVELOPMENT SETTINGS =====
 NODE_ENV=development
