@@ -18,7 +18,7 @@ const getResendClient = () => {
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 // Circuit breaker state
-let circuitBreakerState = {
+const circuitBreakerState = {
   failures: 0,
   lastFailureTime: 0,
   isOpen: false,

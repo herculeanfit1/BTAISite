@@ -26,9 +26,9 @@ export async function OPTIONS() {
 export async function POST(request: NextRequest) {
   try {
     // Get client IP and User-Agent for tracking
-    const ipAddress = request.ip || 
-      request.headers.get('x-forwarded-for')?.split(',')[0] || 
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || 
       request.headers.get('x-real-ip') || 
+      request.headers.get('cf-connecting-ip') || 
       'unknown';
     
     const userAgent = request.headers.get('user-agent') || 'unknown';

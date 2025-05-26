@@ -73,7 +73,7 @@ export default function HomePage() {
       <AboutSection isDesktop={isDesktop} />
 
       {/* Contact Section */}
-      <ContactSection isDesktop={isDesktop} />
+      <ContactSection />
     </div>
   );
 }
