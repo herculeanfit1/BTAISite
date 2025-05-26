@@ -50,7 +50,7 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations ######
           app_location: "out" # App source code path
-          api_location: "" # Api source code path - optional
+          api_location: "azure-functions" # Api source code path - optional
           output_location: "out" # Built app content directory - optional
           skip_app_build: true # Skip building since we build above
           ###### End of Repository/Build Configurations ######
