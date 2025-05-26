@@ -1276,3 +1276,44 @@ These updates maintain the site's clean, professional aesthetic while delivering
    - Maintains deployment pipeline integrity
 
 **This is now a MANDATORY requirement for all code changes in this project.**
+
+## 2025-01-27 17:57:00
+
+**User:** Also, what can I remove from Azure since we migrated. Can you review everything in the subscription and let me know anything referenced to Bridging Trust. The only other project I have there is the AIStudyPlans website. I want to cleanup whatever I can. Also, change the year of the license to 2025
+
+**Context:** Azure resource cleanup and license year update after migrating from Azure Functions + Resend to Formspree for contact form handling.
+
+**Actions Taken:**
+
+1. **License Year Update:**
+   - Updated LICENSE file from 2024 to 2025
+
+2. **Azure Resource Analysis:**
+   - Analyzed all Azure resources in BTAI-RG1 resource group
+   - Identified unused resources after Formspree migration:
+     - `bridgingtrust-website-insights` (Application Insights) - ❌ Not used
+     - `bridgingtrustaivaul` (Key Vault) - ❌ Not used  
+     - `bridgingtrustaistorage` (Storage Account) - ❌ Not used
+     - `managed-bridgingtrust-website-insights-ws` (Log Analytics) - ❌ Not used
+
+3. **Codebase Cleanup:**
+   - Removed `email-function/` directory (entire Azure Functions project)
+   - Deleted `link-azure-storage.md` and `link-storage.json`
+   - Removed 18 Azure-specific scripts (deployment, testing, configuration)
+   - Removed unused dependencies: `resend` (^4.5.1) and `zod` (^3.25.28)
+   - Removed `azure-build` script from package.json
+
+4. **Documentation Created:**
+   - Created comprehensive `docs/azure-cleanup-guide.md` with:
+     - Step-by-step deletion instructions
+     - Cost savings estimates ($15-70/month)
+     - Verification procedures
+     - Environment variable cleanup guide
+
+**Important Discovery:**
+User questioned which Static Web App actually has the custom domain `bridgingtrust.ai` configured, noting that `bridgingtrustai` (shown in screenshot) doesn't have their custom domain, while another SWA does. This highlighted the critical importance of verifying which Azure resources are actually serving the live website before recommending deletions.
+
+**Estimated Monthly Savings:** $15-70/month from removing unused Azure resources
+**Files Cleaned:** 31 files changed, 118 insertions(+), 3697 deletions(-)
+
+**Status:** Awaiting user confirmation of which Static Web App has the custom domain before finalizing deletion recommendations.
