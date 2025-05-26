@@ -46,7 +46,7 @@ export const ContactSection = ({ isDesktop }: ContactSectionProps) => {
     setSubmitResult(null);
 
     try {
-      // Use our new email API endpoint
+      // Use Azure Function endpoint
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: {

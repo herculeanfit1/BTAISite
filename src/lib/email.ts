@@ -5,8 +5,19 @@ import { Resend } from 'resend';
  * Uses Resend.com for transactional email delivery
  */
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization of Resend client to avoid build-time errors
+let resend: Resend | null = null;
+
+const getResendClient = (): Resend => {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is required');
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+};
 
 // Email configuration
 export const EMAIL_CONFIG = {
@@ -140,7 +151,10 @@ export const sendEmail = async (params: {
     // Use debug email in debug mode
     const finalTo = EMAIL_CONFIG.DEBUG_MODE ? EMAIL_CONFIG.DEBUG_EMAIL : to;
     
-    const result = await resend.emails.send({
+    // Get the Resend client (lazy initialization)
+    const resendClient = getResendClient();
+    
+    const result = await resendClient.emails.send({
       from,
       to: finalTo,
       subject: EMAIL_CONFIG.DEBUG_MODE ? `[DEBUG] ${subject}` : subject,
