@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: bridging-trust-ai-test
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - node_modules:/app/node_modules
+      - test-results:/app/test-results
+      - playwright-report:/app/playwright-report
+    environment:
+      - NODE_ENV=test
+      - CI=true
+      - NEXT_TELEMETRY_DISABLED=1
+    # Resource constraints to prevent runaway processes
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    # Health check to verify container is running correctly
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    # Ensure clean shutdown
+    stop_grace_period: 30s
+
+volumes:
+  node_modules:
+  test-results:
+  playwright-report: 

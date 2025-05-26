@@ -1,0 +1,26 @@
+bin
+obj
+csx
+.vs
+edge
+Publish
+.DS_Store
+*.user
+*.suo
+*.cscfg
+*.Cache
+project.lock.json
+.vscode/
+
+local.settings.json
+node_modules
+dist
+
+# Local environment files
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log* 

@@ -1,0 +1,26 @@
+{
+  "name": "email-function",
+  "version": "1.0.0",
+  "description": "Email relay function for Bridging Trust AI contact form",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "func azure functionapp publish btai-email-relay"
+  },
+  "keywords": [
+    "azure",
+    "functions",
+    "email",
+    "contact-form"
+  ],
+  "author": "Bridging Trust AI",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/functions": "3.5.1",
+    "resend": "2.0.0"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "4.0.5341"
+  }
+}

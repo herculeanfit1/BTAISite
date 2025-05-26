@@ -1,0 +1,125 @@
+{
+  "common": {
+    "navigation": {
+      "home": "Home",
+      "about": "About",
+      "services": "Services",
+      "blog": "Blog",
+      "contact": "Contact",
+      "careers": "Careers"
+    },
+    "buttons": {
+      "learnMore": "Learn More",
+      "getStarted": "Get Started",
+      "bookConsultation": "Book a Consultation",
+      "sendMessage": "Send Message",
+      "subscribe": "Subscribe"
+    },
+    "footer": {
+      "copyright": "© {year} Bridging Trust AI. All rights reserved.",
+      "privacyPolicy": "Privacy Policy",
+      "terms": "Terms of Service"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Building Trust in AI Solutions",
+      "subtitle": "We create ethical, transparent AI systems that enhance human capabilities"
+    },
+    "features": {
+      "title": "Our Approach",
+      "item1": {
+        "title": "Human-Centered Design",
+        "description": "We put people first in all our AI solutions"
+      },
+      "item2": {
+        "title": "Ethical Implementation",
+        "description": "Transparent and responsible AI development"
+      },
+      "item3": {
+        "title": "Custom Solutions",
+        "description": "Tailored to your specific business needs"
+      }
+    },
+    "testimonials": {
+      "title": "What Our Clients Say",
+      "testimonial1": {
+        "quote": "Bridging Trust AI transformed our customer service with their ethical AI approach.",
+        "author": "Jane Smith",
+        "company": "Tech Innovations Inc."
+      },
+      "testimonial2": {
+        "quote": "Their custom AI solution increased our efficiency while maintaining human oversight.",
+        "author": "John Davis",
+        "company": "Global Solutions Ltd."
+      }
+    },
+    "process": {
+      "title": "Our Process",
+      "item1": {
+        "title": "Consultation",
+        "description": "We meet with you to understand your needs and goals."
+      },
+      "item2": {
+        "title": "Assessment",
+        "description": "We evaluate your current systems and identify opportunities."
+      },
+      "item3": {
+        "title": "Design",
+        "description": "We create a customized AI solution designed with ethics in mind."
+      },
+      "item4": {
+        "title": "Development",
+        "description": "We build your solution with transparency throughout the process."
+      },
+      "item5": {
+        "title": "Deployment",
+        "description": "We implement your solution and provide training and support."
+      }
+    },
+    "newsletter": {
+      "title": "Stay Updated",
+      "description": "Subscribe to our newsletter for the latest in ethical AI development."
+    }
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Our mission is to build trust in AI through ethical development",
+    "mission": {
+      "title": "Our Mission",
+      "description": "We're committed to creating AI systems that enhance human capabilities while maintaining ethical standards and transparency."
+    },
+    "team": {
+      "title": "Our Team",
+      "description": "Our diverse team brings together expertise in AI, ethics, business, and design."
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "AI solutions designed with people in mind",
+    "service1": {
+      "title": "AI Strategy Consulting",
+      "description": "Develop a roadmap for ethical AI implementation in your organization"
+    },
+    "service2": {
+      "title": "Custom AI Solutions",
+      "description": "Tailored AI systems designed for your specific business needs"
+    },
+    "service3": {
+      "title": "AI Ethics Auditing",
+      "description": "Review your existing AI systems for ethical considerations and transparency"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Get in touch with our team",
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "subject": "Subject",
+      "submitSuccess": "Message sent successfully!",
+      "submitError": "Error sending message. Please try again."
+    }
+  }
+}

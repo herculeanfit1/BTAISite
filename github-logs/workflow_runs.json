@@ -1,0 +1,3 @@
+[0;34mFetching latest workflow runs...[0m
+[0;33mAttempting to parse response with Python...[0m
+[0;31mPython also failed to parse the JSON. The response is not valid JSON.[0m

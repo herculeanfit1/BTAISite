@@ -1,0 +1,135 @@
+
+> bridging-trust-ai@0.1.0 dev:next
+> next dev
+
+   ▲ Next.js 15.3.2
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.58:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ optimizeCss
+
+ ✓ Starting...
+ ⨯ Middleware cannot be used with "output: export". See more info here: https://nextjs.org/docs/advanced-features/static-html-export
+ ✓ Ready in 1188ms
+ ✓ Compiled /api/send-email in 257ms (364 modules)
+[2025-05-15T03:31:23.450Z] [send-email] Processing request 9211fe2d-cc69-4e20-9016-211cd2a5a43c
+[2025-05-15T03:31:23.451Z] [send-email] Request 9211fe2d-cc69-4e20-9016-211cd2a5a43c payload received {
+  hasName: true,
+  hasEmail: true,
+  hasMessage: true,
+  hasSubject: true,
+  hasCompany: true,
+  requestHeaders: {
+    accept: '*/*',
+    'content-length': '199',
+    'content-type': 'application/json',
+    host: 'localhost:3000',
+    'user-agent': 'curl/8.7.1',
+    'x-forwarded-for': '::1',
+    'x-forwarded-host': 'localhost:3000',
+    'x-forwarded-port': '3000',
+    'x-forwarded-proto': 'http'
+  }
+}
+[2025-05-15T03:31:23.452Z] [send-email] Request 9211fe2d-cc69-4e20-9016-211cd2a5a43c forwarding to Azure Function
+[2025-05-15T03:31:23.700Z] [send-email] Request 9211fe2d-cc69-4e20-9016-211cd2a5a43c Azure Function response status: 500
+[2025-05-15T03:31:23.700Z] [send-email] Request 9211fe2d-cc69-4e20-9016-211cd2a5a43c Azure Function returned error status: 500 { statusText: 'Internal Server Error' }
+[2025-05-15T03:31:23.702Z] [send-email] Request 9211fe2d-cc69-4e20-9016-211cd2a5a43c failed with error: Unexpected end of JSON input {
+  error: 'Unexpected end of JSON input',
+  stack: 'SyntaxError: Unexpected end of JSON input\n' +
+    '    at JSON.parse (<anonymous>)\n' +
+    '    at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)\n' +
+    '    at successSteps (node:internal/deps/undici/undici:5719:27)\n' +
+    '    at fullyReadBody (node:internal/deps/undici/undici:4609:9)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async consumeBody (node:internal/deps/undici/undici:5728:7)\n' +
+    '    at async POST (webpack-internal:///(rsc)/./app/api/send-email/route.ts:132:34)\n' +
+    '    at async AppRouteRouteModule.do (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:34112)\n' +
+    '    at async AppRouteRouteModule.handle (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:26:41338)\n' +
+    '    at async doRender (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:1513:42)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:1915:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:2403:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:2440:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:1007:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/next-server.js:305:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/base-server.js:899:17)\n' +
+    '    at async /Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n' +
+    '    at async Span.traceAsyncFn (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/trace/trace.js:157:20)\n' +
+    '    at async DevServer.handleRequest (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n' +
+    '    at async invokeRender (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/lib/router-server.js:237:21)\n' +
+    '    at async handleRequest (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/lib/router-server.js:428:24)\n' +
+    '    at async requestHandlerImpl (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/lib/router-server.js:452:13)\n' +
+    '    at async Server.requestListener (/Users/herculeanfit1/dev/BridgingTrustAI/node_modules/next/dist/server/lib/start-server.js:158:13)'
+}
+ POST /api/send-email 500 in 610ms
+[2025-05-15T03:31:23.732Z] [send-email] Processing request ffe1bbd0-d34b-4029-8fe5-7de14dde4b48
+[2025-05-15T03:31:23.733Z] [send-email] Request ffe1bbd0-d34b-4029-8fe5-7de14dde4b48 payload received {
+  hasName: true,
+  hasEmail: false,
+  hasMessage: true,
+  hasSubject: true,
+  hasCompany: true,
+  requestHeaders: {
+    accept: '*/*',
+    'content-length': '174',
+    'content-type': 'application/json',
+    host: 'localhost:3000',
+    'user-agent': 'curl/8.7.1',
+    'x-forwarded-for': '::1',
+    'x-forwarded-host': 'localhost:3000',
+    'x-forwarded-port': '3000',
+    'x-forwarded-proto': 'http'
+  }
+}
+[2025-05-15T03:31:23.733Z] [send-email] Request ffe1bbd0-d34b-4029-8fe5-7de14dde4b48 validation failed { _errors: [], email: { _errors: [ 'Required' ] } }
+ POST /api/send-email 400 in 9ms
+[2025-05-15T03:31:23.749Z] [send-email] Processing request b4c7f7ae-2a30-4f00-9b58-44dcd4751e93
+[2025-05-15T03:31:23.749Z] [send-email] Request b4c7f7ae-2a30-4f00-9b58-44dcd4751e93 payload received {
+  hasName: true,
+  hasEmail: true,
+  hasMessage: true,
+  hasSubject: true,
+  hasCompany: false,
+  requestHeaders: {
+    accept: '*/*',
+    'content-length': '180',
+    'content-type': 'application/json',
+    host: 'localhost:3000',
+    'user-agent': 'curl/8.7.1',
+    'x-forwarded-for': '::1',
+    'x-forwarded-host': 'localhost:3000',
+    'x-forwarded-port': '3000',
+    'x-forwarded-proto': 'http'
+  }
+}
+[2025-05-15T03:31:23.749Z] [send-email] Request b4c7f7ae-2a30-4f00-9b58-44dcd4751e93 validation failed {
+  _errors: [],
+  email: { _errors: [ 'Please enter a valid email address' ] }
+}
+ POST /api/send-email 400 in 6ms
+[2025-05-15T03:31:23.762Z] [send-email] Processing request 635ccb9a-3499-4a09-8d8b-f168c8dab3c4
+[2025-05-15T03:31:23.762Z] [send-email] Request 635ccb9a-3499-4a09-8d8b-f168c8dab3c4 payload received {
+  hasName: true,
+  hasEmail: true,
+  hasMessage: true,
+  hasSubject: true,
+  hasCompany: false,
+  requestHeaders: {
+    accept: '*/*',
+    'content-length': '127',
+    'content-type': 'application/json',
+    host: 'localhost:3000',
+    'user-agent': 'curl/8.7.1',
+    'x-forwarded-for': '::1',
+    'x-forwarded-host': 'localhost:3000',
+    'x-forwarded-port': '3000',
+    'x-forwarded-proto': 'http'
+  }
+}
+[2025-05-15T03:31:23.762Z] [send-email] Request 635ccb9a-3499-4a09-8d8b-f168c8dab3c4 validation failed {
+  _errors: [],
+  message: { _errors: [ 'Message must be at least 10 characters' ] }
+}
+ POST /api/send-email 400 in 4ms
+[?25h

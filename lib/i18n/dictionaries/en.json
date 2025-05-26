@@ -1,0 +1,92 @@
+{
+  "common": {
+    "buttons": {
+      "getStarted": "Get Started",
+      "learnMore": "Learn More",
+      "contactUs": "Contact Us",
+      "subscribe": "Subscribe",
+      "tryAgain": "Try Again",
+      "goHome": "Return to Homepage"
+    },
+    "navigation": {
+      "home": "Home",
+      "about": "About",
+      "services": "Services",
+      "blog": "Blog",
+      "contact": "Contact",
+      "careers": "Careers"
+    },
+    "footer": {
+      "rights": "All rights reserved",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "errors": {
+      "somethingWentWrong": "Something went wrong",
+      "errorMessage": "We're sorry, but we encountered an unexpected error.",
+      "errorId": "Error ID"
+    },
+    "loading": "Loading..."
+  },
+  "home": {
+    "hero": {
+      "title": "Building Trust in AI Solutions",
+      "subtitle": "We create ethical, transparent AI systems that enhance human capabilities",
+      "tagline": "AI Consulting & Implementation"
+    },
+    "features": {
+      "title": "Our Approach",
+      "humanCentered": {
+        "title": "Human-Centered Design",
+        "description": "We put people first in all our AI solutions"
+      },
+      "ethical": {
+        "title": "Ethical Implementation",
+        "description": "Transparent and responsible AI development"
+      },
+      "custom": {
+        "title": "Custom Solutions",
+        "description": "Tailored to your specific business needs"
+      }
+    },
+    "testimonials": {
+      "title": "What Our Clients Say"
+    },
+    "timeline": {
+      "title": "Our Process",
+      "steps": {
+        "consultation": {
+          "title": "Consultation",
+          "description": "We meet with you to understand your needs and goals"
+        },
+        "assessment": {
+          "title": "Assessment",
+          "description": "We evaluate your current systems and identify opportunities"
+        },
+        "design": {
+          "title": "Design",
+          "description": "We create a customized AI solution designed with ethics in mind"
+        },
+        "development": {
+          "title": "Development",
+          "description": "We build your solution with transparency throughout the process"
+        },
+        "deployment": {
+          "title": "Deployment",
+          "description": "We implement your solution and provide training and support"
+        }
+      }
+    },
+    "newsletter": {
+      "title": "Stay Updated",
+      "description": "Subscribe to our newsletter for the latest in ethical AI development"
+    },
+    "trust": {
+      "iso": "ISO Certified",
+      "gdpr": "GDPR Compliant",
+      "trusted": "Trusted by 100+ Organizations",
+      "enterprise": "Enterprise Ready",
+      "aiPowered": "AI Powered"
+    }
+  }
+}

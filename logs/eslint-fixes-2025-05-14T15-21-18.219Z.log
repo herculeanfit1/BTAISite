@@ -1,0 +1,606 @@
+ESLint Fixes Log - 2025-05-14T15:21:18.220Z
+
+
+--- Fixing unused variables in app/components (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/BlogSearch.tsx
+  149:16  error  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ClientLayout.tsx
+  14:50  error  'locale' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/CookieConsent.tsx
+  58:13  warning  Do not use an `<a>` element to navigate to `/privacy/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/HeroSection.tsx
+   5:10  error  'CheckCircleIcon' is defined but never used  @typescript-eslint/no-unused-vars
+   9:8   error  'Image' is defined but never used            @typescript-eslint/no-unused-vars
+  45:3   error  'className' is defined but never used        @typescript-eslint/no-unused-vars
+  46:3   error  'backgroundImage' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/Newsletter.tsx
+  182:13  warning  Do not use an `<a>` element to navigate to `/privacy/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/PricingTable.tsx
+  1:17  error  'ReactNode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ServiceCard.tsx
+   3:8  error  'Image' is defined but never used      @typescript-eslint/no-unused-vars
+  19:3  error  'imagePath' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/TestimonialSection.tsx
+  46:14  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/Todo.tsx
+  4:10  error  'Route' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/animations/VercelInspiredAnimation.tsx
+  144:23  warning  Variable Assigned to Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/common/LoadingSpinner.tsx
+  31:79  warning  Generic Object Injection Sink  security/detect-object-injection
+  31:96  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/GlobeSection.tsx
+  63:7  error  'FallbackGlobeSection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/SimpleGlobe.tsx
+  169:15  error    'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  222:15  error    'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  304:26  warning  Function Call Object Injection Sink            security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/FooterSection.tsx
+   6:10  error  'Route' is defined but never used      @typescript-eslint/no-unused-vars
+  16:33  error  'isDesktop' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/GlobeSection.tsx
+  136:15  warning  Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/streaming/StreamingDashboard.tsx
+  169:16  warning  Generic Object Injection Sink  security/detect-object-injection
+
+✖ 24 problems (15 errors, 9 warnings)
+
+
+
+--- Fixing unused variables in app/api (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/blog/search/route.ts
+   7:10  error  'NextRequest' is defined but never used   @typescript-eslint/no-unused-vars
+  12:11  error  'SearchParams' is defined but never used  @typescript-eslint/no-unused-vars
+  23:11  error  'BlogPost' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/contact/route.ts
+   17:10  error    'isValidEmail' is defined but never used     @typescript-eslint/no-unused-vars
+   17:24  error    'isValidName' is defined but never used      @typescript-eslint/no-unused-vars
+   17:37  error    'isValidMessage' is defined but never used   @typescript-eslint/no-unused-vars
+   56:6   error    'ContactFormData' is defined but never used  @typescript-eslint/no-unused-vars
+   90:11  warning  Generic Object Injection Sink                security/detect-object-injection
+  188:23  warning  Generic Object Injection Sink                security/detect-object-injection
+  202:8   warning  Generic Object Injection Sink                security/detect-object-injection
+  203:5   warning  Generic Object Injection Sink                security/detect-object-injection
+  207:3   warning  Generic Object Injection Sink                security/detect-object-injection
+  210:3   warning  Generic Object Injection Sink                security/detect-object-injection
+  210:23  warning  Generic Object Injection Sink                security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/newsletter/route.ts
+  21:6   error    'NewsletterData' is defined but never used  @typescript-eslint/no-unused-vars
+  38:11  warning  Generic Object Injection Sink               security/detect-object-injection
+
+✖ 16 problems (8 errors, 8 warnings)
+
+
+
+--- Fixing unused variables in app/[locale] (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/[locale]/page.tsx
+   6:10  error  'NewsletterSection' is defined but never used          @typescript-eslint/no-unused-vars
+  16:7   error  'organizationData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  34:7   error  'websiteData' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+✖ 3 problems (3 errors, 0 warnings)
+
+
+
+--- Fixing unused variables in app/about (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/about/page.tsx
+    5:10  error  'Button' is defined but never used                @typescript-eslint/no-unused-vars
+  206:9   error  'teamMembers' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 2 problems (2 errors, 0 warnings)
+
+
+
+--- Fixing unused variables in app/blog (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/blog/category/[category]/page.tsx
+  5:10  error  'Breadcrumbs' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/blog/page.tsx
+   6:10  error  'Newsletter' is defined but never used        @typescript-eslint/no-unused-vars
+   7:10  error  'ClientBlogSearch' is defined but never used  @typescript-eslint/no-unused-vars
+  23:16  error  'getCategories' is defined but never used     @typescript-eslint/no-unused-vars
+
+✖ 4 problems (4 errors, 0 warnings)
+
+
+
+--- Fixing unused variables in app/careers (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/careers/page.tsx
+  2:8  error  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (1 error, 0 warnings)
+
+
+
+--- Fixing unused variables in app/contact ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/contact/ContactForm.tsx
+  395:11  warning  Do not use an `<a>` element to navigate to `/coming-soon/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+
+--- Fixing unused variables in app/page.tsx (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/page.tsx
+    8:10  error    'Route' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+  616:10  error    'email' is assigned a value but never used                                                                                                                   @typescript-eslint/no-unused-vars
+  616:17  error    'setEmail' is assigned a value but never used                                                                                                                @typescript-eslint/no-unused-vars
+  850:17  warning  Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+✖ 4 problems (3 errors, 1 warning)
+
+
+
+--- Fixing unused variables in lib ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/analytics.tsx
+    8:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   40:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/logger.ts
+    7:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:9   warning  Generic Object Injection Sink             security/detect-object-injection
+  120:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/rate-limit.ts
+  26:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  27:14  warning  Generic Object Injection Sink  security/detect-object-injection
+  56:10  warning  Generic Object Injection Sink  security/detect-object-injection
+  57:7   warning  Generic Object Injection Sink  security/detect-object-injection
+  64:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  65:7   warning  Generic Object Injection Sink  security/detect-object-injection
+  72:5   warning  Generic Object Injection Sink  security/detect-object-injection
+  75:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  76:27  warning  Generic Object Injection Sink  security/detect-object-injection
+  93:15  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/useAnalytics.tsx
+   9:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 30 problems (0 errors, 30 warnings)
+
+
+
+--- Fixing unused variables in src/uitests (ERROR) ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/accessibility.spec.ts
+  15:16  error    'e' is defined but never used  @typescript-eslint/no-unused-vars
+  53:37  warning  Generic Object Injection Sink  security/detect-object-injection
+  55:66  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/button.spec.ts
+    1:29  error  'Page' is defined but never used                     @typescript-eslint/no-unused-vars
+    1:40  error  'Locator' is defined but never used                  @typescript-eslint/no-unused-vars
+    2:38  error  'hasClass' is defined but never used                 @typescript-eslint/no-unused-vars
+  131:18  error  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  423:13  error  'hasFocusStyles' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/card.spec.ts
+  134:33  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/component.spec.ts
+  297:16  error  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/navigation.spec.ts
+    1:29  error  'Page' is defined but never used                    @typescript-eslint/no-unused-vars
+    1:40  error  'Locator' is defined but never used                 @typescript-eslint/no-unused-vars
+    2:20  error  'isMobileViewport' is defined but never used        @typescript-eslint/no-unused-vars
+   77:11  error  'mobileNavMenu' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  157:11  error  'mobileNavMenu' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/performance/lighthouse.spec.ts
+    2:16  error  'expect' is defined but never used  @typescript-eslint/no-unused-vars
+   96:16  error  'e' is defined but never used       @typescript-eslint/no-unused-vars
+  135:16  error  'e' is defined but never used       @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/performance/performance.spec.ts
+   80:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   84:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:7   warning  Generic Object Injection Sink             security/detect-object-injection
+  171:25  warning  Generic Object Injection Sink             security/detect-object-injection
+  272:20  error    'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/utils/test-utils.ts
+  205:13  error    'linkText' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  207:36  warning  Found non-literal argument to RegExp Constructor  security/detect-non-literal-regexp
+
+✖ 27 problems (17 errors, 10 warnings)
+
+
+
+--- Running general ESLint fixes in app/components ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/BlogSearch.tsx
+  149:16  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ClientLayout.tsx
+  14:50  warning  'locale' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/CookieConsent.tsx
+  58:13  warning  Do not use an `<a>` element to navigate to `/privacy/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/HeroSection.tsx
+   5:10  warning  'CheckCircleIcon' is defined but never used  @typescript-eslint/no-unused-vars
+   9:8   warning  'Image' is defined but never used            @typescript-eslint/no-unused-vars
+  45:3   warning  'className' is defined but never used        @typescript-eslint/no-unused-vars
+  46:3   warning  'backgroundImage' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/Newsletter.tsx
+  182:13  warning  Do not use an `<a>` element to navigate to `/privacy/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/PricingTable.tsx
+  1:17  warning  'ReactNode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ServiceCard.tsx
+   3:8  warning  'Image' is defined but never used      @typescript-eslint/no-unused-vars
+  19:3  warning  'imagePath' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/TestimonialSection.tsx
+  46:14  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/Todo.tsx
+  4:10  warning  'Route' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/animations/VercelInspiredAnimation.tsx
+  144:23  warning  Variable Assigned to Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/common/LoadingSpinner.tsx
+  31:79  warning  Generic Object Injection Sink  security/detect-object-injection
+  31:96  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/GlobeSection.tsx
+  63:7  warning  'FallbackGlobeSection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/SimpleGlobe.tsx
+  169:15  warning  'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  222:15  warning  'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  304:26  warning  Function Call Object Injection Sink            security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/FooterSection.tsx
+   6:10  warning  'Route' is defined but never used      @typescript-eslint/no-unused-vars
+  16:33  warning  'isDesktop' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/GlobeSection.tsx
+  136:15  warning  Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/streaming/StreamingDashboard.tsx
+  169:16  warning  Generic Object Injection Sink  security/detect-object-injection
+
+✖ 24 problems (0 errors, 24 warnings)
+
+
+
+--- Running general ESLint fixes in app/api ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/blog/search/route.ts
+   7:10  warning  'NextRequest' is defined but never used   @typescript-eslint/no-unused-vars
+  12:11  warning  'SearchParams' is defined but never used  @typescript-eslint/no-unused-vars
+  23:11  warning  'BlogPost' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/contact/route.ts
+   17:10  warning  'isValidEmail' is defined but never used     @typescript-eslint/no-unused-vars
+   17:24  warning  'isValidName' is defined but never used      @typescript-eslint/no-unused-vars
+   17:37  warning  'isValidMessage' is defined but never used   @typescript-eslint/no-unused-vars
+   56:6   warning  'ContactFormData' is defined but never used  @typescript-eslint/no-unused-vars
+   90:11  warning  Generic Object Injection Sink                security/detect-object-injection
+  188:23  warning  Generic Object Injection Sink                security/detect-object-injection
+  202:8   warning  Generic Object Injection Sink                security/detect-object-injection
+  203:5   warning  Generic Object Injection Sink                security/detect-object-injection
+  207:3   warning  Generic Object Injection Sink                security/detect-object-injection
+  210:3   warning  Generic Object Injection Sink                security/detect-object-injection
+  210:23  warning  Generic Object Injection Sink                security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/newsletter/route.ts
+  21:6   warning  'NewsletterData' is defined but never used  @typescript-eslint/no-unused-vars
+  38:11  warning  Generic Object Injection Sink               security/detect-object-injection
+
+✖ 16 problems (0 errors, 16 warnings)
+
+
+
+--- Running general ESLint fixes in app/[locale] ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/[locale]/page.tsx
+   6:10  warning  'NewsletterSection' is defined but never used          @typescript-eslint/no-unused-vars
+  16:7   warning  'organizationData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  34:7   warning  'websiteData' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+✖ 3 problems (0 errors, 3 warnings)
+
+
+
+--- Running general ESLint fixes in app/about ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/about/page.tsx
+    5:10  warning  'Button' is defined but never used                @typescript-eslint/no-unused-vars
+  206:9   warning  'teamMembers' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 2 problems (0 errors, 2 warnings)
+
+
+
+--- Running general ESLint fixes in app/blog ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/blog/category/[category]/page.tsx
+  5:10  warning  'Breadcrumbs' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/blog/page.tsx
+   6:10  warning  'Newsletter' is defined but never used        @typescript-eslint/no-unused-vars
+   7:10  warning  'ClientBlogSearch' is defined but never used  @typescript-eslint/no-unused-vars
+  23:16  warning  'getCategories' is defined but never used     @typescript-eslint/no-unused-vars
+
+✖ 4 problems (0 errors, 4 warnings)
+
+
+
+--- Running general ESLint fixes in app/careers ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/careers/page.tsx
+  2:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+
+--- Running general ESLint fixes in app/contact ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/contact/ContactForm.tsx
+  395:11  warning  Do not use an `<a>` element to navigate to `/coming-soon/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+✖ 1 problem (0 errors, 1 warning)
+
+
+
+--- Running general ESLint fixes in app/page.tsx ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/page.tsx
+    8:10  warning  'Route' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+  616:10  warning  'email' is assigned a value but never used                                                                                                                   @typescript-eslint/no-unused-vars
+  616:17  warning  'setEmail' is assigned a value but never used                                                                                                                @typescript-eslint/no-unused-vars
+  850:17  warning  Do not use an `<a>` element to navigate to `/about/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+✖ 4 problems (0 errors, 4 warnings)
+
+
+
+--- Running general ESLint fixes in lib ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/analytics.tsx
+    8:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   40:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  190:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/logger.ts
+    7:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:9   warning  Generic Object Injection Sink             security/detect-object-injection
+  120:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/rate-limit.ts
+  26:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  27:14  warning  Generic Object Injection Sink  security/detect-object-injection
+  56:10  warning  Generic Object Injection Sink  security/detect-object-injection
+  57:7   warning  Generic Object Injection Sink  security/detect-object-injection
+  64:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  65:7   warning  Generic Object Injection Sink  security/detect-object-injection
+  72:5   warning  Generic Object Injection Sink  security/detect-object-injection
+  75:9   warning  Generic Object Injection Sink  security/detect-object-injection
+  76:27  warning  Generic Object Injection Sink  security/detect-object-injection
+  93:15  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/useAnalytics.tsx
+   9:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 30 problems (0 errors, 30 warnings)
+
+
+
+--- Running general ESLint fixes in src/uitests ---
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/accessibility.spec.ts
+  15:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  53:37  warning  Generic Object Injection Sink  security/detect-object-injection
+  55:66  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/button.spec.ts
+    1:29  warning  'Page' is defined but never used                     @typescript-eslint/no-unused-vars
+    1:40  warning  'Locator' is defined but never used                  @typescript-eslint/no-unused-vars
+    2:38  warning  'hasClass' is defined but never used                 @typescript-eslint/no-unused-vars
+  131:18  warning  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  423:13  warning  'hasFocusStyles' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/card.spec.ts
+  134:33  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/component.spec.ts
+  297:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/components/navigation.spec.ts
+    1:29  warning  'Page' is defined but never used                    @typescript-eslint/no-unused-vars
+    1:40  warning  'Locator' is defined but never used                 @typescript-eslint/no-unused-vars
+    2:20  warning  'isMobileViewport' is defined but never used        @typescript-eslint/no-unused-vars
+   77:11  warning  'mobileNavMenu' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  157:11  warning  'mobileNavMenu' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/performance/lighthouse.spec.ts
+    2:16  warning  'expect' is defined but never used  @typescript-eslint/no-unused-vars
+   96:16  warning  'e' is defined but never used       @typescript-eslint/no-unused-vars
+  135:16  warning  'e' is defined but never used       @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/performance/performance.spec.ts
+   80:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   84:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:7   warning  Generic Object Injection Sink             security/detect-object-injection
+  171:25  warning  Generic Object Injection Sink             security/detect-object-injection
+  272:20  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/src/uitests/utils/test-utils.ts
+  205:13  warning  'linkText' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  207:36  warning  Found non-literal argument to RegExp Constructor  security/detect-non-literal-regexp
+
+✖ 27 problems (0 errors, 27 warnings)
+
+
+
+--- Checking for TypeScript errors (ERROR) ---
+__tests__/api/status.test.ts(8,30): error TS7006: Parameter 'response' implicitly has an 'any' type.
+__tests__/components/FeatureSection.test.tsx(82,9): error TS2322: Type '{ title: string; features: { title: string; description: string; icon: string; }[]; layout: string; }' is not assignable to type 'IntrinsicAttributes & FeatureSectionProps'.
+  Property 'layout' does not exist on type 'IntrinsicAttributes & FeatureSectionProps'.
+__tests__/components/VercelSafariPage.test.tsx(10,38): error TS2307: Cannot find module '@/app/vercel-safari/page' or its corresponding type declarations.
+__tests__/middleware.test.ts(18,5): error TS2698: Spread types may only be created from object types.
+__tests__/utils/responsive-test-utils.ts(9,10): error TS2339: Property 'IS_REACT_ACT_ENVIRONMENT' does not exist on type 'Window & typeof globalThis'.
+__tests__/utils/responsive-test-utils.ts(16,49): error TS2339: Property 'IS_REACT_ACT_ENVIRONMENT' does not exist on type 'Window & typeof globalThis'.
+__tests__/utils/test-utils.ts(40,3): error TS2322: Type 'Mock<Procedure>' is not assignable to type 'Mock<any, any, any>'.
+  The types returned by 'withImplementation(...)' are incompatible between these types.
+    Type 'Mock<Procedure> | Promise<Mock<Procedure>>' is not assignable to type 'Promise<void>'.
+      Type 'Mock<Procedure>' is missing the following properties from type 'Promise<void>': then, catch, finally, [Symbol.toStringTag]
+__tests__/utils/test-utils.ts(95,7): error TS2698: Spread types may only be created from object types.
+__tests__/utils/test-utils.ts(97,17): error TS18046: 'actual' is of type 'unknown'.
+app/components/demo/ParallelDataFetchingDemo.tsx(89,12): error TS2578: Unused '@ts-expect-error' directive.
+app/components/demo/ParallelDataFetchingDemo.tsx(97,12): error TS2578: Unused '@ts-expect-error' directive.
+app/components/FeatureSection.tsx(191,9): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'className' does not exist in type 'Partial<unknown> & Attributes'.
+app/components/streaming/StreamingDashboard.tsx(228,12): error TS2578: Unused '@ts-expect-error' directive.
+app/components/streaming/StreamingDashboard.tsx(238,14): error TS2578: Unused '@ts-expect-error' directive.
+app/components/streaming/StreamingDashboard.tsx(250,16): error TS2578: Unused '@ts-expect-error' directive.
+lib/analytics.tsx(187,5): error TS2717: Subsequent property declarations must have the same type.  Property 'gtag' must be of type '(command: string, action: string, params?: string | Record<string, unknown> | undefined) => void', but here has type '(command: string, action: string, params?: string | Record<string, any> | undefined) => void'.
+lib/analytics.tsx(192,5): error TS2717: Subsequent property declarations must have the same type.  Property 'dataLayer' must be of type 'unknown[]', but here has type 'any[]'.
+lib/route-types.ts(18,10): error TS2440: Import declaration conflicts with local declaration of 'Route'.
+src/uitests/components/component.spec.ts(39,9): error TS2322: Type '(component: Locator, page: Page) => Promise<void>' is not assignable to type '(component: Locator, page?: Page | undefined) => Promise<void>'.
+  Types of parameters 'page' and 'page' are incompatible.
+    Type 'Page | undefined' is not assignable to type 'Page'.
+      Type 'undefined' is not assignable to type 'Page'.
+src/uitests/components/component.spec.ts(202,11): error TS2554: Expected 3 arguments, but got 4.
+src/uitests/components/component.spec.ts(320,41): error TS2531: Object is possibly 'null'.
+src/uitests/components/component.spec.ts(399,11): error TS2554: Expected 3 arguments, but got 4.
+src/uitests/components/component.spec.ts(509,70): error TS2554: Expected 3 arguments, but got 4.
+src/uitests/components/ui-components.spec.ts(75,19): error TS18047: 'el' is possibly 'null'.
+src/uitests/components/ui-components.spec.ts(75,22): error TS2339: Property 'validationMessage' does not exist on type 'HTMLElement | SVGElement'.
+  Property 'validationMessage' does not exist on type 'HTMLElement'.
+src/uitests/contact-basic.spec.ts(25,12): error TS18047: 'pageContent' is possibly 'null'.
+src/uitests/lighthouse-optimizations.spec.ts(94,33): error TS2339: Property 'responseStart' does not exist on type 'PerformanceEntry'.
+src/uitests/lighthouse-optimizations.spec.ts(100,32): error TS2339: Property 'domContentLoadedEventEnd' does not exist on type 'PerformanceEntry'.
+src/uitests/lighthouse-optimizations.spec.ts(102,37): error TS2339: Property 'loadEventEnd' does not exist on type 'PerformanceEntry'.
+src/uitests/lighthouse-optimizations.spec.ts(113,12): error TS18046: 'metrics' is of type 'unknown'.
+src/uitests/lighthouse-optimizations.spec.ts(114,12): error TS18046: 'metrics' is of type 'unknown'.
+src/uitests/lighthouse-optimizations.spec.ts(115,12): error TS18046: 'metrics' is of type 'unknown'.
+src/uitests/lighthouse-optimizations.spec.ts(116,12): error TS18046: 'metrics' is of type 'unknown'.
+src/uitests/pages/about.spec.ts(34,67): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/about.spec.ts(60,67): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/about.spec.ts(99,9): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/about.spec.ts(128,9): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/contact.spec.ts(98,40): error TS2339: Property 'validity' does not exist on type 'Element'.
+src/uitests/pages/contact.spec.ts(110,40): error TS2339: Property 'validity' does not exist on type 'Element'.
+src/uitests/pages/contact.spec.ts(138,9): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/contact.spec.ts(180,62): error TS2554: Expected 3 arguments, but got 4.
+src/uitests/pages/home.spec.ts(78,11): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/home.spec.ts(128,13): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/home.spec.ts(158,13): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/services.spec.ts(38,9): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/services.spec.ts(110,7): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/pages/services.spec.ts(138,7): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/uitests/performance/lighthouse.spec.ts(63,24): error TS2339: Property 'hadRecentInput' does not exist on type 'PerformanceEntry'.
+src/uitests/performance/lighthouse.spec.ts(64,33): error TS2339: Property 'value' does not exist on type 'PerformanceEntry'.
+src/uitests/performance/lighthouse.spec.ts(103,13): error TS2304: Cannot find name 'playAudit'.
+src/uitests/performance/lighthouse.spec.ts(105,17): error TS2304: Cannot find name 'lighthouseDesktopConfig'.
+src/uitests/performance/lighthouse.spec.ts(142,13): error TS2304: Cannot find name 'playAudit'.
+src/uitests/performance/lighthouse.spec.ts(144,17): error TS2304: Cannot find name 'lighthouseMobileConfig'.
+src/uitests/performance/lighthouse.spec.ts(190,24): error TS2339: Property 'hadRecentInput' does not exist on type 'PerformanceEntry'.
+src/uitests/performance/lighthouse.spec.ts(191,33): error TS2339: Property 'value' does not exist on type 'PerformanceEntry'.
+src/uitests/performance/lighthouse.spec.ts(221,25): error TS18048: 'lcp' is possibly 'undefined'.
+src/uitests/performance/lighthouse.spec.ts(221,25): error TS2365: Operator '<' cannot be applied to types '{}' and 'number'.
+src/uitests/performance/lighthouse.spec.ts(233,23): error TS18046: 'cls' is of type 'unknown'.
+src/uitests/performance/lighthouse.spec.ts(251,30): error TS18046: 'lcp' is of type 'unknown'.
+src/uitests/performance/lighthouse.spec.ts(252,28): error TS18046: 'cls' is of type 'unknown'.
+src/uitests/performance/performance.spec.ts(79,26): error TS18046: 'performanceEntries' is of type 'unknown'.
+src/uitests/performance/performance.spec.ts(83,36): error TS18046: 'performanceEntries' is of type 'unknown'.
+src/uitests/performance/performance.spec.ts(87,38): error TS18046: 'performanceEntries' is of type 'unknown'.
+src/uitests/performance/performance.spec.ts(110,26): error TS2339: Property 'hadRecentInput' does not exist on type 'PerformanceEntry'.
+src/uitests/performance/performance.spec.ts(292,22): error TS18047: 'script' is possibly 'null'.
+src/uitests/performance/performance.spec.ts(292,48): error TS18047: 'script' is possibly 'null'.
+src/uitests/performance/performance.spec.ts(296,9): error TS18047: 'script' is possibly 'null'.
+src/uitests/performance/performance.spec.ts(297,9): error TS18047: 'script' is possibly 'null'.
+src/uitests/performance/performance.spec.ts(298,9): error TS18047: 'script' is possibly 'null'.
+src/uitests/performance/performance.spec.ts(300,26): error TS18047: 'script' is possibly 'null'.
+src/uitests/security.spec.ts(131,60): error TS18046: 'error' is of type 'unknown'.
+src/uitests/security.spec.ts(141,32): error TS18048: 'rateLimitedResponse' is possibly 'undefined'.
+vitest.setup.ts(75,20): error TS2352: Conversion of type 'Mock<(...args: any[]) => MockClientRequest>' to type '{ (options: string | URL | RequestOptions, callback?: ((res: IncomingMessage) => void) | undefined): ClientRequest; (url: string | URL, options: RequestOptions, callback?: ((res: IncomingMessage) => void) | undefined): ClientRequest; } | { ...; }' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Mock<(...args: any[]) => MockClientRequest>' is not comparable to type '{ (options: string | URL | RequestOptions, callback?: ((res: IncomingMessage) => void) | undefined): ClientRequest; (url: string | URL, options: RequestOptions, callback?: ((res: IncomingMessage) => void) | undefined): ClientRequest; }'.
+    Type 'MockClientRequest' is missing the following properties from type 'ClientRequest': aborted, host, protocol, reusedSocket, and 55 more.
+vitest.setup.ts(266,14): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(275,14): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(286,7): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(288,12): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(290,57): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(291,57): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(292,62): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(293,61): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(295,64): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+vitest.setup.ts(307,58): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.

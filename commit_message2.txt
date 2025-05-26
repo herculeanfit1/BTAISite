@@ -1,0 +1,35 @@
+- Remove unused Image import and variables in ComingSoonPage
+- Remove unused CheckCircleIcon, Image imports and className/backgroundImage props in HeroSection
+
+These changes further reduce ESLint warnings without affecting functionality.
+
+fix: address more ESLint warnings in components
+
+- Remove unused imports and props in ServiceCard component
+- Remove unused imports and simplify FooterSection component interface
+
+These changes continue our cleanup of ESLint warnings.
+
+fix: address more ESLint warnings in API routes and contact form
+
+- Remove unused interfaces in blog search route for cleaner code
+- Fix object injection security issue in contact route by using type-safe property access
+- Remove unused window.ENV interface in ContactForm component
+
+These changes continue our cleanup of ESLint warnings.
+
+fix: continue addressing ESLint warnings
+
+- Fix unused sanitizedData variable in contact API route
+- Pass locale prop to components in ClientLayout
+- Remove unused import (Link) and rename error variable in ContactSection
+- Remove unused geometry variables in SimpleGlobe component
+
+These changes further reduce our ESLint warnings while maintaining functionality.
+
+fix: remove more unused imports and components
+
+- Remove unused dynamic import from app/page.tsx
+- Remove unused FallbackGlobeSection component from GlobeSection.tsx
+
+These changes further simplify the codebase and address ESLint warnings.

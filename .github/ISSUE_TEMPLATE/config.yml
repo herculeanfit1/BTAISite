@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Bridging Trust AI Documentation
+    url: https://github.com/herculeanfit1/BridgingTrustAI/tree/main/docs
+    about: Check the documentation before creating an issue
+  - name: Questions & Discussions
+    url: https://github.com/herculeanfit1/BridgingTrustAI/discussions
+    about: For questions and discussions about the Bridging Trust AI website
+  - name: Security Issues
+    url: mailto:security@bridgingtrust.ai
+    about: Please report security vulnerabilities here instead of creating public issues 

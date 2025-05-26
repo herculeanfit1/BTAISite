@@ -1,0 +1,21 @@
+{
+  "csp": {
+    "enabled": true,
+    "defaultSrc": ["'self'"],
+    "scriptSrc": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    "styleSrc": ["'self'", "'unsafe-inline'"],
+    "imgSrc": ["'self'", "data:"],
+    "connectSrc": ["'self'"],
+    "fontSrc": ["'self'"],
+    "objectSrc": ["'none'"],
+    "mediaSrc": ["'self'"],
+    "frameSrc": ["'none'"]
+  },
+  "headers": {
+    "enabled": true,
+    "xFrameOptions": "DENY",
+    "xContentTypeOptions": "nosniff",
+    "referrerPolicy": "no-referrer-when-downgrade",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=()"
+  }
+}

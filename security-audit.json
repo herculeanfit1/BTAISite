@@ -1,0 +1,141 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@azure/static-web-apps-cli": {
+      "name": "@azure/static-web-apps-cli",
+      "severity": "low",
+      "isDirect": true,
+      "via": [
+        "cookie"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@azure/static-web-apps-cli"
+      ],
+      "fixAvailable": false
+    },
+    "@cyclonedx/cyclonedx-library": {
+      "name": "@cyclonedx/cyclonedx-library",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "libxmljs2"
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-npm"
+      ],
+      "range": ">=1.14.0-rc.0",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-library"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "1.10.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@cyclonedx/cyclonedx-npm": {
+      "name": "@cyclonedx/cyclonedx-npm",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "effects": [],
+      "range": ">=1.11.0",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-npm"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "1.10.0",
+        "isSemVerMajor": true
+      }
+    },
+    "cookie": {
+      "name": "cookie",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1103907,
+          "name": "cookie",
+          "dependency": "cookie",
+          "title": "cookie accepts cookie name, path, and domain with out of bounds characters",
+          "url": "https://github.com/advisories/GHSA-pxg6-pf52-xh8x",
+          "severity": "low",
+          "cwe": [
+            "CWE-74"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<0.7.0"
+        }
+      ],
+      "effects": [
+        "@azure/static-web-apps-cli"
+      ],
+      "range": "<0.7.0",
+      "nodes": [
+        "node_modules/cookie"
+      ],
+      "fixAvailable": false
+    },
+    "libxmljs2": {
+      "name": "libxmljs2",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1100657,
+          "name": "libxmljs2",
+          "dependency": "libxmljs2",
+          "title": "libxmljs2 vulnerable to type confusion when parsing specially crafted XML",
+          "url": "https://github.com/advisories/GHSA-78h3-pg4x-j8cv",
+          "severity": "critical",
+          "cwe": [
+            "CWE-843"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<=0.35.0"
+        }
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/libxmljs2"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "1.10.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 2,
+      "moderate": 0,
+      "high": 0,
+      "critical": 3,
+      "total": 5
+    },
+    "dependencies": {
+      "prod": 106,
+      "dev": 1306,
+      "optional": 203,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 1446
+    }
+  }
+}

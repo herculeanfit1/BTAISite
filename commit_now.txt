@@ -1,0 +1,20 @@
+fix: address critical ESLint warnings and security issues
+
+- Fix object injection security vulnerabilities in:
+  - TestimonialSection
+  - VercelInspiredAnimation
+  - LoadingSpinner
+  - SimpleGlobe
+
+- Remove unused variables and imports in page.tsx
+- Replace 'any' types with more specific 'unknown' types in analytics.tsx
+
+These changes prioritize security fixes while maintaining site functionality.
+Follow-up commits will address remaining ESLint warnings.
+
+fix: remove unused imports and variables
+
+- Remove unused Image import and variables in ComingSoonPage
+- Remove unused CheckCircleIcon, Image imports and className/backgroundImage props in HeroSection
+
+These changes further reduce ESLint warnings without affecting functionality.

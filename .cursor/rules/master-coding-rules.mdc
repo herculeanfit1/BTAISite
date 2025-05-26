@@ -1,0 +1,184 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+<!-- ========================================================= -->
+<!--  Master .cursorrules | Bridging Trust AI – May 2025        -->
+<!-- ========================================================= -->
+This document is the **single source of truth** for every Bridging Trust AI software project, including the public website, internal tools, mobile apps, infrastructure-as-code, and supporting libraries.  
+By unifying our original Cursor coding preferences with the detailed Next.js/Tailwind code‑generation standards, we ensure **security, compliance, resiliency, scalability, and performance**—while keeping the codebase clear, consistent, and easy to extend.
+
+---
+
+## 0  Scope & Audience
+* Applies to **all** repositories under the Bridging Trust AI organization (web, API, infrastructure, mobile, data‑science).
+* Enforced automatically by Cursor, CI pipelines, and pre‑commit hooks.
+
+---
+
+## 1  General Principles
+| Principle | What it Means in Practice |
+|-----------|---------------------------|
+| **Simplicity & Clarity** | Prefer the simplest working solution; write self‑documenting code with clear naming and concise comments. |
+| **DRY** | Re‑use helpers, services, and shared components; delete dead code when new logic replaces old. |
+| **Environment Awareness** | All code must run unchanged in **dev, test, and prod** via configuration, not conditionals. |
+| **Iterative Improvement** | Ship incremental changes behind feature flags; refactor legacy code once new patterns are stable. |
+
+---
+
+## 2  Project Structure & Code Organization
+### 2.1 Universal Layout
+```text
+root/
+├─ app/               # Next.js 15 App Router pages, server components
+├─ src/
+│  ├─ components/     # shared UI
+│  ├─ lib/            # utilities, data access
+│  └─ types/          # global TypeScript types
+├─ mobile/            # React‑Native/Expo projects
+├─ infra/             # Terraform / Bicep / Docker / GitHub Actions
+├─ tests/             # pytest, Jest, Playwright
+├─ docs/              # architecture, ADRs, promptlog.md
+└─ .cursorrules
+```
+* **Modularity:** keep files ≤ 150 lines (Infra scripts may exceed).
+* **Docstrings / JSDoc:** mandatory for every public function, class, and component.
+* **Prompt Logging:** append each exact user prompt to `docs/promptlog.md` automatically.
+
+---
+
+## 3  Environment & Configuration Management
+| Topic | Rule | Best Practice |
+|-------|------|--------------|
+| **Secrets** | Never hard‑code; load from env vars or a vault. | Require 2‑person review on secret rotation PRs. |
+| **Dynamic vs. Static** | Use env vars for sensitive or dynamic data; config files for complex/static settings. | Document each variable in `docs/configuration.md`. |
+| **File Size** | Aim ≤ 100‑150 lines for application code. | Refactor when larger, except for Dockerfiles or Bicep templates. |
+| **.env Protection** | Never overwrite `.env*` without explicit approval. | `.env` files ignored in Git; sample templates live under `docs/`. |
+
+---
+
+## 4  Testing & Quality Assurance
+* **Frameworks:** `pytest` (Python), `Jest` + React Native Testing Library (mobile), Playwright (e2e).
+* **Isolation:** use fixtures, SQLite‑in‑memory, and Docker test containers.
+* **Coverage ≥ 90 %** for critical modules; required to merge.
+* **Infrastructure Tests:** verify Docker images build, containers start, env vars inject, and compose stacks pass health checks.
+
+---
+
+## 5  Docker & Deployment
+* **Dockerfiles:** multi‑stage, non‑root, smallest‑possible images.
+* **docker‑compose:** kill old containers before up; separate profiles for dev/test/prod.
+* **CI/CD:** GitHub Actions workflows per repo; require passing tests + lint + `ruff`/`eslint`.  
+  *Use incremental docker layer caching and provenance attestation.*
+
+---
+
+## 6  Security & Compliance
+* **Web:** CSRF tokens, secure cookies, rate limiting, parameterized queries, output sanitization.
+* **Mobile:** secure storage (Expo SecureStore), HTTPS pinning for critical APIs.
+* **Audit Logging:** all auth events and privileged actions.
+* **USA Regulations:** follow NIST 800‑53 baseline; document data‑flow for minors’ data.
+
+---
+
+## 7  Performance, Scalability & Resiliency
+| Area | Guideline |
+|------|-----------|
+| **Performance** | Use async/await, query optimization, lazy component loading, `next/image` for media. |
+| **Scalability** | Design for horizontal scaling; enable DB connection pooling; cache with Redis. |
+| **Resiliency** | Centralized error handling, retries with backoff, circuit breakers, health probes. |
+
+---
+
+## 8  Commit Messages & Change Control
+```text
+<type>(<scope>): <subject>
+
+<body – optional>
+
+<footer – refs, BREAKING CHANGE>
+```
+Types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `style`, `test`.
+
+---
+
+## 9  Domain‑Specific Standards
+### 9.1 Web (Next.js 15.3.2 + Tailwind CSS + TypeScript)
+1. **App Router only** (`app/`); default to **Server Components**.
+2. **TypeScript strict mode** (`"strict": true` in *tsconfig*).
+3. **Tailwind** + `prettier-plugin-tailwindcss`; no inline styles.  
+4. **Component Pattern**
+   ```tsx
+   interface Props { /* ... */ }
+
+   export const MyComponent = ({ /* ... */ }: Props) => {
+     /* logic */
+   };
+   ```
+5. **Pages**
+   ```tsx
+   const Page = async () => { /* fetch, render */ };
+   export default Page;
+   ```
+6. **Client Components**: `'use client'` at top, only when necessary.
+7. **SEO**: use Next.js `metadata` export.
+8. **Error Boundaries**: implement `error.tsx` with reset logic.
+9. **Data Fetching**: `fetch()` with `{ next: { revalidate } }`, or `cache()` helpers.
+10. **Accessibility**: WCAG AA; decorative icons `aria-hidden="true"`.
+
+### 9.2 Backend (Python / Flask + HTMX)
+* Blueprints for feature domains, Jinja2 templates, CSRF via `Flask-WTF`.
+* Ruff for style; type‑check with MyPy.
+* API versioning under `/api/v1`.
+
+### 9.3 Mobile (React Native 0.76.9 + Expo ~52)
+* **Managed workflow** unless native modules force eject.
+* Organize `components/`, `screens/`, `services/`, `hooks/`.
+* Tests with Jest; use React Native Testing Library.
+* Optimize flat‑list rendering; minimize re‑renders.
+
+---
+
+## 10  Custom Workflow Preferences
+* **Prefer simple fixes**; exhaust existing patterns before introducing new ones.
+* **Remove** old logic after successful replacement.
+* **Refactor** files > 250 lines.
+* **Mocking** only inside `tests/`.
+* **Restart** dev servers after dependency or env changes.
+
+---
+
+## 11  Documentation Automation
+| File | Rule |
+|------|------|
+| `docs/promptlog.md` | Append every exact user prompt with `## YYYY‑MM‑DD HH:MM` heading and context notes. |
+| ADRs | Use `docs/adr/NNNN-title.md`; follow Michael Nygard template. |
+| README | Each repo requires setup, scripts, env vars, and contact sections. |
+
+---
+
+## 12  Cursor Enforcement
+Cursor will:
+* Flag files > 150 lines (app code) or 250 lines (infra) for review.
+* Block commits containing hard‑coded secrets.
+* Auto‑format with Prettier, Tailwind plugin, and Ruff.
+* Apply these `.cursorrules` to every AI‑assisted generation.
+
+---
+
+## 13  Appendix A – Next.js 15.3.2 Code‑Generation Cheatsheet
+*(For AI agents and code‑gen tools – follow exactly)*
+
+| Scenario | Required Pattern |
+|----------|------------------|
+| **Client Component** | `'use client'`<br>`export const …` |
+| **Server Page w/ Data** | `async function getData()` + default export page with await |
+| **Metadata** | `export const metadata: Metadata = { … }` |
+| **Error Boundary** | `'use client'; export default function Error…` |
+| **Image** | `<Image src="/…" width={…} height={…} alt="…" />` |
+
+---
+
+_End of Bridging Trust AI master .cursorrules_  
+*Last updated: 2025‑05‑24 (America/Chicago)*

@@ -1,0 +1,41 @@
+# Dependabot configuration for security updates
+# Updated as part of Node 20 LTS upgrade
+
+version: 2
+updates:
+  # Enable npm security updates
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    # Focus on security updates
+    security-updates-only: false
+    # Version settings
+    versioning-strategy: "lockfile-only"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Assign reviewers
+    reviewers:
+      - "bridgingtrustai-admin"
+    # Ignore major updates that would require more significant refactoring
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Enable GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions" 

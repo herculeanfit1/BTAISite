@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from "next/server";
+
+/**
+ * Next.js Middleware for Security Headers and Content-Type Management
+ *
+ * This middleware serves multiple critical purposes:
+ * 1. Sets security headers on all responses to protect against common web vulnerabilities
+ * 2. Explicitly sets Content-Type headers for HTML responses to ensure proper rendering
+ * 3. Implements HTTP Strict Transport Security (HSTS) for enhanced security in production
+ * 4. Configures CSP reporting for security monitoring and fine-tuning
+ *
+ * The middleware addresses a critical issue where the browser would download HTML content
+ * instead of rendering it properly. This happens when the Content-Type header is missing
+ * or incorrectly set, causing the browser to interpret the response as a file download.
+ *
+ * This implementation works in conjunction with both:
+ * - The default Next.js server (npm run dev:next)
+ * - Our custom server implementation (npm run dev / server.js)
+ *
+ * @param {NextRequest} request - The incoming Next.js request object
+ * @returns {NextResponse} - The modified response with appropriate headers
+ */
+export function middleware(request: NextRequest) {
+  // Create the response object
+  const response = NextResponse.next();
+
+  // Set security headers with a comprehensive Content Security Policy
+  // This protects against XSS, clickjacking, and other injection attacks
+  const contentSecurityPolicy = `
+    default-src 'self' dev.bridgingtrust.local https://dev.bridgingtrust.local:3000;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' blob: data: https://www.google-analytics.com;
+    font-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;
+    connect-src 'self' https://www.google-analytics.com https://dev.bridgingtrust.local:3000;
+    frame-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+    report-uri /api/csp-report;
+    report-to default;
+  `
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // Add security headers
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+
+  // Add a Report-To header for newer browsers that support the Reporting API
+  const reportToHeader = `{"group":"default","max_age":31536000,"endpoints":[{"url":"/api/csp-report"}],"include_subdomains":true}`;
+  response.headers.set("Report-To", reportToHeader);
+
+  // Standard security headers
+  response.headers.set("X-Content-Type-Options", "nosniff"); // Prevents MIME type sniffing
+  response.headers.set("X-Frame-Options", "DENY"); // Prevents clickjacking
+  response.headers.set("X-XSS-Protection", "1; mode=block"); // Additional XSS protection
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin"); // Controls referrer information
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  ); // Restricts feature usage
+
+  // IMPLEMENT HSTS (HTTP Strict Transport Security) HEADERS FOR PRODUCTION
+  // This forces browsers to use HTTPS for all future requests to this domain
+  // Only apply in production to avoid issues with local development
+  if (process.env.NODE_ENV === "production") {
+    // Set HSTS header for production environment
+    // max-age=63072000 sets the policy for 2 years (in seconds)
+    // includeSubDomains applies the policy to all subdomains
+    // preload allows the domain to be hardcoded into browsers as HTTPS-only
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
+
+  // CRITICAL FIX: Explicitly set Content-Type for HTML responses to prevent download issues
+  // This is the key fix for the "Internal Server Error" where browsers download HTML instead of rendering it
+  // We only apply this to routes that are NOT:
+  // 1. Next.js internal paths (/_next/)
+  // 2. API routes (/api/)
+  // 3. Static asset files with known extensions
+  if (
+    !request.nextUrl.pathname.startsWith("/_next/") &&
+    !request.nextUrl.pathname.startsWith("/api/") &&
+    !request.nextUrl.pathname.match(/\.(jpe?g|png|gif|svg|webp|ico|css|js)$/i)
+  ) {
+    response.headers.set("Content-Type", "text/html; charset=utf-8");
+  }
+
+  return response;
+}
+
+// Configure which paths the middleware applies to
+// We want to apply these headers to all routes except static assets
+export const config = {
+  matcher: [
+    // Match all routes except Next.js static assets and images
+    // This ensures API routes still get security headers while avoiding
+    // middleware processing overhead for static assets
+    "/((?!_next/static|_next/image|favicon.ico).*)",
+  ],
+};

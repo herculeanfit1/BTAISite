@@ -1,0 +1,87 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "plugins": [
+    "security",
+    "@typescript-eslint"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.json"
+  },
+  "settings": {
+    "security": {
+      "packageManager": "npm"
+    },
+    "react": {
+      "version": "detect"
+    }
+  },
+  "rules": {
+    "security/detect-object-injection": "warn",
+    "security/detect-non-literal-regexp": "warn",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "react/no-unescaped-entities": "off",
+    "no-undef": "warn",
+    "@next/next/no-html-link-for-pages": "warn"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "jest": true,
+    "es6": true
+  },
+  "globals": {
+    "jest": "readonly",
+    "describe": "readonly",
+    "it": "readonly",
+    "expect": "readonly",
+    "beforeEach": "readonly",
+    "afterEach": "readonly",
+    "vi": "readonly",
+    "React": "readonly",
+    "RequestInit": "readonly",
+    "RequestCache": "readonly",
+    "playAudit": "readonly",
+    "lighthouseDesktopConfig": "readonly",
+    "lighthouseMobileConfig": "readonly"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "out/",
+    "public/",
+    "coverage/",
+    "**/*.d.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module",
+        "ecmaFeatures": {
+          "jsx": true
+        },
+        "project": "./tsconfig.json"
+      }
+    },
+    {
+      "files": ["**/__tests__/**/*", "**/*.{test,spec}.{js,ts,jsx,tsx}"],
+      "env": {
+        "jest": true,
+        "node": true
+      }
+    }
+  ]
+} 

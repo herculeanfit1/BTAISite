@@ -1,0 +1,54 @@
+name: Azure Static Web Apps CI/CD (Cost Optimized)
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'out/**', '.github/workflows/**' ]
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy]')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+          
+      # Verify pre-built files exist
+      - name: Verify pre-built files
+        run: |
+          if [ ! -d "out" ] || [ ! -f "out/index.html" ]; then
+            echo "❌ No pre-built files found. Please run locally:"
+            echo "npm run build:static && npm run static-export"
+            echo "Then commit the 'out' directory and push with '[deploy]' in commit message"
+            exit 1
+          fi
+          echo "✅ Pre-built files found, proceeding with deployment"
+          
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_ROCK_0A93FDF0F }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "out"
+          api_location: "api"
+          output_location: ""
+          skip_app_build: true
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_HAPPY_ROCK_0A93FDF0F }}
+          action: "close"
+          app_location: "/"

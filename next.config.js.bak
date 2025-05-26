@@ -1,0 +1,105 @@
+/**
+ * Next.js Configuration File
+ * 
+ * This file configures the behavior of Next.js for our specific project needs.
+ * It has been enhanced to address CI/CD pipeline issues with static exports,
+ * particularly for deployment to Azure Static Web Apps.
+ * 
+ * Key enhancements:
+ * - Configured for static export mode
+ * - Disabled image optimization for static exports
+ * - Added experimental features for better path resolution
+ * - Implemented redirects for API routes in static exports
+ * - Added webpack configuration to help resolve path aliases
+ * 
+ * @type {import('next').NextConfig}
+ */
+
+// For development mode, disable static export
+const isDevMode = process.env.NODE_ENV === 'development';
+
+const nextConfig = {
+  // Enable React strict mode for better development experience
+  reactStrictMode: true,
+  
+  // Configure output for static export (needed for Azure Static Web Apps)
+  // This tells Next.js to export static HTML/CSS/JS files instead of requiring a Node.js server
+  output: isDevMode ? undefined : 'export',
+  
+  // Disable image optimization for static export
+  // Note: Next.js Image optimization requires a server component, which doesn't work in static exports
+  images: {
+    unoptimized: !isDevMode,
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+  
+  // Ensure trailing slashes for better Azure SWA compatibility
+  // This adds a trailing slash to all URLs, which helps with Azure Static Web Apps routing
+  trailingSlash: true,
+  
+  // Skip specific routes during static generation to avoid export errors
+  // This is critical for avoiding build failures with dynamic routes
+  skipTrailingSlashRedirect: true,
+  
+  // Enhanced experimental features for Next.js 15
+  experimental: {
+    // Allows for better handling of scroll position when navigating between pages
+    scrollRestoration: true,
+    
+    // Enhanced typed routes for improved type safety
+    typedRoutes: true,
+  },
+
+  // Define redirects to handle pages that can't be statically generated
+  // This is necessary because API routes don't work in static exports
+  async redirects() {
+    return [
+      {
+        // Redirect all API routes to 404 in static exports
+        source: '/api/:path*',
+        destination: '/404',
+        permanent: false,
+      }
+    ];
+  },
+  
+  // Add compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
+  // Webpack configuration to enhance path resolution
+  webpack: (config) => {
+    // Fix JSX runtime resolution - use direct module paths without .js extension
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'react/jsx-dev-runtime': require.resolve('react/jsx-dev-runtime'),
+      'react/jsx-runtime': require.resolve('react/jsx-runtime'),
+      'react': require.resolve('react'),
+      'react-dom': require.resolve('react-dom'),
+    };
+    
+    return config;
+  }
+};
+
+// Export the config directly (without bundle analyzer in dev mode)
+if (process.env.ANALYZE === 'true') {
+  const withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: true,
+    openAnalyzer: false,
+    analyzerMode: 'static',
+    generateStatsFile: true,
+    statsFilename: '.next/analyze/stats.json',
+    reportFilename: '.next/analyze/report.html'
+  });
+  module.exports = withBundleAnalyzer(nextConfig);
+} else {
+  module.exports = nextConfig;
+} 

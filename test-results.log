@@ -1,0 +1,69 @@
+Testing email API route at: http://localhost:3000/api/send-email
+
+========================================
+TEST CASE 1: Valid submission with all fields
+========================================
+{
+  "success": false,
+  "error": "Failed to send message",
+  "message": "There was an error processing your request. Please try again later.",
+  "requestId": "9211fe2d-cc69-4e20-9016-211cd2a5a43c"
+}
+
+========================================
+TEST CASE 2: Validation error (missing required field)
+========================================
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "_errors": [],
+    "email": {
+      "_errors": [
+        "Required"
+      ]
+    }
+  },
+  "requestId": "ffe1bbd0-d34b-4029-8fe5-7de14dde4b48"
+}
+
+========================================
+TEST CASE 3: Validation error (invalid email format)
+========================================
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "_errors": [],
+    "email": {
+      "_errors": [
+        "Please enter a valid email address"
+      ]
+    }
+  },
+  "requestId": "b4c7f7ae-2a30-4f00-9b58-44dcd4751e93"
+}
+
+========================================
+TEST CASE 4: Validation error (message too short)
+========================================
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": {
+    "_errors": [],
+    "message": {
+      "_errors": [
+        "Message must be at least 10 characters"
+      ]
+    }
+  },
+  "requestId": "635ccb9a-3499-4a09-8d8b-f168c8dab3c4"
+}
+
+All tests completed.
+
+Next steps:
+1. Check server logs for request processing details
+2. Verify Azure Function logs in Azure Portal
+3. Check email inbox for test messages (for successful tests)

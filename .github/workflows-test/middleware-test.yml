@@ -1,0 +1,102 @@
+name: Middleware Static Export Test
+
+on:
+  # Allow manual triggering for testing
+  workflow_dispatch:
+  # Uncomment to enable automatic runs on PR to main
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'middleware.ts'
+  #     - '__tests__/middleware.test.ts'
+  #     - 'staticwebapp.config.json'
+
+env:
+  NODE_VERSION: '20.19.1'
+  CI: true
+  NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES: 'true'
+
+jobs:
+  test-middleware:
+    name: Test Middleware & Static Export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Verify middleware.ts exists
+        run: |
+          if [ -f "middleware.ts" ]; then
+            echo "✅ middleware.ts exists"
+            cat middleware.ts
+          else
+            echo "❌ middleware.ts is missing"
+            exit 1
+          fi
+      
+      - name: Run middleware tests
+        run: npm run test:middleware
+        
+      - name: Run middleware tests with coverage
+        run: npm run test:middleware:coverage
+        
+      - name: Build project with static export
+        run: npm run build:static
+        
+      - name: Run static export helper
+        run: npm run static-export
+        
+      - name: Verify static export structure
+        run: |
+          if [ -d "out" ]; then
+            echo "✅ Static export 'out' directory exists"
+            
+            if [ -f "out/staticwebapp.config.json" ]; then
+              echo "✅ staticwebapp.config.json was copied to the output directory"
+            else
+              echo "❌ staticwebapp.config.json missing from output directory"
+              exit 1
+            fi
+            
+            if [ -f "out/index.html" ]; then
+              echo "✅ index.html exists in output directory"
+            else
+              echo "❌ index.html missing from output directory"
+              exit 1
+            fi
+            
+            if [ -d "out/_next" ]; then
+              echo "✅ _next directory exists in output"
+            else
+              echo "❌ _next directory missing from output"
+              exit 1
+            fi
+            
+            echo "✅ Static export validation complete"
+          else
+            echo "❌ Static export directory 'out' is missing"
+            exit 1
+          fi
+      
+      - name: Upload middleware test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: middleware-coverage
+          path: coverage
+          retention-days: 7
+          
+      - name: Upload static export for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-export-build
+          path: out
+          retention-days: 1 

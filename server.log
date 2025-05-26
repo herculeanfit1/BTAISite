@@ -1,0 +1,21 @@
+
+> bridging-trust-ai@0.1.0 dev
+> node server.js
+
+> Ready on http://localhost:3000
+Handling request: /
+Next.js handling request for: /
+ ✓ Compiled /middleware in 231ms (91 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 780ms (582 modules)
+ GET / 200 in 901ms
+Handling request: /apple-touch-icon-precomposed.png
+Next.js handling request for: /apple-touch-icon-precomposed.png
+Handling request: /apple-touch-icon.png
+Next.js handling request for: /apple-touch-icon.png
+Handling request: /favicon.ico
+Next.js handling request for: /favicon.ico
+ ○ Compiling /[locale] ...
+ ✓ Compiled /[locale] in 1148ms (712 modules)
+ GET /apple-touch-icon.png 200 in 1420ms
+ GET /apple-touch-icon-precomposed.png 200 in 1420ms

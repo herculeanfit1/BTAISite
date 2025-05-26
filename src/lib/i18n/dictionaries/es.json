@@ -1,0 +1,92 @@
+{
+  "common": {
+    "buttons": {
+      "getStarted": "Comenzar",
+      "learnMore": "Saber Más",
+      "contactUs": "Contáctenos",
+      "subscribe": "Suscribirse",
+      "tryAgain": "Inténtalo de nuevo",
+      "goHome": "Volver a la página principal"
+    },
+    "navigation": {
+      "home": "Inicio",
+      "about": "Acerca de",
+      "services": "Servicios",
+      "blog": "Blog",
+      "contact": "Contacto",
+      "careers": "Carreras"
+    },
+    "footer": {
+      "rights": "Todos los derechos reservados",
+      "privacy": "Política de Privacidad",
+      "terms": "Términos de Servicio"
+    },
+    "errors": {
+      "somethingWentWrong": "Algo salió mal",
+      "errorMessage": "Lo sentimos, pero hemos encontrado un error inesperado.",
+      "errorId": "ID de error"
+    },
+    "loading": "Cargando..."
+  },
+  "home": {
+    "hero": {
+      "title": "Construyendo confianza en soluciones de IA",
+      "subtitle": "Creamos sistemas de IA éticos y transparentes que mejoran las capacidades humanas",
+      "tagline": "Consultoría e Implementación de IA"
+    },
+    "features": {
+      "title": "Nuestro Enfoque",
+      "humanCentered": {
+        "title": "Diseño Centrado en Personas",
+        "description": "Ponemos a las personas primero en todas nuestras soluciones de IA"
+      },
+      "ethical": {
+        "title": "Implementación Ética",
+        "description": "Desarrollo de IA transparente y responsable"
+      },
+      "custom": {
+        "title": "Soluciones Personalizadas",
+        "description": "Adaptadas a sus necesidades específicas de negocio"
+      }
+    },
+    "testimonials": {
+      "title": "Lo que dicen nuestros clientes"
+    },
+    "timeline": {
+      "title": "Nuestro Proceso",
+      "steps": {
+        "consultation": {
+          "title": "Consulta",
+          "description": "Nos reunimos con usted para entender sus necesidades y objetivos"
+        },
+        "assessment": {
+          "title": "Evaluación",
+          "description": "Evaluamos sus sistemas actuales e identificamos oportunidades"
+        },
+        "design": {
+          "title": "Diseño",
+          "description": "Creamos una solución de IA personalizada diseñada con ética en mente"
+        },
+        "development": {
+          "title": "Desarrollo",
+          "description": "Construimos su solución con transparencia durante todo el proceso"
+        },
+        "deployment": {
+          "title": "Implementación",
+          "description": "Implementamos su solución y proporcionamos capacitación y soporte"
+        }
+      }
+    },
+    "newsletter": {
+      "title": "Mantente Actualizado",
+      "description": "Suscríbete a nuestro boletín para conocer lo último en desarrollo ético de IA"
+    },
+    "trust": {
+      "iso": "Certificación ISO",
+      "gdpr": "Cumplimiento GDPR",
+      "trusted": "Confianza de más de 100 organizaciones",
+      "enterprise": "Listo para Empresas",
+      "aiPowered": "Potenciado por IA"
+    }
+  }
+}

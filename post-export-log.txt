@@ -1,0 +1,251 @@
+Post-Static Export Log - 2025-05-18T12:26:30.328Z
+
+
+
+----- Fixing ESLint warnings -----
+[1m[34m🔧 Bridging Trust AI - ESLint Automated Fixes[0m
+
+🔍 Running ESLint with auto-fix...
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/[locale]/page.tsx
+   6:10  warning  'NewsletterSection' is defined but never used          @typescript-eslint/no-unused-vars
+  16:7   warning  'organizationData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  34:7   warning  'websiteData' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/blog/search/route.ts
+  12:11  warning  'SearchParams' is defined but never used  @typescript-eslint/no-unused-vars
+  23:11  warning  'BlogPost' is defined but never used      @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/contact/route.ts
+  148:11  warning  'sanitizedData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/api/newsletter/route.ts
+  82:11  warning  'sanitizedEmail' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  83:11  warning  'sanitizedName' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/coming-soon/page.tsx
+   5:8   warning  'Image' is defined but never used                    @typescript-eslint/no-unused-vars
+  21:10  warning  'hoveredLink' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  21:23  warning  'setHoveredLink' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/BlogSearch.tsx
+  149:16  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ClientLayout.tsx
+  14:50  warning  'locale' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/HeroSection.tsx
+   7:10  warning  'CheckCircleIcon' is defined but never used  @typescript-eslint/no-unused-vars
+  11:8   warning  'Image' is defined but never used            @typescript-eslint/no-unused-vars
+  47:3   warning  'className' is defined but never used        @typescript-eslint/no-unused-vars
+  48:3   warning  'backgroundImage' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/PricingTable.tsx
+  1:17  warning  'ReactNode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/ServiceCard.tsx
+   3:8  warning  'Image' is defined but never used      @typescript-eslint/no-unused-vars
+  19:3  warning  'imagePath' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/TestimonialSection.tsx
+  46:14  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/animations/VercelInspiredAnimation.tsx
+  143:23  warning  Variable Assigned to Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/common/LoadingSpinner.tsx
+  40:21  warning  Variable Assigned to Object Injection Sink  security/detect-object-injection
+  41:22  warning  Variable Assigned to Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/GlobeSection.tsx
+  64:7  warning  'FallbackGlobeSection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/globe/SimpleGlobe.tsx
+  179:15  warning  'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  237:15  warning  'geometry' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  337:28  warning  Function Call Object Injection Sink            security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/ContactSection.tsx
+   5:8   warning  'Link' is defined but never used   @typescript-eslint/no-unused-vars
+  85:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/home/FooterSection.tsx
+   3:10  warning  'useState' is defined but never used   @typescript-eslint/no-unused-vars
+   4:8   warning  'Link' is defined but never used       @typescript-eslint/no-unused-vars
+   6:10  warning  'Route' is defined but never used      @typescript-eslint/no-unused-vars
+  16:33  warning  'isDesktop' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/components/streaming/StreamingDashboard.tsx
+  174:17  warning  Generic Object Injection Sink  security/detect-object-injection
+
+/Users/herculeanfit1/dev/BridgingTrustAI/app/page.tsx
+  4:8  warning  'dynamic' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/analytics.tsx
+    8:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   40:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/logger.ts
+    7:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:9   warning  Generic Object Injection Sink             security/detect-object-injection
+  120:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/herculeanfit1/dev/BridgingTrustAI/lib/useAnalytics.tsx
+   9:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 54 problems (0 errors, 54 warnings)
+
+✅ Automatically fixed ESLint issues where possible
+🔍 Addressing object injection issues...
+✅ Fixed 19 potential object injection issues
+✅ Completed ESLint fixes
+
+[1m[34m📋 Summary:[0m
+[32m✓ Automated fixes completed[0m
+[36m📄 Log file created at: /Users/herculeanfit1/dev/BridgingTrustAI/logs/eslint-fixes-2025-05-18T12-26-30.358Z.log[0m
+
+[33m⚠️ Manual fixes still required for:[0m
+1. Replace <a> elements with Next.js <Link> components
+2. Fix object injection security issues (security/detect-object-injection)
+3. Replace "any" types with proper TypeScript types
+
+[1m[34mNext steps:[0m
+1. Run [36mnpm run lint[0m to check for remaining issues
+2. Check the GitHub Actions workflow to verify the fixes
+
+
+----- Optimizing images -----
+✅ Sharp is already installed
+🔍 Finding images to optimize...
+🖼️ Found 78 images to optimize
+⚙️ Starting image optimization...
+✅ Optimized: ai-brain.jpg
+✅ Optimized: blockchain-technology.jpg
+✅ Optimized: blog/placeholder.jpg
+✅ Optimized: icons/android-chrome/android-chrome-144.png
+✅ Optimized: icons/android-chrome/android-chrome-192.png
+✅ Optimized: icons/android-chrome/android-chrome-36.png
+✅ Optimized: icons/android-chrome/android-chrome-48.png
+✅ Optimized: icons/android-chrome/android-chrome-512.png
+✅ Optimized: icons/android-chrome/android-chrome-72.png
+✅ Optimized: icons/android-chrome/android-chrome-96.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-114.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-120.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-144.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-152.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-180.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-57.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-60.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-72.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-76.png
+✅ Optimized: icons/favicon-128.png
+✅ Optimized: icons/favicon-16.png
+✅ Optimized: icons/favicon-196.png
+✅ Optimized: icons/favicon-256.png
+✅ Optimized: icons/favicon-32.png
+✅ Optimized: icons/favicon-48.png
+✅ Optimized: icons/favicon-512.png
+✅ Optimized: icons/favicon-96.png
+✅ Optimized: icons/mstile/mstile-144.png
+✅ Optimized: icons/mstile/mstile-150.png
+✅ Optimized: icons/mstile/mstile-310.png
+✅ Optimized: icons/mstile/mstile-70.png
+✅ Optimized: illustrations/hero-img/hero-ai.png
+✅ Optimized: team/placeholder.jpg
+✅ Optimized: team/terence.kolstad.png
+✅ Optimized: ai-brain.jpg
+✅ Optimized: blockchain-technology.jpg
+✅ Optimized: blog/placeholder.jpg
+✅ Optimized: icons/android-chrome/android-chrome-144.png
+✅ Optimized: icons/android-chrome/android-chrome-192.png
+✅ Optimized: icons/android-chrome/android-chrome-36.png
+✅ Optimized: icons/android-chrome/android-chrome-48.png
+✅ Optimized: icons/android-chrome/android-chrome-512.png
+✅ Optimized: icons/android-chrome/android-chrome-72.png
+✅ Optimized: icons/android-chrome/android-chrome-96.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-114.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-120.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-144.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-152.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-180.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-57.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-60.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-72.png
+✅ Optimized: icons/apple-touch-icon/apple-touch-icon-76.png
+✅ Optimized: icons/favicon-128.png
+✅ Optimized: icons/favicon-16.png
+✅ Optimized: icons/favicon-196.png
+✅ Optimized: icons/favicon-256.png
+✅ Optimized: icons/favicon-32.png
+✅ Optimized: icons/favicon-48.png
+✅ Optimized: icons/favicon-512.png
+✅ Optimized: icons/favicon-96.png
+✅ Optimized: icons/mstile/mstile-144.png
+✅ Optimized: icons/mstile/mstile-150.png
+✅ Optimized: icons/mstile/mstile-310.png
+✅ Optimized: icons/mstile/mstile-70.png
+✅ Optimized: illustrations/hero-img/hero-ai.png
+✅ Optimized: team/placeholder.jpg
+✅ Optimized: team/terence.kolstad.png
+
+📊 Optimization Results:
+  Total images processed: 78
+  Successfully optimized: 68
+  Errors encountered: 10
+  Original size: 5.04 MB
+  Optimized size: 1.73 MB
+  Space saved: 3.30 MB (65.58%)
+
+🔍 Next steps:
+  1. Optimized images are available in out/optimized/
+  2. Update your image paths to use these optimized versions
+  3. Or copy the optimized images back to their original locations
+
+
+----- Enhancing cross-browser compatibility -----
+✅ Autoprefixer is already installed
+📦 Installing PostCSS CLI...
+
+added 16 packages, and audited 1258 packages in 2s
+
+295 packages are looking for funding
+  run `npm fund` for details
+
+2 low severity vulnerabilities
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+✅ PostCSS CLI installed successfully
+🔄 Checking and updating PostCSS config...
+✅ Autoprefixer already configured in PostCSS
+📝 Creating .browserslistrc file...
+✅ Created .browserslistrc file
+🔄 Adding no-js fallback class to HTML...
+📝 Creating browser compatibility CSS...
+✅ Created browser-compat.css
+✅ Added browser-compat.css to all HTML files
+🔄 Running autoprefixer on output CSS files...
+✅ Applied autoprefixer to all CSS files
+
+✅ Cross-browser compatibility enhancements complete
+🔍 Browser compatibility improvements:
+  1. Added autoprefixer for vendor prefixes
+  2. Created browser fallback CSS
+  3. Added no-js class for JavaScript-disabled browsers
+  4. Fixed iOS Safari 100vh issue
+  5. Added custom scrollbar styling
+  6. Added reduced motion support

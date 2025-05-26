@@ -1,0 +1,102 @@
+# ===================================================================================
+# Dockerfile.test for Bridging Trust AI Next.js Application
+# ===================================================================================
+#
+# This Dockerfile creates a test environment for the Next.js 15 application with:
+#  - Proper Node.js runtime environment
+#  - All dependencies for running tests (including Playwright for browser tests)
+#  - Platform-specific fixes for Rollup modules
+#  - Volume mounting points for test results and coverage reports
+#
+# The build uses a multi-stage approach to optimize for both build speed and
+# final image size, separating dependency installation from the application code.
+# ===================================================================================
+
+# -----------------------------------------------------------------------------
+# Base stage: Common environment settings and dependencies
+# -----------------------------------------------------------------------------
+FROM node:20.19-slim AS base
+
+# Set essential environment variables
+ENV NODE_ENV=test
+ENV CI=true
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Install system dependencies for testing
+# These packages are needed for:
+# - Playwright browser testing
+# - Chrome/Chromium browser dependencies
+# - Font rendering
+# - X11 server components for headless browser tests
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libcairo2 \
+    libdbus-1-3 \
+    libfontconfig1 \
+    libgbm1 \
+    libglib2.0-0 \
+    libxcb1 \
+    libxkbcommon0 \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# -----------------------------------------------------------------------------
+# Dependencies stage: Install and cache npm dependencies
+# -----------------------------------------------------------------------------
+FROM base AS deps
+WORKDIR /app
+
+# Copy only the package files needed for installation
+# This step is separated to leverage Docker layer caching
+# and avoid reinstalling dependencies when only code changes
+COPY package*.json ./
+COPY scripts/fix-rollup-docker.js ./scripts/
+
+# Install dependencies and fix Rollup platform-specific modules
+# We clear npm cache to keep the image size smaller
+RUN npm ci && \
+    node ./scripts/fix-rollup-docker.js && \
+    npm cache clean --force
+
+# -----------------------------------------------------------------------------
+# Builder stage: Copy source code and prepare for testing
+# -----------------------------------------------------------------------------
+FROM base AS builder
+WORKDIR /app
+
+# Copy node_modules from deps stage and all source code
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# -----------------------------------------------------------------------------
+# Final stage: Testing environment
+# -----------------------------------------------------------------------------
+FROM base AS runner
+WORKDIR /app
+
+# Copy the entire application from builder stage
+COPY --from=builder /app ./
+
+# Install Playwright and necessary browsers
+# We only install Chromium to keep the image smaller
+# The --with-deps flag ensures browser dependencies are installed
+RUN npm install -g @playwright/test && \
+    npx playwright install --with-deps chromium && \
+    rm -rf /tmp/*
+
+# Add cleanup script for container termination
+# This ensures proper cleanup of resources when container stops
+COPY ./scripts/docker-cleanup.sh /docker-cleanup.sh
+RUN chmod +x /docker-cleanup.sh
+
+# Define the command to run tests
+# We use shell form with cleanup trap to ensure cleanup runs even if tests fail
+# The EXIT_CODE variable preserves the test exit code after cleanup runs
+CMD ["sh", "-c", "npm test; EXIT_CODE=$?; /docker-cleanup.sh; exit $EXIT_CODE"] 

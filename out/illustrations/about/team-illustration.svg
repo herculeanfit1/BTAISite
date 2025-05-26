@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Platform -->
+  <rect x="100" y="280" width="300" height="30" rx="10" fill="#F0F0F0" stroke="#5552DA" stroke-width="3"/>
+  
+  <!-- Team Member 1 -->
+  <circle cx="150" cy="240" r="30" fill="#5552DA"/>
+  <path d="M135 240H165M125 260H175" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M150 270V280" stroke="#5552DA" stroke-width="3"/>
+  
+  <!-- Team Member 2 -->
+  <circle cx="250" cy="220" r="30" fill="#5552DA"/>
+  <path d="M235 220H265M225 240H275" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M250 250V280" stroke="#5552DA" stroke-width="3"/>
+  
+  <!-- Team Member 3 -->
+  <circle cx="350" cy="240" r="30" fill="#5552DA"/>
+  <path d="M335 240H365M325 260H375" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M350 270V280" stroke="#5552DA" stroke-width="3"/>
+  
+  <!-- Connection Lines -->
+  <path d="M180 240L220 220" stroke="#2CB9B0" stroke-width="2"/>
+  <path d="M280 220L320 240" stroke="#2CB9B0" stroke-width="2"/>
+  
+  <!-- Rising Blocks/Ladder -->
+  <rect x="110" y="330" width="40" height="20" rx="5" fill="#2CB9B0" opacity="0.8"/>
+  <rect x="160" y="320" width="40" height="30" rx="5" fill="#2CB9B0" opacity="0.85"/>
+  <rect x="210" y="310" width="40" height="40" rx="5" fill="#2CB9B0" opacity="0.9"/>
+  <rect x="260" y="320" width="40" height="30" rx="5" fill="#2CB9B0" opacity="0.85"/>
+  <rect x="310" y="330" width="40" height="20" rx="5" fill="#2CB9B0" opacity="0.8"/>
+  
+  <!-- Thought Bubbles -->
+  <path d="M130 180C130 180 115 170 120 160C125 150 140 155 140 155C140 155 145 140 160 145C175 150 170 165 170 165C170 165 185 170 180 185C175 200 160 195 160 195C160 195 155 205 145 200C135 195 140 185 140 185C140 185 125 185 130 180Z" fill="white" stroke="#2CB9B0" stroke-width="2"/>
+  <circle cx="150" cy="170" r="5" fill="#5552DA"/>
+  <circle cx="155" cy="180" r="3" fill="#5552DA"/>
+  <circle cx="145" cy="180" r="3" fill="#5552DA"/>
+  
+  <path d="M250 160C250 160 235 150 240 140C245 130 260 135 260 135C260 135 265 120 280 125C295 130 290 145 290 145C290 145 305 150 300 165C295 180 280 175 280 175C280 175 275 185 265 180C255 175 260 165 260 165C260 165 245 165 250 160Z" fill="white" stroke="#2CB9B0" stroke-width="2"/>
+  <rect x="265" y="150" width="10" height="10" rx="2" fill="#5552DA"/>
+  <circle cx="260" cy="155" r="3" fill="#5552DA"/>
+  <circle cx="280" cy="155" r="3" fill="#5552DA"/>
+  
+  <path d="M370 180C370 180 355 170 360 160C365 150 380 155 380 155C380 155 385 140 400 145C415 150 410 165 410 165C410 165 425 170 420 185C415 200 400 195 400 195C400 195 395 205 385 200C375 195 380 185 380 185C380 185 365 185 370 180Z" fill="white" stroke="#2CB9B0" stroke-width="2"/>
+  <path d="M385 160L395 170M395 160L385 170" stroke="#5552DA" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Arc connecting all -->
+  <path d="M120 140C160 80 340 80 380 140" stroke="#5552DA" stroke-width="2" stroke-dasharray="6 6"/>
+  <circle cx="120" cy="140" r="5" fill="#5552DA"/>
+  <circle cx="380" cy="140" r="5" fill="#5552DA"/>
+  <circle cx="250" cy="90" r="10" fill="#2CB9B0"/>
+  
+  <!-- Small People on platform -->
+  <circle cx="130" cy="295" r="5" fill="#5552DA"/>
+  <circle cx="190" cy="295" r="5" fill="#5552DA"/>
+  <circle cx="370" cy="295" r="5" fill="#5552DA"/>
+  <circle cx="310" cy="295" r="5" fill="#5552DA"/>
+</svg>

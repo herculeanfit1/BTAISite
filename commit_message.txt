@@ -1,0 +1,39 @@
+feat: Comprehensive SSL and Docker CI implementation
+
+This commit adds a complete SSL and Docker CI setup for the Bridging Trust AI website:
+
+- Implemented flexible SSL configuration for development, CI, and production environments
+- Added Docker configuration with Nginx for SSL termination and proxy
+- Created scripts for automatic SSL certificate management with Let's Encrypt
+- Fixed TypeScript errors in blog categories page
+- Updated next.config.js to use remotePatterns instead of deprecated domains
+- Enhanced server.js with environment-specific configuration
+- Added comprehensive documentation for deployment process
+- Improved README with details about the infrastructure
+- Added detailed code comments throughout the codebase
+
+This implementation allows the site to run in three modes:
+1. Development: Self-signed certificates (HTTPS)
+2. CI/Testing: HTTP-only mode for testing
+3. Production: Let's Encrypt certificates (HTTPS)
+
+The Docker configuration includes three services:
+- Next.js application
+- Nginx for SSL termination and proxy
+- Certbot for automatic certificate renewal
+
+feat(navigation): Enhance navigation bar to match production site
+
+- Improved layout with right-justified navigation buttons
+- Enhanced Contact button with larger size and rounded corners 
+- Increased header bar height by 30% for better visual hierarchy
+- Increased logo and company name size by 30% for better brand prominence
+- Added proper spacing between logo and company name
+- Fixed server configuration to better handle HTTP/HTTPS ports
+- Improved code documentation with comprehensive comments
+- Updated README to document navigation improvements
+
+This update ensures the dev environment navigation bar visually matches
+the production site. The changes were implemented using inline styling for
+precise control over dimensions and appearance, while maintaining the
+responsive behavior for both desktop and mobile views.

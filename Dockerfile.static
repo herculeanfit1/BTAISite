@@ -1,0 +1,109 @@
+# Simplified Dockerfile for static builds
+FROM node:20.19-slim
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV CI=true
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES=true
+
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files and create scripts directory
+COPY package*.json ./
+RUN mkdir -p scripts
+
+# Create script to patch Tailwind CSS for static builds
+RUN echo '#!/usr/bin/env node \n\
+console.log("Creating Tailwind CSS workaround for static builds..."); \n\
+import fs from "fs"; \n\
+import { fileURLToPath } from "url"; \n\
+import path from "path"; \n\
+\n\
+const __filename = fileURLToPath(import.meta.url); \n\
+const __dirname = path.dirname(__filename); \n\
+\n\
+// Mock the Tailwind CSS Oxide module \n\
+const mockOxide = `export default { \n\
+  compileCss: () => ({ css: "" }), \n\
+  compileStylesheet: () => ({ css: "" }), \n\
+  resolveConfig: (config) => config, \n\
+  generateRules: () => [], \n\
+  generateUtilities: () => ({}), \n\
+};\n`; \n\
+\n\
+// Create directory structure \n\
+fs.mkdirSync("node_modules/@tailwindcss", { recursive: true }); \n\
+fs.writeFileSync("node_modules/@tailwindcss/oxide.js", mockOxide); \n\
+\n\
+// Create dummy postcss plugin \n\
+const postcssDir = "node_modules/@tailwindcss/postcss/dist"; \n\
+fs.mkdirSync(postcssDir, { recursive: true }); \n\
+\n\
+const mockPostcss = `export default function() { \n\
+  return { \n\
+    postcssPlugin: "tailwindcss", \n\
+    Once(root) { return root; } \n\
+  }; \n\
+}; \n\
+export const postcss = true;\n`; \n\
+\n\
+fs.writeFileSync(`${postcssDir}/index.js`, mockPostcss); \n\
+console.log("Tailwind CSS workaround created successfully!");' > scripts/fix-tailwind-static.js \
+&& chmod +x scripts/fix-tailwind-static.js
+
+# Install dependencies without native bindings
+RUN npm ci --ignore-scripts
+
+# Create a CommonJS version of the fix script
+RUN echo 'const fs = require("fs"); \n\
+\n\
+console.log("Creating Tailwind CSS workaround for static builds..."); \n\
+\n\
+// Mock the Tailwind CSS Oxide module \n\
+const mockOxide = `module.exports = { \n\
+  compileCss: () => ({ css: "" }), \n\
+  compileStylesheet: () => ({ css: "" }), \n\
+  resolveConfig: (config) => config, \n\
+  generateRules: () => [], \n\
+  generateUtilities: () => ({}), \n\
+};\n`; \n\
+\n\
+// Create directory structure \n\
+fs.mkdirSync("node_modules/@tailwindcss", { recursive: true }); \n\
+fs.writeFileSync("node_modules/@tailwindcss/oxide.js", mockOxide); \n\
+\n\
+// Create dummy postcss plugin \n\
+const postcssDir = "node_modules/@tailwindcss/postcss/dist"; \n\
+fs.mkdirSync(postcssDir, { recursive: true }); \n\
+\n\
+const mockPostcss = `module.exports = function() { \n\
+  return { \n\
+    postcssPlugin: "tailwindcss", \n\
+    Once(root) { return root; } \n\
+  }; \n\
+}; \n\
+module.exports.postcss = true;\n`; \n\
+\n\
+fs.writeFileSync(`${postcssDir}/index.js`, mockPostcss); \n\
+console.log("Tailwind CSS workaround created successfully!");' > scripts/fix-tailwind-static.cjs \
+&& chmod +x scripts/fix-tailwind-static.cjs \
+&& node scripts/fix-tailwind-static.cjs
+
+# Copy app source
+COPY . .
+
+# Use local mocked version to bypass native binding issues
+RUN mkdir -p node_modules/tailwindcss/lib \
+    && echo "module.exports = require('../../@tailwindcss/postcss/dist');" > node_modules/tailwindcss/lib/index.js
+
+# Build the static site without Tailwind CSS processing
+CMD ["npm", "run", "build:static"] 

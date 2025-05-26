@@ -1,0 +1,86 @@
+name: Backup Repository After Deployment
+
+# This workflow triggers after a successful Azure Static Web Apps deployment
+# It backs up the main repository to a secondary repository for redundancy
+#
+# IMPORTANT: This workflow requires the following secrets to be set:
+# - BACKUP_SSH_KEY: A private SSH key with access to the backup repository
+# - BACKUP_REPO_URL: SSH URL of the secondary repository, e.g., git@github.com:username/backup-repo.git
+#
+# If the backup repository is private, ensure the deploy key has write access
+
+on:
+  # Run this workflow when the Azure Static Web Apps workflow completes successfully
+  workflow_run:
+    workflows: ["Azure Static Web Apps Deployment"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  backup_to_secondary_repo:
+    # Only run if the Azure Static Web Apps workflow was successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: Backup Repository
+    
+    steps:
+      # Step 1: Checkout the main repository
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # We need the full history
+
+      # Step 2: Set Git configuration
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      
+      # Step 3: Set up SSH key for authentication
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.BACKUP_SSH_KEY }}
+          
+      # Step 4: Add the backup repository as a remote
+      - name: Add backup repository remote
+        run: |
+          # Remove any existing backup remote to prevent errors
+          git remote remove backup 2>/dev/null || true
+          
+          # Add the backup repository as a remote using SSH URL
+          git remote add backup ${{ secrets.BACKUP_REPO_URL }}
+          
+      # Step 5: Push to the backup repository
+      - name: Push to backup repository
+        run: |
+          echo "Pushing to backup repository..."
+          
+          # Timestamp for the backup
+          TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
+          
+          # Create a backup tag with timestamp
+          git tag "backup-${TIMESTAMP}"
+          
+          # Push the main branch to the backup repository
+          echo "Pushing branch main to backup repository..."
+          git push -f backup main || { echo "❌ Failed to push to backup repository"; exit 1; }
+          
+          # Push all tags to the backup repository
+          echo "Pushing tags to backup repository..."
+          git push -f backup --tags || { echo "❌ Failed to push tags to backup repository"; exit 1; }
+          
+          echo "✅ Successfully backed up repository to secondary location"
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+          
+      # Step 6: Log the completion of the backup
+      - name: Log backup status
+        run: |
+          echo "Repository backup completed"
+          echo "Timestamp: $(date)"
+          echo "Repository backed up to: ${{ secrets.BACKUP_REPO_URL }}"
+          echo "Main branch and all tags have been pushed to the backup repository" 

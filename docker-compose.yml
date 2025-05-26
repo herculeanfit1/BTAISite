@@ -1,0 +1,97 @@
+# Docker Compose configuration for Bridging Trust AI website
+# This configuration supports three environments:
+# 1. Development - Self-signed certificates (SSL_CERT_ENV=dev)
+# 2. Production - Let's Encrypt certificates (SSL_CERT_ENV=prod)
+# 3. CI/Testing - HTTP only mode (CI=true)
+
+version: '3.8'
+
+services:
+  # Next.js application service
+  # This service runs the Next.js app with a custom server.js implementation
+  # that handles SSL certificates and environment-specific configuration
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bridging-trust-ai
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Expose the Next.js app on port 3000
+    environment:
+      # Environment configuration with defaults
+      - NODE_ENV=${NODE_ENV:-production} # production or development
+      - SSL_CERT_ENV=${SSL_CERT_ENV:-dev} # dev, prod, or none
+      - CUSTOM_HOSTNAME=${CUSTOM_HOSTNAME:-dev.bridgingtrust.local} # Hostname for local development
+      - DOMAIN=${DOMAIN:-bridgingtrust.ai} # Domain for production certificates
+      - PORT=3000 # Application port
+      - HOST=0.0.0.0 # Listen on all network interfaces
+      - CI=${CI:-false} # CI mode disables SSL and uses HTTP
+    volumes:
+      # Persistent storage for messages (contact form submissions)
+      - ./messages:/app/messages
+      # Mount self-signed certificates for development
+      - ./.cert:/app/.cert
+      # Mount Let's Encrypt certificates for production
+      # Falls back to /etc/letsencrypt if LETSENCRYPT_CERT_DIR is not set
+      - ${LETSENCRYPT_CERT_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
+    networks:
+      - bridging-trust-network
+    depends_on:
+      - certbot
+      
+  # Certbot service for Let's Encrypt certificate management
+  # This service handles initial certificate issuance and automatic renewal
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      # Store certificates in the specified directory
+      - ${LETSENCRYPT_CERT_DIR:-/etc/letsencrypt}:/etc/letsencrypt
+      # Web root for Let's Encrypt validation challenges
+      - ${LETSENCRYPT_WWW_DIR:-./certbot/www}:/var/www/certbot
+    # Run renewal check every 12 hours
+    command: renew
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
+    networks:
+      - bridging-trust-network
+    
+  # Nginx proxy for TLS termination, reverse proxy, and static file caching
+  # This service handles HTTPS termination and forwards requests to the app
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" # HTTP port for initial requests and Let's Encrypt validation
+      - "443:443" # HTTPS port for secure connections
+    volumes:
+      # Configuration files
+      - ./nginx/conf.d:/etc/nginx/conf.d # Server blocks
+      - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf # Main configuration
+      # Certificate directories
+      - ${LETSENCRYPT_CERT_DIR:-/etc/letsencrypt}:/etc/letsencrypt:ro
+      - ${LETSENCRYPT_WWW_DIR:-./certbot/www}:/var/www/certbot
+      # Static files and development certificates
+      - ./public:/var/www/public:ro
+      - ./.cert:/app/.cert:ro
+    environment:
+      # Pass environment variables for configuration
+      - SSL_CERT_ENV=${SSL_CERT_ENV:-dev}
+      - CI=${CI:-false}
+    networks:
+      - bridging-trust-network
+    depends_on:
+      - app
+      - certbot
+
+# Docker networks
+networks:
+  # Internal network for services to communicate
+  bridging-trust-network:
+    driver: bridge
+
+# Persistent volumes
+volumes:
+  # Volume for node_modules to improve performance
+  node_modules:

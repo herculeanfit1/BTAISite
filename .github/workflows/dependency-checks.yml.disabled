@@ -1,0 +1,73 @@
+name: Dependency Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.nvmrc'
+  workflow_dispatch:
+
+jobs:
+  validate-dependencies:
+    runs-on: ubuntu-latest
+    name: Validate Dependencies
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}'
+          cache: 'npm'
+
+      - name: Validate package-lock.json is in sync
+        run: |
+          npm install --package-lock-only
+          if ! git diff --exit-code package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install --package-lock-only' and commit the changes."
+            exit 1
+          fi
+
+      - name: Check for unpinned dependencies
+        run: |
+          # Find any dependencies with ^ or ~ in package.json
+          if grep -E '"[^"]+": "[\^~][0-9]' package.json; then
+            echo "::error::Found unpinned dependencies. All dependencies should use exact versions."
+            exit 1
+          else
+            echo "All dependencies are properly pinned."
+          fi
+
+      - name: Check for package.json and .nvmrc consistency
+        run: |
+          NVMRC_VERSION=$(cat .nvmrc | tr -d '[:space:]')
+          PKG_ENGINE_VERSION=$(node -e "console.log(require('./package.json').engines.node || '')")
+          
+          if [ "$NVMRC_VERSION" != "$PKG_ENGINE_VERSION" ]; then
+            echo "::error::Node.js version mismatch: .nvmrc ($NVMRC_VERSION) and package.json engines ($PKG_ENGINE_VERSION) should match"
+            exit 1
+          else
+            echo "Node.js version consistent between .nvmrc and package.json"
+          fi
+
+      - name: Run security audit
+        run: npm audit --production --audit-level=high
+        # Continue on errors since we only want this as a report
+        continue-on-error: true
+
+      - name: List outdated dependencies (informational)
+        run: npm outdated || true
+        # Always succeeds since we just want the information 

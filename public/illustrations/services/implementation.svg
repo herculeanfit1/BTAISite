@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Server Tower -->
+  <rect x="160" y="120" width="180" height="260" rx="10" fill="#F0F0F0" stroke="#5552DA" stroke-width="4"/>
+  
+  <!-- Server Unit Slots -->
+  <rect x="180" y="150" width="140" height="30" rx="5" fill="#E0E0E0" stroke="#2CB9B0" stroke-width="2"/>
+  <rect x="180" y="190" width="140" height="30" rx="5" fill="#E0E0E0" stroke="#2CB9B0" stroke-width="2"/>
+  <rect x="180" y="230" width="140" height="30" rx="5" fill="#E0E0E0" stroke="#2CB9B0" stroke-width="2"/>
+  <rect x="180" y="270" width="140" height="30" rx="5" fill="#E0E0E0" stroke="#2CB9B0" stroke-width="2"/>
+  <rect x="180" y="310" width="140" height="30" rx="5" fill="#E0E0E0" stroke="#2CB9B0" stroke-width="2"/>
+
+  <!-- Server Indicators -->
+  <circle cx="190" cy="165" r="5" fill="#5552DA"/>
+  <circle cx="190" cy="205" r="5" fill="#5552DA"/>
+  <circle cx="190" cy="245" r="5" fill="#5552DA"/>
+  <circle cx="190" cy="285" r="5" fill="#5552DA"/>
+  <circle cx="190" cy="325" r="5" fill="#5552DA"/>
+  
+  <!-- Data Flow Lines -->
+  <path d="M350 200C370 200 390 180 390 160M350 240C380 240 410 210 410 160M350 280C390 280 430 240 430 160" stroke="#5552DA" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 5"/>
+  
+  <!-- Cloud Symbol -->
+  <path d="M430 120C430 98.9543 412.0457 82 391 82H389C372.431 82 359 95.4315 359 112C359 112 342 109 342 130C342 144.5 352 152 370 152H420C425.523 152 430 147.523 430 142V120Z" fill="white" stroke="#2CB9B0" stroke-width="3"/>
+  
+  <!-- Cloud Connection -->
+  <path d="M390 152L390 195" stroke="#2CB9B0" stroke-width="3" stroke-linecap="round" stroke-dasharray="5 5"/>
+  
+  <!-- People -->
+  <circle cx="120" cy="170" r="20" fill="#5552DA"/>
+  <path d="M110 170H130M100 185H140" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <circle cx="100" cy="250" r="20" fill="#5552DA"/>
+  <path d="M90 250H110M80 265H120" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <circle cx="120" cy="330" r="20" fill="#5552DA"/>
+  <path d="M110 330H130M100 345H140" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- People Connections -->
+  <path d="M140 170H160M120 190V230M120 270V310M140 330H160" stroke="#2CB9B0" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Gear Icons -->
+  <path d="M80 100A25 25 0 0 1 120 120" stroke="#5552DA" stroke-width="3" fill="none"/>
+  <path d="M90 85L100 115M115 90L75 110" stroke="#5552DA" stroke-width="3"/>
+  <circle cx="95" cy="100" r="5" fill="#5552DA"/>
+  
+  <path d="M440 290A25 25 0 0 1 400 270" stroke="#5552DA" stroke-width="3" fill="none"/>
+  <path d="M430 305L420 275M395 290L435 270" stroke="#5552DA" stroke-width="3"/>
+  <circle cx="415" cy="290" r="5" fill="#5552DA"/>
+  
+  <!-- Binary Numbers -->
+  <text x="300" y="165" font-family="monospace" font-size="10" fill="#5552DA">10110</text>
+  <text x="300" y="205" font-family="monospace" font-size="10" fill="#5552DA">01001</text>
+  <text x="300" y="245" font-family="monospace" font-size="10" fill="#5552DA">11010</text>
+  <text x="300" y="285" font-family="monospace" font-size="10" fill="#5552DA">00101</text>
+  <text x="300" y="325" font-family="monospace" font-size="10" fill="#5552DA">10011</text>
+</svg>

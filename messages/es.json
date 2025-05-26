@@ -1,0 +1,125 @@
+{
+  "common": {
+    "navigation": {
+      "home": "Inicio",
+      "about": "Sobre Nosotros",
+      "services": "Servicios",
+      "blog": "Blog",
+      "contact": "Contacto",
+      "careers": "Carreras"
+    },
+    "buttons": {
+      "learnMore": "Más Información",
+      "getStarted": "Comenzar",
+      "bookConsultation": "Reservar Consulta",
+      "sendMessage": "Enviar Mensaje",
+      "subscribe": "Suscribirse"
+    },
+    "footer": {
+      "copyright": "© {year} Bridging Trust AI. Todos los derechos reservados.",
+      "privacyPolicy": "Política de Privacidad",
+      "terms": "Términos de Servicio"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Construyendo Confianza en Soluciones de IA",
+      "subtitle": "Creamos sistemas de IA éticos y transparentes que mejoran las capacidades humanas"
+    },
+    "features": {
+      "title": "Nuestro Enfoque",
+      "item1": {
+        "title": "Diseño Centrado en Humanos",
+        "description": "Ponemos a las personas primero en todas nuestras soluciones de IA"
+      },
+      "item2": {
+        "title": "Implementación Ética",
+        "description": "Desarrollo de IA transparente y responsable"
+      },
+      "item3": {
+        "title": "Soluciones Personalizadas",
+        "description": "Adaptadas a sus necesidades empresariales específicas"
+      }
+    },
+    "testimonials": {
+      "title": "Lo Que Dicen Nuestros Clientes",
+      "testimonial1": {
+        "quote": "Bridging Trust AI transformó nuestro servicio al cliente con su enfoque ético de IA.",
+        "author": "Jane Smith",
+        "company": "Tech Innovations Inc."
+      },
+      "testimonial2": {
+        "quote": "Su solución de IA personalizada aumentó nuestra eficiencia manteniendo la supervisión humana.",
+        "author": "John Davis",
+        "company": "Global Solutions Ltd."
+      }
+    },
+    "process": {
+      "title": "Nuestro Proceso",
+      "item1": {
+        "title": "Consulta",
+        "description": "Nos reunimos con usted para entender sus necesidades y objetivos."
+      },
+      "item2": {
+        "title": "Evaluación",
+        "description": "Evaluamos sus sistemas actuales e identificamos oportunidades."
+      },
+      "item3": {
+        "title": "Diseño",
+        "description": "Creamos una solución de IA personalizada diseñada con ética en mente."
+      },
+      "item4": {
+        "title": "Desarrollo",
+        "description": "Construimos su solución con transparencia durante todo el proceso."
+      },
+      "item5": {
+        "title": "Implementación",
+        "description": "Implementamos su solución y proporcionamos capacitación y soporte."
+      }
+    },
+    "newsletter": {
+      "title": "Manténgase Actualizado",
+      "description": "Suscríbase a nuestro boletín para lo último en desarrollo ético de IA."
+    }
+  },
+  "about": {
+    "title": "Sobre Nosotros",
+    "subtitle": "Nuestra misión es construir confianza en la IA a través del desarrollo ético",
+    "mission": {
+      "title": "Nuestra Misión",
+      "description": "Estamos comprometidos a crear sistemas de IA que mejoren las capacidades humanas manteniendo estándares éticos y transparencia."
+    },
+    "team": {
+      "title": "Nuestro Equipo",
+      "description": "Nuestro diverso equipo reúne experiencia en IA, ética, negocios y diseño."
+    }
+  },
+  "services": {
+    "title": "Nuestros Servicios",
+    "subtitle": "Soluciones de IA diseñadas pensando en las personas",
+    "service1": {
+      "title": "Consultoría de Estrategia de IA",
+      "description": "Desarrolle una hoja de ruta para la implementación ética de IA en su organización"
+    },
+    "service2": {
+      "title": "Soluciones de IA Personalizadas",
+      "description": "Sistemas de IA adaptados a sus necesidades empresariales específicas"
+    },
+    "service3": {
+      "title": "Auditoría de Ética de IA",
+      "description": "Revise sus sistemas de IA existentes para consideraciones éticas y transparencia"
+    }
+  },
+  "contact": {
+    "title": "Contáctenos",
+    "subtitle": "Póngase en contacto con nuestro equipo",
+    "form": {
+      "name": "Nombre",
+      "email": "Correo Electrónico",
+      "message": "Mensaje",
+      "subject": "Asunto",
+      "submitSuccess": "¡Mensaje enviado con éxito!",
+      "submitError": "Error al enviar el mensaje. Por favor, inténtelo de nuevo."
+    }
+  }
+}
