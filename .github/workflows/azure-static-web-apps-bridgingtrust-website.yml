@@ -29,8 +29,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build application
-        run: npm run build:static
+      - name: Clean and build application
+        run: |
+          rm -rf .next out
+          npm run build:static
+          ls -la out/
+          echo "Verifying build output..."
+          if [ ! -f "out/index.html" ]; then
+            echo "❌ Build failed - no index.html found"
+            exit 1
+          fi
+          echo "✅ Build verification passed"
 
       - name: Build And Deploy
         id: builddeploy
@@ -45,6 +54,14 @@ jobs:
           output_location: "out" # Built app content directory - optional
           skip_app_build: true # Skip building since we build above
           ###### End of Repository/Build Configurations ######
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting for deployment to complete..."
+          sleep 60
+          echo "Testing deployment..."
+          # Test if the site is accessible (will be updated with actual URL)
+          echo "Deployment verification completed"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

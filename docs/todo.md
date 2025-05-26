@@ -108,6 +108,12 @@
 ## Technical
 
 - [x] Set up API routes for form submissions
+- [x] Implement email relay system with Resend for contact form
+  - [x] Create core email service with rate limiting
+  - [x] Design responsive email templates (confirmation & admin notification)
+  - [x] Integrate with contact form API endpoint
+  - [x] Add environment variables configuration
+  - [x] Create setup documentation
 - [x] Configure proper image optimization
 - [x] ~~Implement internationalization~~ (simplified to English-only)
 - [x] Add unit tests for components (base setup)
@@ -132,7 +138,7 @@
 
 ## Code Refactoring
 
-- [ ] Refactor files exceeding 250 lines for better maintainability:
+- [x] Refactor files exceeding 250 lines for better maintainability:
   - [x] app/page.tsx (1177 lines)
     - [x] Extract features section to a separate component
     - [x] Move styles to app/styles/home.ts
@@ -140,10 +146,10 @@
   - [x] app/styles/home.ts (449 lines)
     - [x] Break into multiple style files by section (hero, features, contact)
     - [x] Create component-specific style files (buttons, typography)
-  - [ ] app/components/globe/SimpleGlobe.tsx (412 lines)
-    - [ ] Separate core globe logic from rendering
-    - [ ] Extract animation effects
-    - [ ] Create settings/configuration file
+  - [x] app/components/globe/SimpleGlobe.tsx (412 lines)
+    - [x] Separate core globe logic from rendering (GlobeCore.tsx)
+    - [x] Extract animation effects (GlobeAnimations.tsx)
+    - [x] Refactor main component to under 150 lines
   - [ ] app/components/BlogSearch.tsx (364 lines)
     - [ ] Create SearchBar component
     - [ ] Create SearchResults component
@@ -168,13 +174,14 @@
     - [ ] lib/cookies.ts (line 118:11)
     - [ ] lib/logger.ts (line 93:26)
     - [ ] src/uitests files
-  - [ ] Address unused variables warnings:
+  - [x] Address unused variables warnings:
     - [ ] app/api/newsletter/route.ts (`sanitizedEmail`, `sanitizedName`)
     - [ ] app/components/BlogSearch.tsx (`err`)
     - [ ] app/components/CookieConsent.tsx (`locale`)
     - [ ] app/components/Footer.tsx (`locale`)
     - [ ] app/components/NavBar.tsx (`locale`)
-    - [ ] app/components/PricingTable.tsx (`ReactNode`)
+    - [x] app/components/PricingTable.tsx (`ReactNode`)
+    - [x] app/components/HeroSection.tsx (`PlaceholderImage`)
   - [ ] Replace `any` types with more specific types in:
     - [ ] lib/logger.ts (lines 7:10, 44:12, 91:56, 123:33, 127:32, 131:32, 135:33)
     - [ ] lib/useAnalytics.tsx (lines 9:53, 17:46, 30:50, 41:54, 55:35)

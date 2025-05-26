@@ -1,0 +1,31 @@
+# Bridging Trust AI - Environment Variables Example
+# Copy this content to .env.local for development
+
+# ===== EMAIL CONFIGURATION =====
+# Resend API key from https://resend.com/api-keys
+RESEND_API_KEY=re_your_api_key_here
+
+# Email addresses (must be verified in Resend dashboard)
+EMAIL_FROM=Bridging Trust AI <hello@bridgingtrust.ai>
+EMAIL_REPLY_TO=support@bridgingtrust.ai
+EMAIL_ADMIN=admin@bridgingtrust.ai
+
+# Email rate limiting and protection
+EMAIL_DAILY_LIMIT=100
+EMAIL_MONTHLY_LIMIT=1000
+EMAIL_HOURLY_LIMIT=10
+EMAIL_MAX_FAILURES=5
+EMAIL_CIRCUIT_BREAKER_TIMEOUT=300000
+
+# Development settings
+SEND_EMAILS_IN_DEVELOPMENT=true
+DEBUG_EMAIL=false
+
+# ===== NEXT.JS CONFIGURATION =====
+NEXT_PUBLIC_APP_URL=https://bridgingtrust.ai
+
+# ===== DEVELOPMENT SETTINGS =====
+NODE_ENV=development
+
+# ===== SECURITY =====
+# Add any additional security-related environment variables here 

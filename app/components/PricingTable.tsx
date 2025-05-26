@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import { Button } from "./Button";
 import { Icons } from "./Icons";
 import { Route } from "next";

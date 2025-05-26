@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "./Button";
 import { AnimatedBackground } from "./hero/AnimatedBackground";
-import { PlaceholderImage } from "./hero/PlaceholderImage";
 import { TrustIndicator } from "./hero/TrustIndicator";
 import { Route } from "next";
 

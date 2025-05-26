@@ -9,6 +9,20 @@
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     },
     {
+      "route": "/",
+      "headers": {
+        "cache-control": "public, max-age=300, must-revalidate, s-maxage=300",
+        "vary": "Accept-Encoding"
+      }
+    },
+    {
+      "route": "/*.html",
+      "headers": {
+        "cache-control": "public, max-age=300, must-revalidate, s-maxage=300",
+        "vary": "Accept-Encoding"
+      }
+    },
+    {
       "route": "/images/*",
       "headers": {
         "cache-control": "public, max-age=604800"
