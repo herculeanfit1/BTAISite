@@ -22,7 +22,6 @@
     "ci-build": "NODE_ENV=production CI=true npm run fix:imports && npm run lint && npm run build",
     "ci-build:fallback": "NODE_ENV=production CI=true npm run fix:imports && npm run build || (echo 'Build completed with non-fatal errors' && exit 0)",
     "static-export": "node scripts/static-export-helper.js",
-    "azure-build": "NODE_ENV=production CI=true npm run ci-build:fallback && npm run static-export",
     "deploy:local": "scripts/deploy-local.sh",
     "fix:imports": "node scripts/fix-imports.js",
     "fix:rollup": "node scripts/fix-rollup.js",
@@ -99,10 +98,8 @@
     "next-themes": "0.4.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "resend": "^4.5.1",
     "tailwind-merge": "3.2.0",
-    "three": "0.154.0",
-    "zod": "^3.25.28"
+    "three": "0.154.0"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",
