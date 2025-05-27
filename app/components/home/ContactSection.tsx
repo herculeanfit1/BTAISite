@@ -66,36 +66,36 @@ export const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="container mx-auto px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+    <section id="contact" style={{ padding: "5rem 1.5rem", backgroundColor: "#F8F9FA", width: "100%" }}>
+      <div style={{ width: "100%", maxWidth: "1280px", margin: "0 auto", padding: "0 1.5rem" }}>
+        <div style={{ maxWidth: "56rem", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+            <h2 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1.5rem", textAlign: "center", lineHeight: 1.2, color: "#111827" }}>
               Contact Us
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Have questions or ready to start your AI journey? Fill out the form below and our team will get back to you promptly. The contact form is the best way to reach our team.
+            <p style={{ fontSize: "1.125rem", color: "#4B5563", maxWidth: "42rem", margin: "0 auto", lineHeight: 1.6 }}>
+              Have questions or ready to start your AI journey? Fill out the form below and our team will get back to you promptly.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div style={{ background: "white", borderRadius: "1rem", padding: "2.5rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", border: "1px solid #f3f4f6" }}>
             {submitResult && submitResult.success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800">
+              <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "0.5rem" }}>
+                <p style={{ color: "#166534", fontWeight: "500" }}>
                   {submitResult.message}
                 </p>
               </div>
             )}
 
             {submitResult && !submitResult.success && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">
+              <div style={{ marginBottom: "1.5rem", padding: "1rem", backgroundColor: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "0.5rem" }}>
+                <p style={{ color: "#DC2626", fontWeight: "500" }}>
                   {submitResult.message}
                 </p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
               {/* Honeypot field for bot protection */}
               <input
                 type="text"
@@ -105,9 +105,9 @@ export const ContactSection = () => {
                 autoComplete="off"
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="firstName" style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", color: "#374151", marginBottom: "0.5rem" }}>
                     First Name *
                   </label>
                   <input
@@ -115,13 +115,15 @@ export const ContactSection = () => {
                     id="firstName"
                     name="firstName"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #D1D5DB", borderRadius: "0.5rem", fontSize: "1rem", transition: "all 0.2s ease", outline: "none" }}
                     placeholder="Enter your first name"
+                    onFocus={(e) => e.target.style.borderColor = "#5B90B0"}
+                    onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="lastName" style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", color: "#374151", marginBottom: "0.5rem" }}>
                     Last Name *
                   </label>
                   <input
@@ -129,27 +131,31 @@ export const ContactSection = () => {
                     id="lastName"
                     name="lastName"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #D1D5DB", borderRadius: "0.5rem", fontSize: "1rem", transition: "all 0.2s ease", outline: "none" }}
                     placeholder="Enter your last name"
+                    onFocus={(e) => e.target.style.borderColor = "#5B90B0"}
+                    onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="company" style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", color: "#374151", marginBottom: "0.5rem" }}>
                   Company Name
                 </label>
                 <input
                   type="text"
                   id="company"
                   name="company"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #D1D5DB", borderRadius: "0.5rem", fontSize: "1rem", transition: "all 0.2s ease", outline: "none" }}
                   placeholder="Enter your company name"
+                  onFocus={(e) => e.target.style.borderColor = "#5B90B0"}
+                  onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", color: "#374151", marginBottom: "0.5rem" }}>
                   Email Address *
                 </label>
                 <input
@@ -157,13 +163,15 @@ export const ContactSection = () => {
                   id="email"
                   name="email"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #D1D5DB", borderRadius: "0.5rem", fontSize: "1rem", transition: "all 0.2s ease", outline: "none" }}
                   placeholder="Enter your email address"
+                  onFocus={(e) => e.target.style.borderColor = "#5B90B0"}
+                  onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
                 />
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="message" style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", color: "#374151", marginBottom: "0.5rem" }}>
                   What can we help you with? *
                 </label>
                 <textarea
@@ -171,15 +179,35 @@ export const ContactSection = () => {
                   name="message"
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                  style={{ width: "100%", padding: "0.75rem 1rem", border: "1px solid #D1D5DB", borderRadius: "0.5rem", fontSize: "1rem", transition: "all 0.2s ease", outline: "none", resize: "vertical", minHeight: "120px" }}
                   placeholder="Tell us about your project or questions..."
+                  onFocus={(e) => e.target.style.borderColor = "#5B90B0"}
+                  onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  width: "100%",
+                  backgroundColor: isSubmitting ? "#9CA3AF" : "#5B90B0",
+                  color: "white",
+                  padding: "0.875rem 1.5rem",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  border: "none",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  outline: "none"
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting) e.target.style.backgroundColor = "#3A5F77";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSubmitting) e.target.style.backgroundColor = "#5B90B0";
+                }}
               >
                 {isSubmitting ? 'Sending Message...' : 'Send Message'}
               </button>

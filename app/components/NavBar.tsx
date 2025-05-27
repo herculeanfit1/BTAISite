@@ -70,8 +70,8 @@ export const NavBar = ({ locale }: NavBarProps) => {
               <Image
                 src="/images/logo/BTAI_Logo_Original.svg"
                 alt="Bridging Trust AI Logo"
-                width={83}
-                height={83}
+                width={108}
+                height={108}
                 className="mr-3 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110"
                 style={{
                   objectFit: "contain",
@@ -85,7 +85,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
                 className="text-xl font-bold whitespace-nowrap"
                 style={{
                   fontWeight: "700",
-                  fontSize: "1.75rem",
+                  fontSize: "2.01rem", // Increased by 15% (1.75 * 1.15)
                   background: "linear-gradient(90deg, #3A5F77 0%, #5B90B0 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -93,7 +93,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
                   color: "#3A5F77", // Fallback for browsers that don't support gradient text
                 }}
               >
-                   Bridging Trust AI
+                &nbsp;&nbsp;Bridging Trust AI
               </span>
             </Link>
           </div>
