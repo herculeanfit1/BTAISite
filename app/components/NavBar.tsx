@@ -8,6 +8,7 @@
  * - Desktop navigation menu with hover effects
  * - Mobile hamburger menu with dropdown
  * - Scroll effect that adds shadow when scrolling down
+ * - Theme toggle in the upper left corner
  *
  * The component ensures proper spacing, sizing, and responsive behavior
  * to match the production website appearance.
@@ -16,6 +17,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface NavBarProps {
   locale?: string;
@@ -53,57 +55,59 @@ export const NavBar = ({ locale }: NavBarProps) => {
   return (
     <header
       role="navigation"
-      className={`fixed top-0 right-0 left-0 z-50 w-full transition-all duration-300 ${isScrolled ? "shadow-lg" : "shadow-sm"}`}
+      className={`fixed top-0 right-0 left-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${isScrolled ? "shadow-lg" : "shadow-sm"}`}
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.98)",
-        backdropFilter: "blur(10px)",
-        borderBottom: isScrolled ? "1px solid #e5e7eb" : "1px solid rgba(229, 231, 235, 0.3)",
         paddingTop: "0.75rem",
         paddingBottom: "0.75rem",
+        backgroundColor: "rgb(255, 255, 255)", // Solid white in light mode
+        opacity: 1, // Ensure full opacity
       }}
+      data-theme-bg="true"
     >
+      {/* Theme Toggle in Very Top Corner */}
+      <div className="absolute top-2 left-2 z-[1001]">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full px-6">
         <div className="mx-auto flex h-12 max-w-[1400px] items-center justify-between">
           {/* Company Logo and Name */}
-          <div className="group flex flex-shrink-0 items-center">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/logo/BTAI_Logo_Original.svg"
-                alt="Bridging Trust AI Logo"
-                width={108}
-                height={108}
-                className="mr-3 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110"
-                style={{
-                  objectFit: "contain",
-                  borderRadius: "50%",
-                  backgroundColor: "#f0f7fc",
-                  border: "2px solid #e5f1fa",
-                }}
-              />
-                            {/* Company name with gradient text effect */}
-              <span
-                className="text-xl font-bold whitespace-nowrap"
-                style={{
-                  fontWeight: "700",
-                  fontSize: "2.01rem", // Increased by 15% (1.75 * 1.15)
-                  background: "linear-gradient(90deg, #3A5F77 0%, #5B90B0 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  color: "#3A5F77", // Fallback for browsers that don't support gradient text
-                }}
-              >
-                &nbsp;&nbsp;Bridging Trust AI
-              </span>
-            </Link>
+          <div className="flex items-center gap-4 ml-8">
+            <div className="group flex flex-shrink-0 items-center">
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="/images/logo/BTAI_Logo_Original.svg"
+                  alt="Bridging Trust AI Logo"
+                  width={108}
+                  height={108}
+                  className="mr-3 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110"
+                  style={{
+                    objectFit: "contain",
+                    borderRadius: "50%",
+                    backgroundColor: "#f0f7fc",
+                    border: "2px solid #e5f1fa",
+                  }}
+                />
+                {/* Company name with gradient text effect */}
+                <span
+                  className="text-xl font-bold whitespace-nowrap bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text text-transparent dark:from-[#5B90B0] dark:to-[#9CAEB8]"
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "2.01rem", // Increased by 15% (1.75 * 1.15)
+                  }}
+                >
+                  &nbsp;&nbsp;Bridging Trust AI
+                </span>
+              </Link>
+            </div>
           </div>
 
           {/* Desktop Navigation - always visible and right-justified */}
-          <div className="ml-auto flex items-center" style={{ gap: "2rem" }}>
+          <div className="ml-auto flex items-center" style={{ gap: "1.5rem" }}>
             {/* Solutions link with hover underline effect */}
             <Link
               href="/#solutions"
-              className="group relative px-4 py-2 font-semibold text-[#5B90B0] transition-colors hover:text-[#3A5F77]"
+              className="group relative px-4 py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
               style={{
                 fontWeight: 600,
                 overflow: "hidden",
@@ -112,13 +116,13 @@ export const NavBar = ({ locale }: NavBarProps) => {
               }}
             >
               <span className="relative z-10">Solutions</span>
-              <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] transition-all duration-300 group-hover:w-full"></span>
+              <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
             </Link>
             
             {/* About link with hover underline effect */}
             <Link
               href="/#about"
-              className="group relative px-4 py-2 font-semibold text-[#5B90B0] transition-colors hover:text-[#3A5F77]"
+              className="group relative px-4 py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
               style={{
                 fontWeight: 600,
                 overflow: "hidden",
@@ -127,18 +131,16 @@ export const NavBar = ({ locale }: NavBarProps) => {
               }}
             >
               <span className="relative z-10">About</span>
-              <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] transition-all duration-300 group-hover:w-full"></span>
+              <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
             </Link>
             
             {/* Contact button styled as a call-to-action */}
             <a
               href="#contact"
               onClick={handleContactClick}
-              className="rounded-lg px-6 py-2 font-medium text-white transition-all hover:bg-[#3A5F77] hover:shadow-md cursor-pointer"
+              className="rounded-lg px-6 py-2 font-medium text-white bg-[#5B90B0] dark:bg-[#3A5F77] transition-all hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] hover:shadow-md cursor-pointer"
               style={{
-                backgroundColor: "#5B90B0",
                 fontWeight: 600,
-                color: "white",
                 fontSize: "1.05rem",
                 padding: "10px 24px",
                 borderRadius: "8px",
@@ -151,10 +153,10 @@ export const NavBar = ({ locale }: NavBarProps) => {
           </div>
 
           {/* Mobile Menu Button - hide on desktop */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="absolute top-3 right-6 text-gray-600 focus:outline-none"
+              className="text-gray-600 dark:text-gray-300 focus:outline-none"
               aria-label="Toggle menu"
             >
               {!isOpen ? (
@@ -193,19 +195,19 @@ export const NavBar = ({ locale }: NavBarProps) => {
 
       {/* Mobile Menu - only visible when isOpen is true and on small screens */}
       {isOpen && (
-        <div className="absolute w-full bg-white shadow-lg md:hidden" style={{ backgroundColor: "rgba(255, 255, 255, 0.98)", backdropFilter: "blur(10px)" }}>
+        <div className="absolute w-full bg-white dark:bg-gray-900 shadow-lg border-b border-gray-200 dark:border-gray-700 md:hidden">
           <div className="container mx-auto px-4 py-4">
             <div className="flex flex-col space-y-4">
               <Link
                 href="/#solutions"
-                className="py-2 font-semibold text-[#5B90B0] transition-colors hover:text-[#3A5F77]"
+                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
                 onClick={() => setIsOpen(false)}
               >
                 Solutions
               </Link>
               <Link
                 href="/#about"
-                className="py-2 font-semibold text-[#5B90B0] transition-colors hover:text-[#3A5F77]"
+                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
                 onClick={() => setIsOpen(false)}
               >
                 About
@@ -216,7 +218,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
                   handleContactClick(e);
                   setIsOpen(false);
                 }}
-                className="py-2 font-semibold text-[#5B90B0] transition-colors hover:text-[#3A5F77] cursor-pointer"
+                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0] cursor-pointer"
               >
                 Contact
               </a>

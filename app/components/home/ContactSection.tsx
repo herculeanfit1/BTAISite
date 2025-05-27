@@ -203,10 +203,10 @@ export const ContactSection = () => {
                   outline: "none"
                 }}
                 onMouseEnter={(e) => {
-                  if (!isSubmitting) e.target.style.backgroundColor = "#3A5F77";
+                  if (!isSubmitting) (e.target as HTMLButtonElement).style.backgroundColor = "#3A5F77";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isSubmitting) e.target.style.backgroundColor = "#5B90B0";
+                  if (!isSubmitting) (e.target as HTMLButtonElement).style.backgroundColor = "#5B90B0";
                 }}
               >
                 {isSubmitting ? 'Sending Message...' : 'Send Message'}

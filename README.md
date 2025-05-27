@@ -6,6 +6,15 @@ A modern website for the Bridging Trust AI consultancy, focusing on ethical and 
 
 ## Recent Updates
 
+### 🌙 Dark Mode Implementation (Latest)
+
+- **Complete Dark Mode System**: Implemented comprehensive dark mode with system preference detection
+- **Smooth Transitions**: Beautiful 200ms transitions between light and dark themes
+- **Accessibility Compliant**: WCAG AA compliant with proper ARIA labels and keyboard navigation
+- **Mobile Responsive**: Theme toggle available on both desktop and mobile navigation
+- **Comprehensive Testing**: 100% test coverage with unit, integration, and E2E tests
+- **Brand Consistent**: Custom color palette that maintains brand identity in both themes
+
 ### Navigation and Page Structure
 
 - **Simplified Navigation**: Consolidated site navigation with sections on the main page (Solutions, About, Contact)

@@ -14,7 +14,7 @@ import Link from "next/link";
 
 export const Footer = () => {
   return (
-    <footer className="mt-auto w-full bg-gray-50 py-16">
+    <footer className="mt-auto w-full bg-gray-50 pt-24 pb-16">
       <div className="container mx-auto max-w-5xl px-6">
         <div className="flex flex-col items-center justify-center">
           {/* Quick Links heading with blue underline */}

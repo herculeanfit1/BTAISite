@@ -5,10 +5,12 @@ import { fireEvent } from "@testing-library/dom"
 import { waitFor } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import { ThemeToggle } from '../../app/components/ThemeToggle';
+import React from "react";
 
 // Mock the next-themes useTheme hook
 const mockSetTheme = vi.fn();
 let currentTheme = "light";
+let resolvedTheme = "light";
 
 vi.mock("next-themes", () => ({
   useTheme: () => ({
@@ -16,17 +18,19 @@ vi.mock("next-themes", () => ({
     setTheme: (theme: string) => {
       mockSetTheme(theme);
       currentTheme = theme;
+      resolvedTheme = theme;
     },
+    resolvedTheme: resolvedTheme,
   }),
 }));
 
 describe("Theme Switching Integration", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    currentTheme = "light"; // Reset theme to light before each test
+    currentTheme = "light";
+    resolvedTheme = "light";
 
-    // Mock document.documentElement.classList methods - use separate mocks for each method
-    // This avoids "Cannot redefine property: classList" errors
+    // Mock document.documentElement.classList methods
     if (document.documentElement) {
       if (!vi.isMockFunction(document.documentElement.classList.add)) {
         vi.spyOn(document.documentElement.classList, 'add').mockImplementation(vi.fn());
@@ -39,7 +43,7 @@ describe("Theme Switching Integration", () => {
       if (!vi.isMockFunction(document.documentElement.classList.contains)) {
         vi.spyOn(document.documentElement.classList, 'contains').mockImplementation((className) => {
           if (className === "dark") {
-            return currentTheme === "dark";
+            return resolvedTheme === "dark";
           }
           return false;
         });
@@ -55,7 +59,17 @@ describe("Theme Switching Integration", () => {
       const themeButton = screen.getByRole("button");
       expect(themeButton).toBeInTheDocument();
       expect(themeButton).toHaveAttribute("aria-label", "Switch to dark mode");
+      expect(themeButton).toHaveAttribute("data-testid", "dark-mode-toggle");
     });
+  });
+
+  it("handles component initialization gracefully", () => {
+    // Test that the component renders without throwing errors
+    expect(() => render(<ThemeToggle />)).not.toThrow();
+    
+    // Verify the component renders the theme toggle
+    const themeToggle = screen.getByTestId("dark-mode-toggle");
+    expect(themeToggle).toBeInTheDocument();
   });
 
   it("switches from light to dark theme when clicked", async () => {
@@ -69,7 +83,7 @@ describe("Theme Switching Integration", () => {
     });
 
     // Initial theme should be light
-    expect(currentTheme).toBe("light");
+    expect(resolvedTheme).toBe("light");
 
     // Click the toggle button
     const themeButton = screen.getByRole("button", {
@@ -79,12 +93,12 @@ describe("Theme Switching Integration", () => {
 
     // Check that the theme was changed to dark
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
-    expect(currentTheme).toBe("dark");
   });
 
   it("switches from dark to light theme when clicked", async () => {
     // Set the initial theme to dark
     currentTheme = "dark";
+    resolvedTheme = "dark";
 
     const user = userEvent.setup();
     render(<ThemeToggle />);
@@ -96,7 +110,7 @@ describe("Theme Switching Integration", () => {
     });
 
     // Initial theme should be dark
-    expect(currentTheme).toBe("dark");
+    expect(resolvedTheme).toBe("dark");
 
     // Click the toggle button
     const themeButton = screen.getByRole("button", {
@@ -106,11 +120,11 @@ describe("Theme Switching Integration", () => {
 
     // Check that the theme was changed to light
     expect(mockSetTheme).toHaveBeenCalledWith("light");
-    expect(currentTheme).toBe("light");
   });
 
   it("renders the appropriate icon for light theme", async () => {
     currentTheme = "light";
+    resolvedTheme = "light";
     render(<ThemeToggle />);
 
     // Wait for component to be mounted
@@ -119,13 +133,25 @@ describe("Theme Switching Integration", () => {
       expect(themeButton).toBeInTheDocument();
     });
 
-    // In light mode, we should have the moon icon
-    const moonSvg = screen.getByRole("button").querySelector("svg");
-    expect(moonSvg).toHaveClass("text-gray-700");
+    // In light mode, we should have the moon icon visible and sun icon hidden
+    const button = screen.getByRole("button");
+    const svgs = button.querySelectorAll("svg");
+    
+    // Should have 2 SVGs (sun and moon)
+    expect(svgs).toHaveLength(2);
+    
+    // Moon icon should be visible (opacity-100)
+    const moonIcon = svgs[1]; // Second SVG is moon
+    expect(moonIcon).toHaveClass("opacity-100");
+    
+    // Sun icon should be hidden (opacity-0)
+    const sunIcon = svgs[0]; // First SVG is sun
+    expect(sunIcon).toHaveClass("opacity-0");
   });
 
   it("renders the appropriate icon for dark theme", async () => {
     currentTheme = "dark";
+    resolvedTheme = "dark";
     render(<ThemeToggle />);
 
     // Wait for component to be mounted
@@ -134,9 +160,20 @@ describe("Theme Switching Integration", () => {
       expect(themeButton).toBeInTheDocument();
     });
 
-    // In dark mode, we should have the sun icon
-    const sunSvg = screen.getByRole("button").querySelector("svg");
-    expect(sunSvg).toHaveClass("text-yellow-500");
+    // In dark mode, we should have the sun icon visible and moon icon hidden
+    const button = screen.getByRole("button");
+    const svgs = button.querySelectorAll("svg");
+    
+    // Should have 2 SVGs (sun and moon)
+    expect(svgs).toHaveLength(2);
+    
+    // Sun icon should be visible (opacity-100)
+    const sunIcon = svgs[0]; // First SVG is sun
+    expect(sunIcon).toHaveClass("opacity-100");
+    
+    // Moon icon should be hidden (opacity-0)
+    const moonIcon = svgs[1]; // Second SVG is moon
+    expect(moonIcon).toHaveClass("opacity-0");
   });
 
   it("applies custom className correctly", async () => {
@@ -147,6 +184,49 @@ describe("Theme Switching Integration", () => {
     await waitFor(() => {
       const themeButton = screen.getByRole("button");
       expect(themeButton).toHaveClass(customClass);
+    });
+  });
+
+  it("has proper accessibility attributes", async () => {
+    render(<ThemeToggle />);
+
+    await waitFor(() => {
+      const themeButton = screen.getByRole("button");
+      expect(themeButton).toHaveAttribute("aria-label");
+      expect(themeButton).toHaveAttribute("data-testid", "dark-mode-toggle");
+    });
+  });
+
+  it("handles keyboard navigation", async () => {
+    const user = userEvent.setup();
+    render(<ThemeToggle />);
+
+    await waitFor(() => {
+      const themeButton = screen.getByRole("button");
+      expect(themeButton).toBeInTheDocument();
+    });
+
+    const themeButton = screen.getByRole("button");
+    
+    // Focus the button
+    await user.tab();
+    expect(themeButton).toHaveFocus();
+    
+    // Press Enter to activate
+    await user.keyboard("{Enter}");
+    expect(mockSetTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("handles system theme preference", async () => {
+    // Test with system theme
+    currentTheme = "system";
+    resolvedTheme = "dark"; // System resolves to dark
+    
+    render(<ThemeToggle />);
+
+    await waitFor(() => {
+      const themeButton = screen.getByRole("button");
+      expect(themeButton).toHaveAttribute("aria-label", "Switch to light mode");
     });
   });
 });

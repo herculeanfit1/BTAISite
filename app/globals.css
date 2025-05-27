@@ -666,3 +666,13 @@ button,
 .btn {
   font-weight: 500;
 }
+
+/* Navigation bar solid background fix */
+[data-theme-bg="true"] {
+  background-color: rgb(255, 255, 255) !important;
+  backdrop-filter: none !important;
+}
+
+.dark [data-theme-bg="true"] {
+  background-color: rgb(17, 24, 39) !important;
+}

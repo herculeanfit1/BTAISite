@@ -28,7 +28,7 @@ const SimpleAnimatedGlobe = () => {
             background: `
               linear-gradient(0deg, transparent 48%, #4ECDC4 49%, #4ECDC4 51%, transparent 52%),
               linear-gradient(90deg, transparent 48%, #4ECDC4 49%, #4ECDC4 51%, transparent 52%),
-              radial-gradient(circle at 50% 50%, transparent 48%, #4ECDC4 49%, #4ECDC4 51%, transparent 52%)
+              radial-gradient(circle at 50% 50%, transparent 60%, #4ECDC4 61%, #4ECDC4 63%, transparent 64%)
             `,
             opacity: 0.6,
             animationDuration: '15s',
@@ -36,58 +36,59 @@ const SimpleAnimatedGlobe = () => {
           }}
         />
         
-        {/* Glowing points */}
-        {[
-          { top: '25%', left: '30%' },
-          { top: '35%', left: '65%' },
-          { top: '45%', left: '20%' },
-          { top: '55%', left: '75%' },
-          { top: '65%', left: '40%' },
-          { top: '75%', left: '60%' },
-          { top: '15%', left: '50%' },
-          { top: '85%', left: '35%' },
-          { top: '30%', left: '80%' },
-          { top: '70%', left: '15%' },
-          { top: '40%', left: '90%' },
-          { top: '60%', left: '10%' },
-        ].map((pos, i) => (
+        {/* Animated tracer lines */}
+        <div 
+          className="absolute inset-0 rounded-full animate-pulse"
+          style={{
+            background: `
+              linear-gradient(45deg, transparent 48%, #ff6b6b 49%, #ff6b6b 51%, transparent 52%),
+              linear-gradient(-45deg, transparent 48%, #4ecdc4 49%, #4ecdc4 51%, transparent 52%)
+            `,
+            opacity: 0.8,
+            animationDuration: '3s',
+          }}
+        />
+        
+        {/* Glowing center */}
+        <div 
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse"
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: '#4ECDC4',
+            boxShadow: '0 0 20px #4ECDC4',
+            animationDuration: '2s',
+          }}
+        />
+      </div>
+      
+      {/* Orbiting particles */}
+      <div 
+        className="absolute inset-0 animate-spin"
+        style={{
+          animationDuration: '30s',
+        }}
+      >
+        {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse"
+            className="absolute animate-pulse"
             style={{
-              top: pos.top,
-              left: pos.left,
-              boxShadow: '0 0 8px #4ECDC4',
-              animationDelay: `${i * 100}ms`,
-              animationDuration: `${3000 + i * 200}ms`,
-            }}
-          />
-        ))}
-        
-        {/* Connection lines */}
-        {[
-          { top: '10%', left: '30%', rotate: '0deg' },
-          { top: '20%', left: '47%', rotate: '45deg' },
-          { top: '30%', left: '48%', rotate: '90deg' },
-          { top: '40%', left: '33%', rotate: '135deg' },
-          { top: '50%', left: '15%', rotate: '180deg' },
-          { top: '60%', left: '11%', rotate: '225deg' },
-          { top: '70%', left: '24%', rotate: '270deg' },
-          { top: '80%', left: '43%', rotate: '315deg' },
-        ].map((line, i) => (
-          <div
-            key={`line-${i}`}
-            className="absolute bg-blue-400 animate-pulse"
-            style={{
-              width: '1px',
-              height: '60px',
-              top: line.top,
-              left: line.left,
-              transformOrigin: 'bottom',
-              transform: `rotate(${line.rotate})`,
-              opacity: 0.4,
-              animationDelay: `${i * 200}ms`,
-              animationDuration: `${2000 + i * 300}ms`,
+              width: '4px',
+              height: '4px',
+              borderRadius: '50%',
+              background: i % 2 === 0 ? '#ff6b6b' : '#4ecdc4',
+              boxShadow: `0 0 10px ${i % 2 === 0 ? '#ff6b6b' : '#4ecdc4'}`,
+              top: '50%',
+              left: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                rotate(${i * 60}deg) 
+                translateX(120px)
+              `,
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: '2s',
             }}
           />
         ))}

@@ -9,7 +9,10 @@ import { CSSProperties } from "react";
 export const heroStyles: Record<string, CSSProperties> = {
   // Main hero section with flexbox centering
   hero: {
-    padding: "1.2rem 1.5rem", // Reduced bottom padding by 40% (2rem -> 1.2rem)
+    paddingTop: "1.2rem",
+    paddingBottom: "0.6rem", // Reduced bottom padding by 50% (1.2rem -> 0.6rem)
+    paddingLeft: "1.5rem",
+    paddingRight: "1.5rem",
     textAlign: "center",
     width: "100%",
     minHeight: "70vh", // Ensure adequate height for the hero section
