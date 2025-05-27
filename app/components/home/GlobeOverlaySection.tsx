@@ -37,13 +37,26 @@ const SimpleAnimatedGlobe = () => {
         />
         
         {/* Glowing points */}
-        {[...Array(12)].map((_, i) => (
+        {[
+          { top: '25%', left: '30%' },
+          { top: '35%', left: '65%' },
+          { top: '45%', left: '20%' },
+          { top: '55%', left: '75%' },
+          { top: '65%', left: '40%' },
+          { top: '75%', left: '60%' },
+          { top: '15%', left: '50%' },
+          { top: '85%', left: '35%' },
+          { top: '30%', left: '80%' },
+          { top: '70%', left: '15%' },
+          { top: '40%', left: '90%' },
+          { top: '60%', left: '10%' },
+        ].map((pos, i) => (
           <div
             key={i}
             className="absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse"
             style={{
-              top: `${20 + Math.sin(i * 0.5) * 30}%`,
-              left: `${20 + Math.cos(i * 0.7) * 30}%`,
+              top: pos.top,
+              left: pos.left,
               boxShadow: '0 0 8px #4ECDC4',
               animationDelay: `${i * 100}ms`,
               animationDuration: `${3000 + i * 200}ms`,
@@ -52,17 +65,26 @@ const SimpleAnimatedGlobe = () => {
         ))}
         
         {/* Connection lines */}
-        {[...Array(8)].map((_, i) => (
+        {[
+          { top: '10%', left: '30%', rotate: '0deg' },
+          { top: '20%', left: '47%', rotate: '45deg' },
+          { top: '30%', left: '48%', rotate: '90deg' },
+          { top: '40%', left: '33%', rotate: '135deg' },
+          { top: '50%', left: '15%', rotate: '180deg' },
+          { top: '60%', left: '11%', rotate: '225deg' },
+          { top: '70%', left: '24%', rotate: '270deg' },
+          { top: '80%', left: '43%', rotate: '315deg' },
+        ].map((line, i) => (
           <div
             key={`line-${i}`}
             className="absolute bg-blue-400 animate-pulse"
             style={{
               width: '1px',
               height: '60px',
-              top: `${10 + i * 10}%`,
-              left: `${30 + Math.sin(i) * 20}%`,
+              top: line.top,
+              left: line.left,
               transformOrigin: 'bottom',
-              transform: `rotate(${i * 45}deg)`,
+              transform: `rotate(${line.rotate})`,
               opacity: 0.4,
               animationDelay: `${i * 200}ms`,
               animationDuration: `${2000 + i * 300}ms`,
