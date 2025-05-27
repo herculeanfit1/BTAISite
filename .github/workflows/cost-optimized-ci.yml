@@ -49,6 +49,14 @@ jobs:
           npm ci --silent
           echo "✅ Dependencies installed"
 
+      - name: Setup tools and scripts
+        run: |
+          # Install jq for dependency reporting (lightweight JSON processor)
+          sudo apt-get update -qq && sudo apt-get install -y jq
+          # Ensure script is executable
+          chmod +x scripts/dependency-lock.sh
+          echo "✅ Tools and scripts ready"
+
       - name: Dependency lock validation
         run: |
           # Validate dependency locking before build
@@ -113,6 +121,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --silent
+
+      - name: Setup tools and scripts
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y jq
+          chmod +x scripts/dependency-lock.sh
 
       - name: Build for deployment
         run: |
