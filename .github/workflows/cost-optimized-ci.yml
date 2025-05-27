@@ -125,6 +125,8 @@ jobs:
           api_location: ""
           output_location: ""
           skip_app_build: false
+        env:
+          NODE_VERSION: "20.19.1"
 
       - name: Post-deployment verification
         run: |
