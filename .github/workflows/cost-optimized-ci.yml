@@ -43,11 +43,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'package-lock.json'
 
-      - name: Install dependencies (production only)
+      - name: Install dependencies
         run: |
-          # Only install production dependencies for faster setup
-          npm ci --omit=dev --silent
-          echo "✅ Production dependencies installed"
+          # Install all dependencies needed for build
+          npm ci --silent
+          echo "✅ Dependencies installed"
 
       - name: Dependency lock validation
         run: |
