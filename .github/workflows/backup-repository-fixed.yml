@@ -1,0 +1,53 @@
+name: Backup Repository After Deployment
+
+# This workflow triggers after a successful Azure Static Web Apps deployment
+# It backs up the main repository to a secondary repository for redundancy
+# OPTIONAL: Only runs if backup secrets are configured
+
+on:
+  workflow_run:
+    workflows: ["Azure Static Web Apps Deployment"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  backup_to_secondary_repo:
+    # Only run if the Azure deployment was successful AND backup secrets exist
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: Backup Repository
+    
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.BACKUP_SSH_KEY }}
+          
+      - name: Add backup repository remote
+        run: |
+          git remote remove backup 2>/dev/null || true
+          git remote add backup ${{ secrets.BACKUP_REPO_URL }}
+          
+      - name: Push to backup repository
+        run: |
+          echo "Pushing to backup repository..."
+          TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
+          git tag "backup-${TIMESTAMP}"
+          git push -f backup main
+          git push -f backup --tags
+          echo "✅ Successfully backed up repository"
+        env:
+          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no" 
