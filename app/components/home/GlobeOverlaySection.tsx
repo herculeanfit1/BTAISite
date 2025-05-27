@@ -10,7 +10,7 @@ const SimpleAnimatedGlobe = () => {
     <div className="relative w-full h-full flex items-center justify-center">
       {/* Main globe sphere */}
       <div 
-        className="relative"
+        className="relative animate-spin"
         style={{
           width: '200px',
           height: '200px',
@@ -18,12 +18,12 @@ const SimpleAnimatedGlobe = () => {
           background: 'linear-gradient(45deg, #5B90B0 0%, #3A5F77 50%, #5B90B0 100%)',
           border: '2px solid #4ECDC4',
           boxShadow: '0 0 30px rgba(91, 144, 176, 0.3), inset 0 0 30px rgba(58, 95, 119, 0.2)',
-          animation: 'globeRotate 20s linear infinite',
+          animationDuration: '20s',
         }}
       >
         {/* Wireframe lines */}
         <div 
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-full animate-spin"
           style={{
             background: `
               linear-gradient(0deg, transparent 48%, #4ECDC4 49%, #4ECDC4 51%, transparent 52%),
@@ -31,7 +31,8 @@ const SimpleAnimatedGlobe = () => {
               radial-gradient(circle at 50% 50%, transparent 48%, #4ECDC4 49%, #4ECDC4 51%, transparent 52%)
             `,
             opacity: 0.6,
-            animation: 'wireframeRotate 15s linear infinite reverse',
+            animationDuration: '15s',
+            animationDirection: 'reverse',
           }}
         />
         
@@ -39,13 +40,13 @@ const SimpleAnimatedGlobe = () => {
         {[...Array(12)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-cyan-400 rounded-full"
+            className="absolute w-2 h-2 bg-cyan-400 rounded-full animate-pulse"
             style={{
               top: `${20 + Math.sin(i * 0.5) * 30}%`,
               left: `${20 + Math.cos(i * 0.7) * 30}%`,
               boxShadow: '0 0 8px #4ECDC4',
-              animation: `pointFloat ${3 + i * 0.2}s ease-in-out infinite alternate`,
-              animationDelay: `${i * 0.1}s`,
+              animationDelay: `${i * 100}ms`,
+              animationDuration: `${3000 + i * 200}ms`,
             }}
           />
         ))}
@@ -54,7 +55,7 @@ const SimpleAnimatedGlobe = () => {
         {[...Array(8)].map((_, i) => (
           <div
             key={`line-${i}`}
-            className="absolute bg-blue-400"
+            className="absolute bg-blue-400 animate-pulse"
             style={{
               width: '1px',
               height: '60px',
@@ -63,35 +64,12 @@ const SimpleAnimatedGlobe = () => {
               transformOrigin: 'bottom',
               transform: `rotate(${i * 45}deg)`,
               opacity: 0.4,
-              animation: `lineGlow ${2 + i * 0.3}s ease-in-out infinite alternate`,
-              animationDelay: `${i * 0.2}s`,
+              animationDelay: `${i * 200}ms`,
+              animationDuration: `${2000 + i * 300}ms`,
             }}
           />
         ))}
       </div>
-      
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes globeRotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes wireframeRotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes pointFloat {
-          from { transform: translateY(0px) scale(1); opacity: 0.8; }
-          to { transform: translateY(-5px) scale(1.2); opacity: 1; }
-        }
-        
-        @keyframes lineGlow {
-          from { opacity: 0.2; transform: scaleY(0.8); }
-          to { opacity: 0.6; transform: scaleY(1.2); }
-        }
-      `}</style>
     </div>
   );
 };
