@@ -13,7 +13,13 @@ const SimpleGlobe = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div style={{ height: "500px", backgroundColor: "#f9fafb" }}></div>
+      <div className="h-[300px] md:h-[500px] bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-24 h-24 md:w-32 md:h-32 bg-blue-200 dark:bg-blue-800 rounded-full mb-4 animate-spin"></div>
+          <div className="h-3 bg-blue-200 dark:bg-blue-800 rounded w-24 mb-2"></div>
+          <div className="h-2 bg-blue-200 dark:bg-blue-800 rounded w-16"></div>
+        </div>
+      </div>
     ),
   }
 );
@@ -23,124 +29,25 @@ const SimpleGlobe = dynamic(
  *
  * Displays a 3D globe visualization with text overlay.
  * Uses dynamic import to prevent server-side rendering issues with WebGL.
+ * Now fully responsive for mobile devices.
  *
  * @returns {JSX.Element} The rendered globe section
  */
 export const GlobeOverlaySection = () => {
-  // Styles for the section
-  const sectionStyles = {
-    padding: "5rem 1.5rem",
-    width: "100%",
-    position: "relative" as const,
-    overflow: "hidden" as const,
-  };
-
-  // Styles for the container
-  const containerStyles = {
-    width: "100%",
-    maxWidth: "1280px",
-    margin: "0 auto",
-    padding: "0 1.5rem",
-  };
-
-  // Styles for the globe container
-  const globeContainerStyles = {
-    position: "relative" as const,
-    height: "500px",
-    borderRadius: "1rem",
-    overflow: "hidden" as const,
-    boxShadow:
-      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-  };
-
-  // Styles for the background gradient
-  const gradientStyles = {
-    position: "absolute" as const,
-    inset: 0,
-    background: "linear-gradient(90deg, #3A5F77 0%, #9CAEB8 100%)",
-    opacity: 0.15,
-    zIndex: 0,
-  };
-
-  // Styles for the globe visualization
-  const globeStyles = {
-    position: "absolute" as const,
-    inset: 0,
-    zIndex: 10,
-  };
-
-  // Styles for the content overlay
-  const overlayStyles = {
-    position: "absolute" as const,
-    inset: "auto 0 0 0",
-    zIndex: 20,
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    padding: "1.5rem",
-    textAlign: "center" as const,
-  };
-
-  // Styles for the content box
-  const contentBoxStyles = {
-    maxWidth: "42rem",
-    backdropFilter: "blur(8px)",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    padding: "1.5rem",
-    borderRadius: "0.75rem 0.75rem 0 0",
-  };
-
-  // Styles for the primary caption
-  const captionStyles = {
-    fontSize: "2.25rem",
-    fontWeight: 500,
-    color: "#5B90B0",
-    marginBottom: "0.5rem",
-  };
-
-  // Styles for the secondary headline
-  const headlineStyles = {
-    fontSize: "1.41rem",
-    fontWeight: "bold",
-    marginBottom: "1rem",
-    lineHeight: 1.2,
-    color: "#111827",
-  };
-
-  // Styles for the description
-  const descriptionStyles = {
-    marginBottom: "1.5rem",
-    fontSize: "1.125rem",
-    color: "#FCFCFC",
-    maxWidth: "36rem",
-    marginLeft: "auto",
-    marginRight: "auto",
-  };
-
-  // Styles for the link button
-  const buttonStyles = {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "0.75rem 1.5rem",
-    border: "1px solid transparent",
-    borderRadius: "0.375rem",
-    fontWeight: 500,
-    backgroundColor: "#5B90B0",
-    color: "white",
-    textDecoration: "none",
-    transition: "background-color 0.3s ease",
-    cursor: "pointer",
-  };
-
   return (
-    <section style={sectionStyles}>
-      <div style={containerStyles}>
-        <div style={globeContainerStyles}>
+    <section className="py-12 md:py-20 px-4 md:px-6 w-full relative overflow-hidden">
+      <div className="w-full max-w-7xl mx-auto">
+        <div className="relative h-[300px] md:h-[500px] w-full rounded-xl md:rounded-2xl overflow-hidden shadow-lg md:shadow-xl">
           {/* Background gradient */}
-          <div style={gradientStyles}></div>
+          <div 
+            className="absolute inset-0 z-0 opacity-15"
+            style={{
+              background: "linear-gradient(90deg, #3A5F77 0%, #9CAEB8 100%)"
+            }}
+          />
 
           {/* Globe Visualization */}
-          <div style={globeStyles}>
+          <div className="absolute inset-0 z-10">
             <SimpleGlobe
               color="#5B90B0"
               wireframe={true}
@@ -150,20 +57,30 @@ export const GlobeOverlaySection = () => {
           </div>
 
           {/* Content Overlay */}
-          <div style={overlayStyles}>
-            <div style={contentBoxStyles}>
-              {/* Primary caption - large size */}
-              <p style={captionStyles}>AI Without Borders</p>
-              {/* Secondary headline - medium size */}
-              <h2 style={headlineStyles}>
+          <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col items-center p-4 md:p-6 text-center">
+            <div className="max-w-2xl md:max-w-4xl backdrop-blur-sm bg-white/20 dark:bg-black/20 p-4 md:p-6 rounded-t-xl md:rounded-t-2xl">
+              {/* Primary caption */}
+              <p className="text-xl md:text-4xl font-medium text-[#5B90B0] mb-2 md:mb-3">
+                AI Without Borders
+              </p>
+              
+              {/* Secondary headline */}
+              <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 leading-tight text-gray-900 dark:text-white">
                 Scalable Solutions, Universal Impact
               </h2>
-              <p style={descriptionStyles}>
+              
+              {/* Description */}
+              <p className="mb-4 md:mb-6 text-sm md:text-lg text-white/90 dark:text-gray-100 max-w-lg md:max-w-2xl mx-auto leading-relaxed">
                 We deliver trusted AI strategies that scale from regional
                 operations to worldwide expansion—helping your business unlock
                 sustainable growth wherever opportunity arises.
               </p>
-              <Link href={"/#solutions" as Route<string>} style={buttonStyles}>
+              
+              {/* CTA Button */}
+              <Link 
+                href={"/#solutions" as Route<string>} 
+                className="inline-flex items-center px-4 md:px-6 py-2 md:py-3 border border-transparent rounded-md font-medium bg-[#5B90B0] text-white hover:bg-[#4a7a96] transition-colors duration-300 text-sm md:text-base"
+              >
                 Explore Our Solutions
               </Link>
             </div>
