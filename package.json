@@ -84,7 +84,10 @@
     "audit:deps": "npm audit",
     "audit:signatures": "npm audit signatures",
     "build:prod": "NODE_ENV=production next build",
-    "check:deps": "npm install --strict-peer-deps"
+    "check:deps": "npm install --strict-peer-deps",
+    "validate": "./scripts/validate-before-push.sh",
+    "validate:quick": "./scripts/validate-before-push.sh --quick",
+    "validate:pre-commit": "./scripts/pre-commit-validation.sh"
   },
   "dependencies": {
     "@react-three/fiber": "8.15.16",
