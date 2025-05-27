@@ -106,6 +106,7 @@ main() {
     log_header "1. DEPENDENCY VALIDATION"
     run_test_step "Node.js version check" "node --version | grep -E 'v20\.[0-9]+\.[0-9]+'"
     run_test_step "NPM dependency check" "npm ci --silent"
+    run_test_step "Dependency lock validation" "npm run lock:validate" true
     
     # 2. CODE QUALITY
     log_header "2. CODE QUALITY CHECKS"

@@ -87,7 +87,12 @@
     "check:deps": "npm install --strict-peer-deps",
     "validate": "./scripts/validate-before-push.sh",
     "validate:quick": "./scripts/validate-before-push.sh --quick",
-    "validate:pre-commit": "./scripts/pre-commit-validation.sh"
+    "validate:pre-commit": "./scripts/pre-commit-validation.sh",
+    "lock:check": "./scripts/dependency-lock.sh check",
+    "lock:freeze": "./scripts/dependency-lock.sh freeze",
+    "lock:audit": "./scripts/dependency-lock.sh audit",
+    "lock:report": "./scripts/dependency-lock.sh report",
+    "lock:validate": "./scripts/dependency-lock.sh validate"
   },
   "dependencies": {
     "@react-three/fiber": "8.15.16",

@@ -49,6 +49,13 @@ jobs:
           npm ci --omit=dev --silent
           echo "✅ Production dependencies installed"
 
+      - name: Dependency lock validation
+        run: |
+          # Validate dependency locking before build
+          echo "🔒 Validating dependency locks..."
+          npm run lock:validate
+          echo "✅ Dependency locks validated"
+
       - name: Quick build validation
         run: |
           # Minimal build check - local testing should have caught build issues

@@ -1,0 +1,35 @@
+npm warn config cache-max This option has been deprecated in favor of `--prefer-online`
+npm warn config shrinkwrap Use the --package-lock setting instead.
+npm warn config optional Use `--omit=optional` to exclude optional dependencies, or
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless otherwise omitted.
+# npm audit report
+
+cookie  <0.7.0
+cookie accepts cookie name, path, and domain with out of bounds characters - https://github.com/advisories/GHSA-pxg6-pf52-xh8x
+No fix available
+node_modules/cookie
+  @azure/static-web-apps-cli  *
+  Depends on vulnerable versions of cookie
+  node_modules/@azure/static-web-apps-cli
+
+libxmljs2  *
+Severity: critical
+libxmljs2 vulnerable to type confusion when parsing specially crafted XML - https://github.com/advisories/GHSA-78h3-pg4x-j8cv
+fix available via `npm audit fix`
+node_modules/libxmljs2
+  @cyclonedx/cyclonedx-library  >=1.14.0-rc.0
+  Depends on vulnerable versions of libxmljs2
+  node_modules/@cyclonedx/cyclonedx-library
+    @cyclonedx/cyclonedx-npm  >=1.11.0
+    Depends on vulnerable versions of @cyclonedx/cyclonedx-library
+    node_modules/@cyclonedx/cyclonedx-npm
+
+5 vulnerabilities (2 low, 3 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+Some issues need review, and may require choosing
+a different dependency.
