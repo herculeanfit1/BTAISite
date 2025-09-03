@@ -42,6 +42,30 @@ RESEND_TEST_MODE=false  # Set to true for testing without sending real emails
 5. Click **Save** at the top
 6. The next deployment will pick up these variables automatically
 
+## Testing the Email System
+
+After configuration, you can test the email system by:
+
+1. **Using the contact form** on the website
+2. **Direct API testing** with curl:
+   ```bash
+   curl -X POST https://bridgingtrust.ai/api/contact \
+     -H "Content-Type: application/json" \
+     -d '{
+       "firstName": "Test",
+       "lastName": "User",
+       "email": "test@example.com",
+       "company": "Test Company",
+       "message": "Test message",
+       "_gotcha": ""
+     }'
+   ```
+
+A successful response will look like:
+```json
+{"success": true, "message": "Emails sent successfully"}
+```
+
 ## Email Addresses Setup
 
 The following email addresses have been created and configured:
