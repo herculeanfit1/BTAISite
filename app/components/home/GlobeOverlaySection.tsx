@@ -14,6 +14,7 @@ export const GlobeOverlaySection = () => {
         <p className="text-xl md:text-4xl font-medium text-[#5B90B0] mb-4 md:mb-6">
           AI Without Borders
         </p>
+        {/* Force deployment refresh - v2 */}
         <h2 
           className="text-lg md:text-2xl font-bold mb-4 md:mb-6 leading-tight text-center"
           style={{ color: '#9ca3af' }} // gray-400 equivalent for consistent light color
