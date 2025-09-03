@@ -1,68 +1,63 @@
 # Bridging Trust AI Website
 
-[![CI/CD Pipeline](https://github.com/herculeanfit1/BridgingTrustAISite/actions/workflows/deploy.yml/badge.svg)](https://github.com/herculeanfit1/BridgingTrustAISite/actions/workflows/deploy.yml)
+[![CI/CD Pipeline](https://github.com/herculeanfit1/BTAISite/actions/workflows/cost-optimized-ci.yml/badge.svg)](https://github.com/herculeanfit1/BTAISite/actions/workflows/cost-optimized-ci.yml)
 
-A modern website for the Bridging Trust AI consultancy, focusing on ethical and trustworthy AI implementations.
+A modern, responsive website for Bridging Trust AI consultancy, built with Next.js 15.4.6 and deployed on Azure Static Web Apps. Features a clean design, working contact form with email integration, and mobile-optimized layouts.
 
 ## Recent Updates
 
-### 🌙 Dark Mode Implementation (Latest)
+### 📧 Email System & Mobile Optimization (Latest)
 
-- **Complete Dark Mode System**: Implemented comprehensive dark mode with system preference detection
-- **Smooth Transitions**: Beautiful 200ms transitions between light and dark themes
-- **Accessibility Compliant**: WCAG AA compliant with proper ARIA labels and keyboard navigation
-- **Mobile Responsive**: Theme toggle available on both desktop and mobile navigation
-- **Comprehensive Testing**: 100% test coverage with unit, integration, and E2E tests
-- **Brand Consistent**: Custom color palette that maintains brand identity in both themes
+- **Working Contact Form**: Fully functional contact form with Resend email integration
+- **Dual Email Delivery**: User confirmation and admin notification emails
+- **Mobile Layout Fixed**: Proper spacing, alignment, and responsive design across all devices
+- **Security Improvements**: Removed exposed API keys, implemented proper environment variable management
+- **Clean Codebase**: Removed duplicate components and Azure Function email system
 
-### Navigation and Page Structure
+### Site Structure & Content
 
-- **Simplified Navigation**: Consolidated site navigation with sections on the main page (Solutions, About, Contact)
-- **Enhanced Solutions Section**: Updated all solution links to point to the coming-soon page
-- **Improved Header**: Increased company logo size by 30% and made the navigation buttons right-justified
-- **Improved Footer**: Removed duplicate quick links and adjusted horizontal divider
-- **Privacy Enhancements**: Removed contact information (email, phone, address) from the Contact section
-- **Streamlined UI**: Removed the "Learn More" button from the hero section
-- **Coming Soon Page**: Removed NextJS feature cards section from the coming-soon page
+- **Single Page Application**: All content consolidated into main page with anchor navigation
+- **Five Main Sections**: Hero, Leveling the Playing Field, Solutions, About Us (Founders), Contact
+- **Responsive Design**: Optimized layouts for mobile and desktop with proper breakpoint handling
+- **Founder Profiles**: Updated co-founder information with simplified titles
+- **Solutions Showcase**: Two-column desktop, single-column mobile layout for service offerings
 
-### Content Improvements
+### Technical Infrastructure
 
-- **Updated Headline**: Enhanced the headline and subheadings with more compelling content
-- **Improved Mission**: Updated "Our Story" section with revised company mission
-- **Solutions Focus**: Made the "Our Solutions" heading more prominent (larger, bold, centered)
+- **Next.js 15.4.6**: Latest stable version with App Router architecture
+- **Azure Static Web Apps**: Production deployment with CI/CD via GitHub Actions
+- **Internationalization Ready**: Multi-locale support structure in place
+- **Email Integration**: Resend API with rate limiting and bot protection
 
-## Static Export Approach
+## Deployment Architecture
 
-This website is configured as a fully static site using Next.js static export. This approach has several benefits:
+This website is deployed on **Azure Static Web Apps** with server-side API routes for email functionality. The architecture combines static site benefits with dynamic capabilities:
 
-- **Improved Performance**: Static sites load faster and have better core web vitals scores
-- **Simpler Hosting**: Can be deployed to any static hosting service (CDN, Azure Static Web Apps, etc.)
-- **Enhanced Security**: Reduced attack surface with no server-side code execution
-- **Lower Costs**: Static hosting is typically much less expensive than server-based options
+- **Static Frontend**: Pre-rendered pages for optimal performance and SEO
+- **API Routes**: Server-side endpoints for contact form processing and email delivery
+- **CDN Distribution**: Global content delivery with edge caching
+- **Automated Deployment**: CI/CD pipeline via GitHub Actions
 
-Key configuration points:
+### Key Configuration
 
-- `output: "export"` is set in next.config.js
-- Images are configured with `unoptimized: true` for static export compatibility
-- No middleware is used (incompatible with static export)
-- Security headers are managed via staticwebapp.config.json
-- Redirects and routing are handled at the hosting level
+- **No Static Export**: Removed `output: "export"` to enable API routes
+- **Images Unoptimized**: Compatible with Azure Static Web Apps hosting
+- **Security Headers**: Managed via `staticwebapp.config.json`
+- **Cache Control**: Optimized caching strategy for faster deployments
 
 ### Building for Deployment
-
-To generate a static build for deployment:
 
 ```bash
 npm run build
 ```
 
-This will output static files to the `out` directory, which can be deployed to any static hosting service.
+The build process creates optimized static assets and API functions that are automatically deployed to Azure Static Web Apps via GitHub Actions.
 
 ## Node.js Version Requirements
 
 ### Overview
 
-This project requires Node.js LTS (v20.x) for optimal compatibility with React 19 and Next.js 15.3.2. We've completed a comprehensive upgrade from previous versions to ensure the codebase takes full advantage of modern features and security improvements.
+This project requires Node.js LTS (v20.x) for optimal compatibility with React 19 and Next.js 15.4.6. The codebase is optimized for modern JavaScript features and enhanced security.
 
 ### Required Node.js Version
 
@@ -72,46 +67,21 @@ This project requires Node.js LTS (v20.x) for optimal compatibility with React 1
 
 ### Technology Stack
 
-- **React**: 19.0.0 (upgraded from 18.2.0)
-- **Next.js**: 15.3.2
-- **TypeScript**: Latest version
-- **Tailwind CSS**: v4
-- **Docker**: For production deployment and CI
-- **Nginx**: For SSL termination and proxy
-- **Certbot**: For automatic SSL certificate management
+- **React**: 19.0.0
+- **Next.js**: 15.4.6
+- **TypeScript**: 5.4.5
+- **Styling**: CSS-in-JS with inline styles (Safari-optimized)
+- **Email Service**: Resend API
+- **Hosting**: Azure Static Web Apps
+- **CI/CD**: GitHub Actions
 
-### Recent Improvements
+### Development Features
 
-#### Security Enhancements
-
-- Implemented comprehensive SSL configuration with Let's Encrypt
-- Created a flexible server configuration supporting dev, CI, and production environments
-- Replaced all HTML anchor tags with Next.js Link components for proper client-side navigation
-- Fixed unsafe window object usage with proper Next.js hooks
-- Implemented improved error handling in API routes
-- Added comprehensive type checking to prevent object injection vulnerabilities
-- Enhanced security of form handling with proper validation
-
-#### DevOps and Deployment
-
-- Streamlined CI process with Docker configuration
-- Added HTTP-only mode for CI testing
-- Created scripts for automatic SSL certificate generation and renewal
-- Configured Nginx for SSL termination and proper proxy behavior
-- Improved production deployment documentation
-
-#### User Experience Updates
-
-- Consolidated About page content into the main page for improved user flow
-- Updated navigation to use anchor links to page sections instead of separate pages
-- Improved error boundary implementation for better error handling
-
-#### Code Quality
-
-- Re-enabled TypeScript strict type checking
-- Fixed ESLint warnings and errors
-- Improved API error handling and responses
-- Enhanced component structure for better maintainability
+- **Hot Reloading**: Instant updates during development
+- **TypeScript**: Full type safety with strict mode enabled
+- **ESLint**: Code quality enforcement with auto-fixing
+- **Component Architecture**: Modular, reusable React components
+- **Responsive Hooks**: Custom hooks for breakpoint detection
 
 ### Installation & Setup
 
@@ -130,89 +100,48 @@ node -v  # Should output v20.x.x
 npm -v   # Should show the compatible npm version
 ```
 
-## Server Implementation
+## Development
 
-This project can be run using two different server implementations:
+### Local Development
 
-1. **Default Next.js Server** (recommended for development):
-
-   ```bash
-   npm run dev:next
-   ```
-
-2. **Custom Server** (with enhanced features):
-   ```bash
-   npm run dev
-   ```
-
-The custom server implementation in `server.js` adds:
-
-- Dynamic SSL certificate handling
-- Environment-specific configuration
-- Content-type header handling
-- Comprehensive logging
-
-## Environment Modes
-
-The application supports several environment modes:
-
-### Development Mode
+Start the development server:
 
 ```bash
-npm run dev
+# Install dependencies
+npm install
+
+# Start development server (recommended)
+npm run dev:http
+
+# Alternative: Standard Next.js dev server
+npm run dev:next
 ```
 
-Features:
+The site will be available at `http://localhost:3000`.
 
-- Hot reloading
-- Self-signed SSL certificates
-- HTTPS by default
-
-### CI/Testing Mode
+### Development Scripts
 
 ```bash
-CI=true npm run dev
+npm run dev:http     # HTTP development server (recommended)
+npm run dev          # HTTPS development server  
+npm run build        # Production build
+npm run start        # Production server
+npm run lint         # ESLint checking
+npm run lint:fix     # Auto-fix ESLint issues
+npm run type-check   # TypeScript validation
 ```
 
-Features:
+### Environment Setup
 
-- HTTP-only mode
-- No SSL certificates required
-- Simplified configuration for testing
-
-### Production Mode
+For local email testing, create `.env.local`:
 
 ```bash
-NODE_ENV=production SSL_CERT_ENV=prod npm run start
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_FROM=hello@bridgingtrust.ai
+EMAIL_TO=sales@bridgingtrust.ai
+EMAIL_ADMIN=admin@bridgingtrust.ai
+RESEND_TEST_MODE=true
 ```
-
-Features:
-
-- Let's Encrypt SSL certificates
-- HTTPS with proper certificate chain
-- Performance optimizations
-
-## Docker Deployment
-
-### Development
-
-```bash
-docker-compose up --build
-```
-
-### CI/Testing
-
-```bash
-CI=true docker-compose up --build
-```
-
-### Production
-
-```bash
-SSL_CERT_ENV=prod docker-compose up --build
-```
-
-For more details, see [Deployment Guide](docs/deployment.md) and [Production Deployment](docs/production-deployment.md).
 
 ## UI Testing
 
@@ -296,3 +225,71 @@ For pre-commit testing of affected components:
 ```bash
 npm run test:docker:affected
 ```
+
+## Email System
+
+The website features a fully functional contact form with email integration using Resend API.
+
+### Features
+
+- **Dual Email Delivery**: Sends confirmation email to user and notification to admin
+- **Rate Limiting**: 5 submissions per hour per IP address
+- **Bot Protection**: Honeypot field to prevent automated spam
+- **Circuit Breaker**: Automatic failover for service reliability
+- **Professional Templates**: HTML email templates with company branding
+
+### Environment Variables
+
+The following environment variables must be configured in Azure Static Web Apps:
+
+```bash
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_FROM=hello@bridgingtrust.ai
+EMAIL_TO=sales@bridgingtrust.ai
+EMAIL_ADMIN=admin@bridgingtrust.ai
+RESEND_TEST_MODE=false
+```
+
+### Testing
+
+Test the email system locally or in production:
+
+```bash
+curl -X POST https://bridgingtrust.ai/api/contact \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test@example.com",
+    "company": "Test Company",
+    "message": "Test message",
+    "_gotcha": ""
+  }'
+```
+
+For more details, see [Email Setup Documentation](docs/email-setup.md).
+
+## Site Structure
+
+The website is a single-page application with five main sections:
+
+1. **Hero Section**: Main headline and call-to-action
+2. **Leveling Section**: "Empowering Ambitious Businesses" content
+3. **Solutions Section**: Service offerings (AI Leadership Accelerator, Governance & Compliance)
+4. **About Section**: Company story, mission, and founder profiles
+5. **Contact Section**: Working contact form with email integration
+
+### Responsive Design
+
+- **Mobile-First**: Optimized layouts for all device sizes
+- **Breakpoint**: 768px for mobile/desktop transition
+- **Touch-Friendly**: Proper spacing and touch targets on mobile
+- **Performance**: Lazy loading and optimized images
+
+## Security
+
+- **Environment Variables**: All secrets stored securely, never in code
+- **Rate Limiting**: API endpoints protected against abuse
+- **Input Validation**: Comprehensive form validation with Zod schemas
+- **CSRF Protection**: Honeypot fields and proper request validation
+- **Security Headers**: Configured via `staticwebapp.config.json`
