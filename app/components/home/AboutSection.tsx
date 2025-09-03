@@ -65,7 +65,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                 </div>
                 <h3 style={styles.founderName}>Bill Schneider</h3>
                 <p style={styles.founderRole}>
-                  Co-Founder & Chief Executive Officer
+                  Co-Founder
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
                   Bill Schneider helps organizations unlock the potential of
@@ -94,7 +94,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                 </div>
                 <h3 style={styles.founderName}>Terence Kolstad</h3>
                 <p style={styles.founderRole}>
-                  Co-Founder & Chief Technology Officer
+                  Co-Founder
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
                   Terence Kolstad is a Minnesota‑based IT strategist with 18
