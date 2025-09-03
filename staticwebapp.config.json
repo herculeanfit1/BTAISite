@@ -11,14 +11,14 @@
     {
       "route": "/",
       "headers": {
-        "cache-control": "public, max-age=300, must-revalidate, s-maxage=300",
+        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
         "vary": "Accept-Encoding"
       }
     },
     {
       "route": "/*.html",
       "headers": {
-        "cache-control": "public, max-age=300, must-revalidate, s-maxage=300",
+        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
         "vary": "Accept-Encoding"
       }
     },
@@ -31,13 +31,13 @@
     {
       "route": "/*.js",
       "headers": {
-        "cache-control": "public, max-age=86400"
+        "cache-control": "public, max-age=3600"
       }
     },
     {
       "route": "/*.css",
       "headers": {
-        "cache-control": "public, max-age=86400"
+        "cache-control": "public, max-age=3600"
       }
     },
     {

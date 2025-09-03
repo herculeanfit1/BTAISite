@@ -154,8 +154,10 @@ jobs:
         run: |
           echo "🏗️ Building for Azure deployment..."
           rm -rf .next
+          # Add cache-busting timestamp to force new deployment
+          echo "BUILD_TIMESTAMP=$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
           npm run build
-          echo "✅ Build completed for deployment"
+          echo "✅ Build completed for deployment at $(date -u)"
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
