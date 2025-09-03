@@ -27,8 +27,20 @@ RESEND_API_KEY=re_VfqTfjKa_8H68ZhmoMGw8rSAmBrqwj1TC
 EMAIL_FROM=hello@bridgingtrust.ai
 EMAIL_TO=sales@bridgingtrust.ai
 EMAIL_ADMIN=admin@bridgingtrust.ai
-RESEND_TEST_MODE=true  # Set to false in production
+RESEND_TEST_MODE=false  # Set to true for testing without sending real emails
 ```
+
+## How to Configure in Azure Static Web Apps
+
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to your Static Web App resource
+3. Go to **Configuration** → **Application settings**
+4. Add each environment variable:
+   - Click **+ Add**
+   - Enter the **Name** and **Value**
+   - Click **OK**
+5. Click **Save** at the top
+6. The next deployment will pick up these variables automatically
 
 ## Email Addresses Setup
 
