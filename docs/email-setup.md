@@ -23,7 +23,7 @@ Contact Form → Next.js API Route → Resend API → Email Delivery
 Set these in your Azure Static Web Apps configuration:
 
 ```bash
-RESEND_API_KEY=re_VfqTfjKa_8H68ZhmoMGw8rSAmBrqwj1TC
+RESEND_API_KEY=your_resend_api_key_here
 EMAIL_FROM=hello@bridgingtrust.ai
 EMAIL_TO=sales@bridgingtrust.ai
 EMAIL_ADMIN=admin@bridgingtrust.ai

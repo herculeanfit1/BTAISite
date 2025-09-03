@@ -2,7 +2,7 @@
 # Copy this to .env.local for local development
 
 # Resend API Configuration
-RESEND_API_KEY=re_VfqTfjKa_8H68ZhmoMGw8rSAmBrqwj1TC
+RESEND_API_KEY=your_resend_api_key_here
 
 # Email Addresses
 EMAIL_FROM=hello@bridgingtrust.ai
