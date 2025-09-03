@@ -9,7 +9,6 @@ import { buttonStyles } from "@/app/styles/components/buttons";
  * HeroSection Component
  *
  * The main banner with headline for the homepage.
- * Features a background color and centered text content.
  *
  * @returns {JSX.Element} The rendered hero section
  */
