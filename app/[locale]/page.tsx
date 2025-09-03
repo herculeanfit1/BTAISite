@@ -3,6 +3,7 @@ import { HeroSection } from "../components/HeroSection";
 import { FeatureSection } from "../components/FeatureSection";
 import { TestimonialSection } from "../components/TestimonialSection";
 import { Timeline } from "../components/Timeline";
+import { GlobeOverlaySection } from "../components/home/GlobeOverlaySection";
 import { Route } from "next";
 
 export const metadata: Metadata = {
@@ -79,6 +80,9 @@ export default async function Home(props: PageProps) {
 
       {/* Feature Section */}
       <FeatureSection title="Our Approach" features={features} />
+
+      {/* AI Without Borders Section */}
+      <GlobeOverlaySection />
 
       {/* Testimonial Section */}
       <TestimonialSection
