@@ -9,7 +9,7 @@ import { CSSProperties } from "react";
 export const heroStyles: Record<string, CSSProperties> = {
   // Main hero section with flexbox centering
   hero: {
-    paddingTop: "6rem", // Increased top padding to account for fixed navigation on mobile
+    paddingTop: "8rem", // Increased mobile top padding for better spacing
     paddingBottom: "0.6rem", // Reduced bottom padding by 50% (1.2rem -> 0.6rem)
     paddingLeft: "1.5rem",
     paddingRight: "1.5rem",
@@ -24,10 +24,10 @@ export const heroStyles: Record<string, CSSProperties> = {
   
   // Desktop-specific hero styles
   heroDesktop: {
-    paddingTop: "1.2rem", // Original padding for desktop
+    paddingTop: "2rem", // Increased desktop top padding for better balance
     paddingBottom: "0.6rem",
-    paddingLeft: "1.5rem",
-    paddingRight: "1.5rem",
+    paddingLeft: "4rem", // Increased horizontal padding for desktop
+    paddingRight: "4rem", // Increased horizontal padding for desktop
     textAlign: "center",
     width: "100%",
     minHeight: "70vh",

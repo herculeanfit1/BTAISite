@@ -40,6 +40,9 @@ export const HeroSection = () => {
             ...typographyStyles.heading1,
             ...typographyStyles.headingLarge,
             color: "white",
+            marginBottom: isDesktop ? "2rem" : "1.5rem", // More spacing on desktop
+            maxWidth: isDesktop ? "900px" : "100%", // Wider text container on desktop
+            lineHeight: isDesktop ? 1.3 : 1.2, // Better line height on desktop
           }}
         >
           Making AI accessible and beneficial for everyone
@@ -48,8 +51,12 @@ export const HeroSection = () => {
           style={{
             ...typographyStyles.paragraph,
             color: "#E5E7EB",
-            maxWidth: "800px",
-            margin: "0 auto 2rem auto",
+            maxWidth: isDesktop ? "700px" : "100%", // Responsive max width
+            margin: isDesktop ? "0 auto 3rem auto" : "0 auto 2rem auto", // More bottom margin on desktop
+            fontSize: isDesktop ? "1.25rem" : "1rem", // Larger text on desktop
+            lineHeight: 1.6,
+            paddingLeft: isDesktop ? "2rem" : "0", // Extra horizontal padding on desktop
+            paddingRight: isDesktop ? "2rem" : "0",
           }}
         >
           We bridge the gap between advanced AI technology and human-centered
