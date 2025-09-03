@@ -20,8 +20,11 @@ export const FeaturesSection = ({ isDesktop }: FeaturesSectionProps) => {
         <div
           style={{
             display: "grid",
-            gap: "2rem",
-            gridTemplateColumns: isDesktop ? "repeat(3, 1fr)" : "1fr",
+            gap: isDesktop ? "2rem" : "1.5rem",
+            gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr",
+            maxWidth: isDesktop ? "none" : "400px",
+            margin: isDesktop ? "0" : "0 auto",
+            padding: isDesktop ? "0" : "0 1rem",
           }}
         >
           {features.map((feature) => (

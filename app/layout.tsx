@@ -1,6 +1,4 @@
 import "./globals.css";
-import { NavBar } from "./components/NavBar";
-import { Footer } from "./components/Footer";
 
 export const metadata = {
   title: "Bridging Trust AI - Making AI Accessible",
@@ -49,9 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="m-0 flex min-h-screen flex-col p-0 bg-white text-gray-900 transition-colors duration-200 dark:bg-gray-900 dark:text-gray-100">
-        <NavBar />
         <main className="mt-8 flex-grow">{children}</main>
-        <Footer />
       </body>
     </html>
   );

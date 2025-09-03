@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { heroStyles } from "@/app/styles/sections/hero";
 import { typographyStyles } from "@/app/styles/components/typography";
 import { layoutStyles } from "@/app/styles/components/layout";
@@ -13,8 +14,25 @@ import { buttonStyles } from "@/app/styles/components/buttons";
  * @returns {JSX.Element} The rendered hero section
  */
 export const HeroSection = () => {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsDesktop(window.innerWidth >= 768);
+      
+      const handleResize = () => {
+        setIsDesktop(window.innerWidth >= 768);
+      };
+
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
+  const heroStyle = isDesktop ? heroStyles.heroDesktop : heroStyles.hero;
+
   return (
-    <section style={{ ...heroStyles.hero, backgroundColor: "#3A5F77" }}>
+    <section style={{ ...heroStyle, backgroundColor: "#3A5F77" }}>
       <div style={layoutStyles.overlay}></div>
       <div style={layoutStyles.container}>
         <h1

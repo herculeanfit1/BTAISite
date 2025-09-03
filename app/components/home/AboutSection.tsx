@@ -55,7 +55,12 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                       gridTemplateColumns: "repeat(2, 1fr)",
                       maxWidth: "100%",
                     }
-                  : styles.grid
+                  : {
+                      ...styles.grid,
+                      maxWidth: "400px",
+                      margin: "0 auto",
+                      padding: "0 1rem",
+                    }
               }
             >
               {/* Founder 1 - Bill (now first) */}
