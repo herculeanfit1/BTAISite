@@ -109,12 +109,12 @@ run_gate() {
             local gate_end=$(date +%s)
             local gate_duration=$((gate_end - gate_start))
             log_success "$gate_name (${gate_duration}s) - $gate_description"
-            ((GATES_PASSED++))
+            GATES_PASSED=$((GATES_PASSED + 1))
         else
             local gate_end=$(date +%s)
             local gate_duration=$((gate_end - gate_start))
             log_error "$gate_name (${gate_duration}s) - $gate_description"
-            ((GATES_FAILED++))
+            GATES_FAILED=$((GATES_FAILED + 1))
             return 1
         fi
     else
@@ -122,12 +122,12 @@ run_gate() {
             local gate_end=$(date +%s)
             local gate_duration=$((gate_end - gate_start))
             log_success "$gate_name (${gate_duration}s) - $gate_description"
-            ((GATES_PASSED++))
+            GATES_PASSED=$((GATES_PASSED + 1))
         else
             local gate_end=$(date +%s)
             local gate_duration=$((gate_end - gate_start))
             log_error "$gate_name (${gate_duration}s) - $gate_description"
-            ((GATES_FAILED++))
+            GATES_FAILED=$((GATES_FAILED + 1))
             return 1
         fi
     fi
