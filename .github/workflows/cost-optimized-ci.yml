@@ -3,8 +3,11 @@ name: Azure Static Web Apps Deployment
 # =============================================================================
 # COST-OPTIMIZED GITHUB ACTIONS WORKFLOW
 # =============================================================================
-# This workflow uses the new quality gate system (ci/g_master.sh) to ensure
-# code quality while minimizing GitHub Actions costs through local-first testing
+# COST OPTIMIZATION STRATEGY:
+# - Main branch pushes: Direct deployment only (local validation assumed)
+# - Pull requests: Full quality gates + deployment (external contributions)
+# - Local CI/CD: Run ./ci/g_master.sh before pushing to main
+# - GitHub Actions: Minimal cloud compute usage for maximum cost efficiency
 # =============================================================================
 
 on:
@@ -29,10 +32,9 @@ jobs:
   # =============================================================================
   # QUALITY GATE VALIDATION JOB
   # =============================================================================
-  # Runs comprehensive quality gates using ci/g_master.sh
-  # Local testing should have caught issues, but this provides final validation
+  # Only runs for PRs - main branch pushes skip this (local validation required)
   quality-gate-validation:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 20  # Increased timeout for comprehensive quality gates
     
@@ -87,12 +89,62 @@ jobs:
           echo "✅ Security scan completed"
 
   # =============================================================================
-  # AZURE DEPLOYMENT JOB
+  # DIRECT DEPLOYMENT JOB (main branch pushes only)
   # =============================================================================
-  # Deploy to Azure Static Web Apps with minimal overhead
-  deploy-to-azure:
+  # Deploy directly to Azure - local validation assumed complete
+  deploy-main-to-azure:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Fast deployment only
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          lfs: false
+
+      - name: Setup Node.js (cached)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.1'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --silent
+
+      - name: Build for deployment
+        run: |
+          echo "🏗️ Building for Azure deployment..."
+          rm -rf .next
+          npm run build
+          echo "✅ Build completed for deployment"
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/"
+          api_location: ""
+          output_location: ""
+          skip_app_build: false
+        env:
+          NODE_VERSION: "20.19.1"
+
+      - name: Post-deployment verification
+        run: |
+          echo "✅ Deployment completed"
+          echo "🌐 Site available at Azure Static Web Apps URL"
+
+  # =============================================================================
+  # PR DEPLOYMENT JOB (with quality gates)
+  # =============================================================================
+  # Deploy PRs only after full validation
+  deploy-pr-to-azure:
     needs: quality-gate-validation
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 15  # Strict timeout for deployment
     
@@ -112,22 +164,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --silent
 
-      - name: Setup tools and scripts
-        run: |
-          # Only install jq if needed, skip script setup for deployment
-          sudo apt-get update -qq && sudo apt-get install -y jq
-
       - name: Build for deployment
         run: |
-          echo "🏗️ Building for Azure deployment..."
+          echo "🏗️ Building PR for Azure deployment..."
           rm -rf .next
-          # Add cache-busting timestamp to force new deployment
-          echo "BUILD_TIMESTAMP=$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
           npm run build
-          echo "✅ Build completed for deployment at $(date -u)"
+          echo "✅ Build completed for PR deployment"
 
-      - name: Deploy to Azure Static Web Apps
-        id: builddeploy
+      - name: Deploy PR to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE }}
@@ -139,13 +183,6 @@ jobs:
           skip_app_build: false
         env:
           NODE_VERSION: "20.19.1"
-
-      - name: Post-deployment verification
-        run: |
-          echo "⏳ Waiting for deployment to stabilize..."
-          sleep 30
-          echo "✅ Deployment completed"
-          echo "🌐 Site should be available at Azure Static Web Apps URL"
 
   # =============================================================================
   # CLEANUP JOB (for PRs)
@@ -169,7 +206,7 @@ jobs:
   # Track workflow costs and duration
   cost-monitoring:
     if: always()
-    needs: [quality-gate-validation, deploy-to-azure]
+    needs: [deploy-main-to-azure, deploy-pr-to-azure]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     
@@ -186,11 +223,11 @@ jobs:
           echo "Started: $(date -u)"
           echo ""
           echo "💰 COST OPTIMIZATION NOTES:"
-          echo "- Quality gate system (ci/g_master.sh) for comprehensive validation"
-          echo "- Local testing completed before push"
-          echo "- Minimal GitHub Actions usage"
-          echo "- Production dependencies only"
+          echo "- Main branch: Direct deployment (local validation required)"
+          echo "- Pull requests: Full quality gates + deployment"
+          echo "- No duplicate testing in GitHub Actions for main pushes"
+          echo "- Fast deployment-only workflow for production"
           echo "- Strict timeouts enforced"
           echo "- Concurrent runs cancelled"
           echo ""
-          echo "✅ Cost-optimized workflow with quality gates completed" 
+          echo "✅ Cost-optimized workflow completed" 
