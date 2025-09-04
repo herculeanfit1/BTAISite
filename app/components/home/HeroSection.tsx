@@ -36,18 +36,12 @@ export const HeroSection = () => {
       <div style={layoutStyles.overlay}></div>
       <div style={layoutStyles.container}>
         <h1
+          className="font-extrabold leading-[1.05] text-center mx-auto w-full mt-0 mb-6 sm:mb-8"
           style={{
-            ...typographyStyles.heading1,
-            ...typographyStyles.headingLarge,
+            fontSize: 'clamp(2rem, 8vw, 4rem)',
+            textWrap: 'balance',
             color: "white",
-            maxWidth: isDesktop ? "900px" : "100%", // Wider text container on desktop
-            lineHeight: isDesktop ? 1.3 : 1.2, // Better line height on desktop
-            textAlign: "center", // Center the text
-            width: "100%", // Ensure full width
-            marginLeft: "auto", // Center horizontally
-            marginRight: "auto", // Center horizontally
-            marginTop: "0",
-            marginBottom: isDesktop ? "2rem" : "1.5rem", // Bottom spacing
+            maxWidth: isDesktop ? "900px" : "100%",
           }}
         >
           Making AI accessible and beneficial for everyone

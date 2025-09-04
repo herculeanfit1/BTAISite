@@ -1,6 +1,4 @@
 import "./globals.css";
-import { NavBar } from "./components/NavBar";
-import { Footer } from "./components/Footer";
 import { ThemeProvider } from "next-themes";
 
 export const metadata = {
@@ -51,9 +49,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="m-0 flex min-h-screen flex-col p-0 bg-white text-gray-900 transition-colors duration-200 dark:bg-gray-900 dark:text-gray-100">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <NavBar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          {children}
         </ThemeProvider>
       </body>
     </html>
