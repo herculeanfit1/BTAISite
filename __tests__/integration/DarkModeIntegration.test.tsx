@@ -175,11 +175,8 @@ describe('Dark Mode Integration', () => {
     const themeToggle = screen.getByTestId('dark-mode-toggle');
     
     // Test environment is inconsistent - just verify icon exists and changes
-    let icon = themeToggle.querySelector('svg');
+    const icon = themeToggle.querySelector('svg');
     expect(icon).toBeInTheDocument();
-    
-    // Get initial state
-    const initialIconClass = icon?.className;
     
     // Click to toggle theme
     fireEvent.click(themeToggle);
