@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata = {
   title: "Bridging Trust AI - Making AI Accessible",
@@ -47,7 +48,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="m-0 flex min-h-screen flex-col p-0 bg-white text-gray-900 transition-colors duration-200 dark:bg-gray-900 dark:text-gray-100">
-        <main className="mt-8 flex-grow">{children}</main>
+        <Providers>
+          <main className="mt-8 flex-grow">{children}</main>
+        </Providers>
       </body>
     </html>
   );

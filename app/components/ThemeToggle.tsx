@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface ThemeToggleProps {
   className?: string;
@@ -8,8 +8,10 @@ interface ThemeToggleProps {
 
 export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
   const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -39,6 +41,11 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
       document.documentElement.classList.remove('dark');
     }
   };
+
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <button

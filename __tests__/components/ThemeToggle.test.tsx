@@ -37,20 +37,32 @@ describe('ThemeToggle', () => {
     
     // Reset document classes
     document.documentElement.className = '';
+    
+    // Mock window.matchMedia to return consistent results
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
   });
 
-  it('renders the theme toggle button', () => {
+  it('renders the theme toggle button', async () => {
     render(<ThemeToggle />);
     
-    const button = screen.getByTestId('dark-mode-toggle');
+    const button = await screen.findByTestId('dark-mode-toggle');
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
   });
 
-  it('starts in light mode by default', () => {
+  it('starts in light mode by default', async () => {
     render(<ThemeToggle />);
     
-    const button = screen.getByTestId('dark-mode-toggle');
+    const button = await screen.findByTestId('dark-mode-toggle');
     expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
     expect(button).toHaveAttribute('title', 'Switch to dark mode');
   });
