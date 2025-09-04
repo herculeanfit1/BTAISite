@@ -3,8 +3,8 @@ name: Azure Static Web Apps Deployment
 # =============================================================================
 # COST-OPTIMIZED GITHUB ACTIONS WORKFLOW
 # =============================================================================
-# This workflow assumes comprehensive testing was done locally via 
-# scripts/pre-commit-validation.sh to minimize GitHub Actions costs
+# This workflow uses the new quality gate system (ci/g_master.sh) to ensure
+# code quality while minimizing GitHub Actions costs through local-first testing
 # =============================================================================
 
 on:
@@ -14,17 +14,24 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened, closed]
 
+# Security: Minimal permissions
+permissions:
+  contents: read
+  id-token: write  # For Azure OIDC
+  pull-requests: read
+
 # Limit concurrent runs to save costs
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # =============================================================================
-  # MINIMAL VALIDATION JOB
+  # QUALITY GATE VALIDATION JOB
   # =============================================================================
-  # Only runs essential checks since local testing should have caught issues
-  minimal-validation:
+  # Runs comprehensive quality gates using ci/g_master.sh
+  # Local testing should have caught issues, but this provides final validation
+  quality-gate-validation:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     timeout-minutes: 10  # Strict timeout to control costs
@@ -49,82 +56,42 @@ jobs:
           npm ci --silent
           echo "✅ Dependencies installed"
 
-      - name: Setup tools and scripts
+      - name: Setup security tools
         run: |
-          # Install jq for dependency reporting (lightweight JSON processor)
+          # Install security tools
           sudo apt-get update -qq && sudo apt-get install -y jq
-          # Ensure script is executable
-          chmod +x scripts/dependency-lock.sh
-          # Verify script is working
-          echo "Testing script..."
-          ./scripts/dependency-lock.sh help
-          echo "✅ Tools and scripts ready"
+          # Install gitleaks for secret scanning
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /usr/local/bin
+          chmod +x /usr/local/bin/gitleaks
+          echo "✅ Security tools installed"
 
-      - name: Dependency lock validation
+      - name: Setup quality gate system
         run: |
-          # Validate dependency locking before build
-          echo "🔒 Validating dependency locks..."
-          echo "Current directory: $(pwd)"
-          echo "Script exists: $(ls -la scripts/dependency-lock.sh)"
-          
-          # Try custom script first, fallback to basic validation
-          if npm run lock:validate; then
-            echo "✅ Dependency locks validated with custom script"
-          else
-            echo "⚠️ Custom script failed, using fallback validation"
-            # Basic lockfile validation
-            if [ -f "package-lock.json" ]; then
-              echo "✅ package-lock.json exists"
-              if npm ci --dry-run > /dev/null 2>&1; then
-                echo "✅ Lockfile integrity validated (fallback)"
-              else
-                echo "❌ Lockfile integrity check failed"
-                exit 1
-              fi
-            else
-              echo "❌ package-lock.json missing"
-              exit 1
-            fi
-          fi
+          # Ensure quality gate scripts are executable
+          chmod +x ci/g_*.sh
+          echo "✅ Quality gate system ready"
 
-      - name: Quick build validation
+      - name: Run quality gates
         run: |
-          # Minimal build check - local testing should have caught build issues
-          echo "🔍 Running minimal build validation..."
-          npm run build
-          
-          # Verify build output exists
-          if [ ! -d ".next" ]; then
-            echo "❌ Build failed - no .next directory"
-            exit 1
-          fi
-          
-          echo "✅ Build validation passed"
+          # Run comprehensive quality gates (local testing should have caught issues)
+          echo "🔍 Running quality gates..."
+          ./ci/g_master.sh --verbose
+          echo "✅ All quality gates passed"
 
-      - name: Deployment readiness check
+      - name: Security scan (always run)
+        if: always()
         run: |
-          # Quick checks that deployment will work
-          echo "🔍 Checking deployment readiness..."
-          
-          # Check for required files
-          if [ ! -f "next.config.js" ]; then
-            echo "❌ Missing next.config.js"
-            exit 1
-          fi
-          
-          if [ ! -f "package.json" ]; then
-            echo "❌ Missing package.json"
-            exit 1
-          fi
-          
-          echo "✅ Deployment readiness confirmed"
+          # Always run security scan even if other gates fail
+          echo "🔍 Running security scan..."
+          ./ci/g_security.sh
+          echo "✅ Security scan completed"
 
   # =============================================================================
   # AZURE DEPLOYMENT JOB
   # =============================================================================
   # Deploy to Azure Static Web Apps with minimal overhead
   deploy-to-azure:
-    needs: minimal-validation
+    needs: quality-gate-validation
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     timeout-minutes: 15  # Strict timeout for deployment
@@ -202,7 +169,7 @@ jobs:
   # Track workflow costs and duration
   cost-monitoring:
     if: always()
-    needs: [minimal-validation, deploy-to-azure]
+    needs: [quality-gate-validation, deploy-to-azure]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     
@@ -219,10 +186,11 @@ jobs:
           echo "Started: $(date -u)"
           echo ""
           echo "💰 COST OPTIMIZATION NOTES:"
+          echo "- Quality gate system (ci/g_master.sh) for comprehensive validation"
           echo "- Local testing completed before push"
           echo "- Minimal GitHub Actions usage"
           echo "- Production dependencies only"
           echo "- Strict timeouts enforced"
           echo "- Concurrent runs cancelled"
           echo ""
-          echo "✅ Cost-optimized workflow completed" 
+          echo "✅ Cost-optimized workflow with quality gates completed" 

@@ -74,6 +74,7 @@ interface SchemaOrgProps {
   faq?: FAQSchema;
   service?: ServiceSchema;
   product?: ProductSchema;
+  nonce?: string;
 }
 
 export const SchemaOrg = ({
@@ -83,6 +84,7 @@ export const SchemaOrg = ({
   faq,
   service,
   product,
+  nonce,
 }: SchemaOrgProps = {}) => {
   try {
     // Create a simplified schema array
@@ -272,6 +274,7 @@ export const SchemaOrg = ({
     return (
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(jsonData),
         }}

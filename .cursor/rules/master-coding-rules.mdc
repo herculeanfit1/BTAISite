@@ -1,184 +1,258 @@
+description: "Bridging Trust AI – Website master coding rules (Next.js 15.4.x, Tailwind 4.1, npm). Quality-first, server components by default, enforced patterns for repeatable excellence."
+globs:
+
+* "\*\*/\*"
+  alwaysApply: true
+
 ---
-description: 
-globs: 
-alwaysApply: true
----
+
 <!-- ========================================================= -->
-<!--  Master .cursorrules | Bridging Trust AI – May 2025        -->
+
+<!--  Master .cursorrules | Bridging Trust AI – Website only   -->
+
+<!--  Next.js 15.4.x | Tailwind 4.1 | npm | Vitest | Playwright -->
+
+<!--  Last updated: 2025-09-03 (America/Chicago)               -->
+
 <!-- ========================================================= -->
-This document is the **single source of truth** for every Bridging Trust AI software project, including the public website, internal tools, mobile apps, infrastructure-as-code, and supporting libraries.  
-By unifying our original Cursor coding preferences with the detailed Next.js/Tailwind code‑generation standards, we ensure **security, compliance, resiliency, scalability, and performance**—while keeping the codebase clear, consistent, and easy to extend.
+
+This document is the **single source of truth** for the Bridging Trust AI **website** codebase. It preserves the original spirit (simplicity, security, clarity) and adds firm **quality gates** so generated code does not require cleanup later.
 
 ---
 
-## 0  Scope & Audience
-* Applies to **all** repositories under the Bridging Trust AI organization (web, API, infrastructure, mobile, data‑science).
-* Enforced automatically by Cursor, CI pipelines, and pre‑commit hooks.
+# 0  Scope & Enforcement
+
+* Applies to this website repo only (Next.js App Router).
+* Enforced by **Cursor**, **ESLint**, **TypeScript strict**, **Vitest/Playwright**, and CI checks.
+* Cursor must follow all **Code-Gen Guardrails** herein when creating or editing files.
 
 ---
 
-## 1  General Principles
-| Principle | What it Means in Practice |
-|-----------|---------------------------|
-| **Simplicity & Clarity** | Prefer the simplest working solution; write self‑documenting code with clear naming and concise comments. |
-| **DRY** | Re‑use helpers, services, and shared components; delete dead code when new logic replaces old. |
-| **Environment Awareness** | All code must run unchanged in **dev, test, and prod** via configuration, not conditionals. |
-| **Iterative Improvement** | Ship incremental changes behind feature flags; refactor legacy code once new patterns are stable. |
+# 1  Core Principles
+
+| Principle                | What it means in practice                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| **Quality First**        | Generate code that compiles, passes lint & tests, and meets accessibility/performance budgets **in the first draft**. |
+| **Server-by-Default**    | Prefer **Server Components**; use client islands only for interactive/animated sections (e.g., globe).                |
+| **Simplicity & Clarity** | Small files (≤150 lines app code), clear naming, no unnecessary abstraction, no dead code.                            |
+| **DRY & Consistency**    | Reuse shared utilities/components; keep styles in Tailwind classes; no inline styles.                                 |
+| **Secure-by-Design**     | Respect CSP/SRI, sanitize inputs/outputs, avoid dangerous HTML; parameterize everything.                              |
+| **Iterate Safely**       | Behind flags when risky; do not regress tests, a11y, or performance budgets.                                          |
 
 ---
 
-## 2  Project Structure & Code Organization
-### 2.1 Universal Layout
-```text
+# 2  Project Structure (authoritative)
+
+```
 root/
-├─ app/               # Next.js 15 App Router pages, server components
+├─ app/                 # App Router: pages, layouts, route handlers (server-first)
 ├─ src/
-│  ├─ components/     # shared UI
-│  ├─ lib/            # utilities, data access
-│  └─ types/          # global TypeScript types
-├─ mobile/            # React‑Native/Expo projects
-├─ infra/             # Terraform / Bicep / Docker / GitHub Actions
-├─ tests/             # pytest, Jest, Playwright
-├─ docs/              # architecture, ADRs, promptlog.md
+│  ├─ components/       # Shared UI (server-first). Client islands in subfolders.
+│  ├─ lib/              # Utilities, fetching, caching, logger, schemas (zod)
+│  └─ types/            # Global TS types & interfaces
+├─ public/              # Static assets (images optimized or via next/image)
+├─ tests/               # Vitest unit & Playwright e2e/visual
+├─ docs/                # architecture notes, ADRs, promptlog.md
 └─ .cursorrules
 ```
-* **Modularity:** keep files ≤ 150 lines (Infra scripts may exceed).
-* **Docstrings / JSDoc:** mandatory for every public function, class, and component.
-* **Prompt Logging:** append each exact user prompt to `docs/promptlog.md` automatically.
+
+* **Path aliases** (must use): `@/components`, `@/lib`, `@/types`.
+* **File size**: soft cap **150 lines** (app code) / **250** (infra/config). Cursor warns & proposes refactor above caps.
+* **Docs**: Every public function/component gets a terse JSDoc. Major features add/update an ADR.
 
 ---
 
-## 3  Environment & Configuration Management
-| Topic | Rule | Best Practice |
-|-------|------|--------------|
-| **Secrets** | Never hard‑code; load from env vars or a vault. | Require 2‑person review on secret rotation PRs. |
-| **Dynamic vs. Static** | Use env vars for sensitive or dynamic data; config files for complex/static settings. | Document each variable in `docs/configuration.md`. |
-| **File Size** | Aim ≤ 100‑150 lines for application code. | Refactor when larger, except for Dockerfiles or Bicep templates. |
-| **.env Protection** | Never overwrite `.env*` without explicit approval. | `.env` files ignored in Git; sample templates live under `docs/`. |
+# 3  Technology Locks
+
+* **Next.js**: lock to **15.4.x**.
+* **TypeScript**: `"strict": true`. Disallow `any`; if unavoidable, isolate and justify in a comment.
+* **Tailwind**: v4.1.x with `prettier-plugin-tailwindcss@0.6.11`. No inline styles.
+* **Package manager**: **npm** (keep `package-lock.json` authoritative).
 
 ---
 
-## 4  Testing & Quality Assurance
-* **Frameworks:** `pytest` (Python), `Jest` + React Native Testing Library (mobile), Playwright (e2e).
-* **Isolation:** use fixtures, SQLite‑in‑memory, and Docker test containers.
-* **Coverage ≥ 90 %** for critical modules; required to merge.
-* **Infrastructure Tests:** verify Docker images build, containers start, env vars inject, and compose stacks pass health checks.
+# 4  Cursor Code-Gen Guardrails (Do/Don’t)
+
+**Always do**
+
+1. **Server First**: Pages/components default to server. For interactivity, create a focused **client island**:
+
+   ```tsx
+   'use client';
+   import { useEffect, useState } from 'react';
+   export function GlobeCanvas(props: Props) { /* island only */ }
+   ```
+2. **Page pattern**:
+
+   ```tsx
+   // app/(segment)/page.tsx
+   import { Suspense } from 'react';
+   export const metadata = { title: '...' };
+   export default async function Page() { /* fetch + return JSX */ }
+   ```
+3. **Data fetching**: Use `cache()` helpers or `fetch(..., { next: { revalidate: <seconds> } })`. Choose **static** by default; opt-in to dynamic.
+4. **SEO**: Use `export const metadata`, canonical URLs, and `robots` as needed.
+5. **Error UX**: Provide `error.tsx`, `not-found.tsx`, and `loading.tsx` per route segment.
+6. **Styles**: Tailwind utilities only; keep classes sorted (Prettier plugin). Use semantic HTML.
+7. **Images/Fonts**: `next/image` and `next/font` (self-host or system stack). No remote untrusted images without allowlist & SRI/CSP.
+8. **Forms/APIs**: Validate with **zod**; rate-limit; return typed responses. Respect CSP (no inline scripts).
+9. **Testing hooks**: Generate companion unit tests for non-trivial lib functions; add/extend Playwright e2e where UX changes.
+
+**Never do**
+
+* Don’t mark pages client without necessity.
+* Don’t use inline styles or unscoped global CSS.
+* Don’t introduce `any` types, silent `catch` blocks, or `console.log` in prod paths (use `logger`).
+* Don’t fetch in client unless required for live interactivity.
+* Don’t ship images or third-party scripts that violate CSP/SRI.
 
 ---
 
-## 5  Docker & Deployment
-* **Dockerfiles:** multi‑stage, non‑root, smallest‑possible images.
-* **docker‑compose:** kill old containers before up; separate profiles for dev/test/prod.
-* **CI/CD:** GitHub Actions workflows per repo; require passing tests + lint + `ruff`/`eslint`.  
-  *Use incremental docker layer caching and provenance attestation.*
+# 5  Security & Compliance (website)
+
+* **CSP/SRI**: Already configured in `staticwebapp.config.json`. Cursor must **not** generate patterns that require unsafe inline scripts/styles. Use `next/script` with `strategy` and SRI when external.
+* **Inputs/Outputs**: Sanitize untrusted HTML. Never `dangerouslySetInnerHTML` unless vetted & wrapped.
+* **Auth & Abuse**: Contact/API routes enforce **zod validation**, header honeypot, per-IP **rate limit**, and **circuit breaker** patterns (keep your Resend flow).
+* **Secrets**: Use **Azure SWA secrets** (status quo). No secrets in repo, commits, or logs.
+* **Supply chain**: Pin critical deps; dependabot/renovate allowed. No post-install scripts from unknown deps.
 
 ---
 
-## 6  Security & Compliance
-* **Web:** CSRF tokens, secure cookies, rate limiting, parameterized queries, output sanitization.
-* **Mobile:** secure storage (Expo SecureStore), HTTPS pinning for critical APIs.
-* **Audit Logging:** all auth events and privileged actions.
-* **USA Regulations:** follow NIST 800‑53 baseline; document data‑flow for minors’ data.
+# 6  Quality Gates (must pass locally & in CI)
+
+* **ESLint**: Include `@typescript-eslint`, `eslint-plugin-security`, `eslint-plugin-jsx-a11y`. No warnings left behind in PRs.
+* **Type-check**: `tsc --noEmit` clean.
+* **Unit tests (Vitest)**: Co-locate tests. Target coverage keeps a **ratchet**:
+
+  * Current floors: **CI ≥ 30%**, **local ≥ 70%** (lines/branches).
+  * **No regression rule**: CI must not drop vs `main` coverage for touched packages. Cursor prefers adding tests to lift coverage.
+* **E2E/Visual (Playwright)**: Keep/update **visual baselines** only in PRs explicitly labeled `visual-accept`.
+* **Accessibility**: `eslint-plugin-jsx-a11y` clean; add **axe** checks in Playwright where feasible.
+* **Performance budgets (Lighthouse CI)**: Home & key pages must meet:
+
+  * **LCP ≤ 2.5s**, **CLS ≤ 0.1**, **INP ≤ 200ms**, **Perf score ≥ 90** on CI profile.
+  * No budget regressions vs `main` for changed pages.
+
+> If a generated change risks breaking budgets, Cursor must propose optimizations (code-split, reduce JS, image optimization) before emitting final code.
 
 ---
 
-## 7  Performance, Scalability & Resiliency
-| Area | Guideline |
-|------|-----------|
-| **Performance** | Use async/await, query optimization, lazy component loading, `next/image` for media. |
-| **Scalability** | Design for horizontal scaling; enable DB connection pooling; cache with Redis. |
-| **Resiliency** | Centralized error handling, retries with backoff, circuit breakers, health probes. |
+# 7  Patterns & Snippets (authoritative)
 
----
+## 7.1 Components
 
-## 8  Commit Messages & Change Control
-```text
-<type>(<scope>): <subject>
-
-<body – optional>
-
-<footer – refs, BREAKING CHANGE>
+```tsx
+interface Props { /* typed props */ }
+/** Brief doc of what and why */
+export function SectionHeading({ children }: Props) {
+  return <h2 className="text-balance text-2xl font-semibold tracking-tight">{children}</h2>;
+}
 ```
-Types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `style`, `test`.
+
+* **Export named** components from `@/components/...`. Pages default-export `Page`.
+* Client islands live under `@/components/client/*` with `'use client'` at top.
+
+## 7.2 Route Handlers / API
+
+```tsx
+// app/api/contact/route.ts
+import { z } from 'zod';
+import { rateLimit } from '@/lib/rate-limit';
+import { sendEmail } from '@/lib/resend';
+const Schema = z.object({ name: z.string().min(1), email: z.string().email(), message: z.string().min(10) });
+
+export async function POST(req: Request) {
+  await rateLimit('contact', req);                 // per-IP
+  const body = await req.json();
+  const parsed = Schema.safeParse(body);
+  if (!parsed.success) return Response.json({ error: 'Invalid' }, { status: 400 });
+  await sendEmail(parsed.data);                    // includes circuit breaker & retries
+  return Response.json({ ok: true });
+}
+```
+
+* Every handler: schema validate → rate-limit → action → typed JSON.
+* No untyped `any`, no silent catch; log with `logger.error`.
+
+## 7.3 Data fetching & caching
+
+* Prefer **build-time** or **revalidate** caching:
+
+  * Static section: `export const revalidate = 3600;`
+  * Dynamic opt-in: `export const dynamic = 'force-dynamic'` (justify in comment).
+
+## 7.4 SEO & Metadata
+
+* Use `export const metadata`. Provide canonical, open-graph, twitter, and `robots`.
+* Add `sitemap.xml` and `robots.txt` route handlers if content structure changes.
 
 ---
 
-## 9  Domain‑Specific Standards
-### 9.1 Web (Next.js 15.3.2 + Tailwind CSS + TypeScript)
-1. **App Router only** (`app/`); default to **Server Components**.
-2. **TypeScript strict mode** (`"strict": true` in *tsconfig*).
-3. **Tailwind** + `prettier-plugin-tailwindcss`; no inline styles.  
-4. **Component Pattern**
-   ```tsx
-   interface Props { /* ... */ }
+# 8  Accessibility (A11y) Rules
 
-   export const MyComponent = ({ /* ... */ }: Props) => {
-     /* logic */
-   };
-   ```
-5. **Pages**
-   ```tsx
-   const Page = async () => { /* fetch, render */ };
-   export default Page;
-   ```
-6. **Client Components**: `'use client'` at top, only when necessary.
-7. **SEO**: use Next.js `metadata` export.
-8. **Error Boundaries**: implement `error.tsx` with reset logic.
-9. **Data Fetching**: `fetch()` with `{ next: { revalidate } }`, or `cache()` helpers.
-10. **Accessibility**: WCAG AA; decorative icons `aria-hidden="true"`.
-
-### 9.2 Backend (Python / Flask + HTMX)
-* Blueprints for feature domains, Jinja2 templates, CSRF via `Flask-WTF`.
-* Ruff for style; type‑check with MyPy.
-* API versioning under `/api/v1`.
-
-### 9.3 Mobile (React Native 0.76.9 + Expo ~52)
-* **Managed workflow** unless native modules force eject.
-* Organize `components/`, `screens/`, `services/`, `hooks/`.
-* Tests with Jest; use React Native Testing Library.
-* Optimize flat‑list rendering; minimize re‑renders.
+* All images have `alt`. Decorative icons: `aria-hidden="true"`.
+* Interactive elements are **buttons/links**, not `<div>`s with handlers.
+* Maintain heading order (`h1` → `h2` → …). Ensure focus states are visible.
+* Color contrast meets **WCAG AA**. Tailwind tokens only (no ad-hoc hex unless added to theme).
 
 ---
 
-## 10  Custom Workflow Preferences
-* **Prefer simple fixes**; exhaust existing patterns before introducing new ones.
-* **Remove** old logic after successful replacement.
-* **Refactor** files > 250 lines.
-* **Mocking** only inside `tests/`.
-* **Restart** dev servers after dependency or env changes.
+# 9  Performance & UX
+
+* **Images**: Use appropriate sizes, `sizes` prop, and modern formats. Avoid layout shifts (`fill` with container constraints).
+* **JS budget**: Keep route JS under reasonable limits; aggressively code-split client islands (e.g., globe).
+* **Fonts**: Prefer system stack or self-hosted via `next/font`. No render-blocking third-party fonts.
 
 ---
 
-## 11  Documentation Automation
-| File | Rule |
-|------|------|
-| `docs/promptlog.md` | Append every exact user prompt with `## YYYY‑MM‑DD HH:MM` heading and context notes. |
-| ADRs | Use `docs/adr/NNNN-title.md`; follow Michael Nygard template. |
-| README | Each repo requires setup, scripts, env vars, and contact sections. |
+# 10  Workflow & Git Hygiene
+
+* **Branching**: Trunk-based; short-lived feature branches; preview builds on PRs.
+* **Commits**: Conventional commits (`feat`, `fix`, `refactor`, etc.). Enforce with commitlint/Husky.
+* **CI must** run: lint → type-check → unit → e2e/visual → lighthouse → build.
+* **No failing checks** may be merged. If budgets/tests are brittle, fix the cause rather than muting the check.
 
 ---
 
-## 12  Cursor Enforcement
+# 11  Documentation Automation
+
+* Append to `docs/promptlog.md` each time Cursor contributes non-trivial code (timestamp + brief context).
+* ADRs for material architectural shifts (naming `docs/adr/NNNN-title.md`).
+
+---
+
+# 12  Azure Static Web Apps (deployment norms)
+
+* Keep `staticwebapp.config.json` authoritative for **CSP**, headers, routes, and API.
+* Env/secrets via SWA; **never** in repo.
+* Artifacts: upload Playwright/Lighthouse results for traceability on each PR.
+
+---
+
+# 13  Cursor Enforcement Summary
+
 Cursor will:
-* Flag files > 150 lines (app code) or 250 lines (infra) for review.
-* Block commits containing hard‑coded secrets.
-* Auto‑format with Prettier, Tailwind plugin, and Ruff.
-* Apply these `.cursorrules` to every AI‑assisted generation.
+
+* Prefer **server components**; only create client components for true interactivity.
+* Refuse to emit inline styles, untyped code, or pages lacking `metadata`/`error.tsx`/`loading.tsx` where appropriate.
+* Keep files under size caps; propose refactors if exceeded.
+* Generate/update tests alongside code changes to maintain **coverage ratchet**.
+* Respect CSP/SRI and avoid patterns requiring unsafe inline scripts.
+* Use path aliases and Tailwind class sorting consistently.
 
 ---
 
-## 13  Appendix A – Next.js 15.3.2 Code‑Generation Cheatsheet
-*(For AI agents and code‑gen tools – follow exactly)*
+# 14  Quick Next.js 15.4.x Cheatsheet (for code-gen)
 
-| Scenario | Required Pattern |
-|----------|------------------|
-| **Client Component** | `'use client'`<br>`export const …` |
-| **Server Page w/ Data** | `async function getData()` + default export page with await |
-| **Metadata** | `export const metadata: Metadata = { … }` |
-| **Error Boundary** | `'use client'; export default function Error…` |
-| **Image** | `<Image src="/…" width={…} height={…} alt="…" />` |
+| Scenario            | Required pattern                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Server page w/ data | `export default async function Page(){/* await fetch */}` + `revalidate` as needed              |
+| Client island       | `'use client'` + hooks only where necessary                                                     |
+| Metadata            | `export const metadata = { title, description, alternates: { canonical }, openGraph, twitter }` |
+| Error boundary      | `app/(seg)/error.tsx` with reset logic                                                          |
+| Route handler       | zod validate → rate-limit → action → typed `Response.json`                                      |
+| Image               | `<Image src="/..." width={...} height={...} alt="..."/>` or `fill` with constrained parent      |
 
 ---
 
-_End of Bridging Trust AI master .cursorrules_  
-*Last updated: 2025‑05‑24 (America/Chicago)*
+*End of Bridging Trust AI website master coding rules*

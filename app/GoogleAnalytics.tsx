@@ -17,9 +17,10 @@ declare global {
 
 interface GoogleAnalyticsProps {
   GA_MEASUREMENT_ID?: string;
+  nonce?: string;
 }
 
-const GoogleAnalytics = ({ GA_MEASUREMENT_ID }: GoogleAnalyticsProps) => {
+const GoogleAnalytics = ({ GA_MEASUREMENT_ID, nonce }: GoogleAnalyticsProps) => {
   // Use provided ID or fallback
   // We're not directly accessing process.env in client component
   const measurementId = GA_MEASUREMENT_ID || "G-XXXXXXXXXX";
@@ -55,10 +56,12 @@ const GoogleAnalytics = ({ GA_MEASUREMENT_ID }: GoogleAnalyticsProps) => {
       <Script
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        nonce={nonce}
       />
       <Script
         id="google-analytics"
         strategy="afterInteractive"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];

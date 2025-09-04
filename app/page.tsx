@@ -54,6 +54,7 @@ export default function HomePage() {
         color: "#1F1F25",
         width: "100%",
         minHeight: "100vh",
+        paddingTop: "80px", // Add padding for fixed header
         WebkitTextSizeAdjust: "100%", // Safari-specific text size adjustment
       }}
     >

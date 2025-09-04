@@ -1,48 +1,58 @@
 #!/bin/bash
 
 # =============================================================================
-# Validate Before Push - Bridging Trust AI
+# Pre-Push Validation Wrapper - Bridging Trust AI
 # =============================================================================
-# Simple wrapper to run comprehensive validation before pushing to GitHub
-# This minimizes GitHub Actions costs by catching issues locally
+# Wrapper script that calls the new quality gate system before pushing
+# Replaces the old pre-commit-validation.sh approach
 # =============================================================================
 
-set -e
+set -e  # Exit on any error (fail-fast)
 
-# Colors
+# Colors for output
+RED='\033[0;31m'
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-NC='\033[0m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 BRIDGING TRUST AI - PRE-PUSH VALIDATION${NC}"
-echo -e "${BLUE}===========================================${NC}\n"
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
 
-echo -e "${YELLOW}💰 Cost-Conscious CI/CD Strategy:${NC}"
-echo "   • Run comprehensive tests locally (FREE)"
-echo "   • Minimize GitHub Actions usage (COST SAVINGS)"
-echo "   • Only deploy if all tests pass (RELIABILITY)"
-echo ""
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+log_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+log_header() {
+    echo -e "\n${BLUE}================================================${NC}"
+    echo -e "${BLUE} $1${NC}"
+    echo -e "${BLUE}================================================${NC}\n"
+}
 
 # Check if we're in the right directory
-if [ ! -f "package.json" ] || [ ! -f "next.config.js" ]; then
-    echo "❌ Please run this script from the BTAISite root directory"
+if [ ! -f "package.json" ] || [ ! -f "ci/g_master.sh" ]; then
+    log_error "Please run this script from the BTAISite root directory"
     exit 1
 fi
 
-# Run the comprehensive validation
-echo -e "${BLUE}Running comprehensive local validation...${NC}"
-./scripts/pre-commit-validation.sh "$@"
+log_header "PRE-PUSH VALIDATION - BRIDGING TRUST AI"
 
-# If we get here, all tests passed
-echo ""
-echo -e "${GREEN}🎉 ALL VALIDATIONS PASSED!${NC}"
-echo -e "${GREEN}✅ Your code is ready to push to GitHub${NC}"
-echo ""
-echo -e "${BLUE}Next steps:${NC}"
-echo "   1. git add -A"
-echo "   2. git commit -m 'your commit message'"
-echo "   3. git push"
-echo ""
-echo -e "${YELLOW}💡 GitHub Actions will run minimal validation only${NC}"
-echo -e "${YELLOW}   (saving costs while ensuring deployment works)${NC}" 
+log_info "Running quality gates before push..."
+log_info "This ensures code quality and prevents broken deployments"
+
+# Run the master quality gate with verbose output
+if ./ci/g_master.sh --verbose; then
+    log_success "All quality gates passed!"
+    log_success "Code is ready for push to GitHub"
+    log_info "You can now safely run: git push"
+else
+    log_error "Quality gates failed!"
+    log_error "Fix the issues above before pushing"
+    log_info "Run './ci/g_master.sh --verbose' for detailed output"
+    exit 1
+fi

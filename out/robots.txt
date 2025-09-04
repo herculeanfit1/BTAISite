@@ -1,7 +1,0 @@
-# Bridging Trust AI robots.txt
-# Allow all web crawlers
-User-agent: *
-Allow: /
-
-# Sitemap location
-Sitemap: https://bridgingtrust.ai/sitemap.xml 
