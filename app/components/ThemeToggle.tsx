@@ -43,13 +43,13 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
   return (
     <button
       onClick={handleToggle}
-      className={`relative flex h-3 w-3 items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 shadow-sm border border-gray-200 dark:border-gray-600 ${className}`}
+      className={`relative flex h-4 w-4 items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 shadow-sm border border-gray-200 dark:border-gray-600 ${className}`}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       data-testid="dark-mode-toggle"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       style={{
-        minWidth: '12px',
-        minHeight: '12px',
+        minWidth: '16px',
+        minHeight: '16px',
         zIndex: 1000,
         position: 'relative'
       }}
@@ -57,7 +57,7 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
       {/* Sun Icon (visible in dark mode) */}
       {isDark ? (
         <svg
-          className="h-2 w-2 text-yellow-500"
+          className="h-2.5 w-2.5 text-yellow-500"
           fill="currentColor"
           viewBox="0 0 20 20"
           xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +71,7 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
       ) : (
         /* Moon Icon (visible in light mode) */
         <svg
-          className="h-2 w-2 text-blue-600"
+          className="h-2.5 w-2.5 text-blue-600"
           fill="currentColor"
           viewBox="0 0 20 20"
           xmlns="http://www.w3.org/2000/svg"
