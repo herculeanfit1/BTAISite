@@ -4,7 +4,6 @@ import { ReactNode, useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { NavBar } from "./NavBar";
 import { Footer } from "./Footer";
-import { CookieConsent } from "./CookieConsent";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -37,7 +36,6 @@ export default function ClientLayout({ children, locale }: ClientLayoutProps) {
       <NavBar locale={locale} />
       <main className="flex-grow">{children}</main>
       <Footer />
-      <CookieConsent />
     </ThemeProvider>
   );
 }
