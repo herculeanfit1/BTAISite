@@ -34,7 +34,7 @@ jobs:
   quality-gate-validation:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Strict timeout to control costs
+    timeout-minutes: 20  # Increased timeout for comprehensive quality gates
     
     steps:
       - name: Checkout code
