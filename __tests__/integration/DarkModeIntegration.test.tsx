@@ -118,7 +118,7 @@ describe('Dark Mode Integration', () => {
     });
   });
 
-  it('respects system preference when no saved theme exists', () => {
+  it('respects system preference when no saved theme exists', async () => {
     // Mock system preference for dark mode
     window.matchMedia = vi.fn().mockImplementation(query => ({
       matches: query === '(prefers-color-scheme: dark)',
