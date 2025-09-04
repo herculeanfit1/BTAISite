@@ -4,10 +4,10 @@ name: Azure Static Web Apps Deployment
 # COST-OPTIMIZED GITHUB ACTIONS WORKFLOW
 # =============================================================================
 # COST OPTIMIZATION STRATEGY:
-# - Main branch pushes: Direct deployment only (local validation assumed)
-# - Pull requests: Full quality gates + deployment (external contributions)
+# - Main branch pushes: Direct deployment only (local validation required)
+# - Pull requests: Direct deployment only (local validation required)
 # - Local CI/CD: Run ./ci/g_master.sh before pushing to main
-# - GitHub Actions: Minimal cloud compute usage for maximum cost efficiency
+# - GitHub Actions: DEPLOYMENT ONLY - no CI/CD pipeline
 # =============================================================================
 
 on:
@@ -29,64 +29,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # =============================================================================
-  # QUALITY GATE VALIDATION JOB
-  # =============================================================================
-  # Only runs for PRs - main branch pushes skip this (local validation required)
-  quality-gate-validation:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20  # Increased timeout for comprehensive quality gates
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: false  # Skip submodules to save time
-          lfs: false        # Skip LFS to save bandwidth
-
-      - name: Setup Node.js (cached)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.19.1'
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-
-      - name: Install dependencies
-        run: |
-          # Install all dependencies needed for build
-          npm ci --silent
-          echo "✅ Dependencies installed"
-
-      - name: Setup security tools
-        run: |
-          # Install security tools
-          sudo apt-get update -qq && sudo apt-get install -y jq
-          # Install gitleaks for secret scanning
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz | tar -xz -C /usr/local/bin
-          chmod +x /usr/local/bin/gitleaks
-          echo "✅ Security tools installed"
-
-      - name: Setup quality gate system
-        run: |
-          # Ensure quality gate scripts are executable
-          chmod +x ci/g_*.sh
-          echo "✅ Quality gate system ready"
-
-      - name: Run quality gates
-        run: |
-          # Run comprehensive quality gates (local testing should have caught issues)
-          echo "🔍 Running quality gates..."
-          ./ci/g_master.sh --verbose
-          echo "✅ All quality gates passed"
-
-      - name: Security scan (always run)
-        if: always()
-        run: |
-          # Always run security scan even if other gates fail
-          echo "🔍 Running security scan..."
-          ./ci/g_security.sh
-          echo "✅ Security scan completed"
 
   # =============================================================================
   # DIRECT DEPLOYMENT JOB (main branch pushes only)
@@ -139,11 +81,10 @@ jobs:
           echo "🌐 Site available at Azure Static Web Apps URL"
 
   # =============================================================================
-  # PR DEPLOYMENT JOB (with quality gates)
+  # PR DEPLOYMENT JOB (deployment only)
   # =============================================================================
-  # Deploy PRs only after full validation
+  # Deploy PRs directly - local validation required
   deploy-pr-to-azure:
-    needs: quality-gate-validation
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 15  # Strict timeout for deployment
@@ -224,8 +165,8 @@ jobs:
           echo ""
           echo "💰 COST OPTIMIZATION NOTES:"
           echo "- Main branch: Direct deployment (local validation required)"
-          echo "- Pull requests: Full quality gates + deployment"
-          echo "- No duplicate testing in GitHub Actions for main pushes"
+          echo "- Pull requests: Direct deployment (local validation required)"
+          echo "- NO CI/CD pipeline in GitHub Actions - all local"
           echo "- Fast deployment-only workflow for production"
           echo "- Strict timeouts enforced"
           echo "- Concurrent runs cancelled"
