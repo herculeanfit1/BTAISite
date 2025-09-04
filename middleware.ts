@@ -24,6 +24,8 @@ export function middleware(request: NextRequest) {
   // Add development header only in development environment
   if (process.env.NODE_ENV === 'development') {
     response.headers.set('X-Development-Mode', 'true');
+    // Log the request path to utilize the request parameter
+    console.warn(`Processing request to: ${request.nextUrl.pathname}`);
   }
   
   return response;

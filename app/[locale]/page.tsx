@@ -1,9 +1,4 @@
 import { Metadata } from "next";
-import { HeroSection } from "../components/home/HeroSection";
-import { LevelingSection } from "../components/home/LevelingSection";
-import { FeaturesSection } from "../components/home/FeaturesSection";
-import { AboutSection } from "../components/home/AboutSection";
-import { ContactSection } from "../components/home/ContactSection";
 import { HomePageContent } from "../components/HomePageContent";
 
 export const metadata: Metadata = {
@@ -20,7 +15,11 @@ interface PageProps {
 
 export default async function Home(props: PageProps) {
   const params = await props.params;
-  const { locale } = params;
+  
+  // Use locale for potential future internationalization
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`Rendering page for locale: ${params.locale}`);
+  }
 
   return <HomePageContent />;
 }

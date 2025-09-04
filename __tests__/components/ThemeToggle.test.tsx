@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ThemeToggle } from '../../app/components/ThemeToggle';
 
 // Mock localStorage
@@ -37,6 +37,23 @@ describe('ThemeToggle', () => {
     
     // Reset document classes
     document.documentElement.className = '';
+    
+    // Reset matchMedia to default (light mode preference)
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  });
+
+  afterEach(() => {
+    // Clean up document classes after each test
+    document.documentElement.className = '';
   });
 
   it('renders the theme toggle button', () => {
@@ -55,12 +72,15 @@ describe('ThemeToggle', () => {
     expect(button).toHaveAttribute('title', 'Switch to dark mode');
   });
 
-  it('respects saved theme preference from localStorage', () => {
+  it('respects saved theme preference from localStorage', async () => {
     localStorageMock.getItem.mockReturnValue('dark');
     
     render(<ThemeToggle />);
     
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    // Wait for useEffect to run and apply the theme
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
   });
 
   it('respects system preference when no saved theme', () => {

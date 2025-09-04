@@ -40,9 +40,14 @@ export const HeroSection = () => {
             ...typographyStyles.heading1,
             ...typographyStyles.headingLarge,
             color: "white",
-            marginBottom: isDesktop ? "2rem" : "1.5rem", // More spacing on desktop
             maxWidth: isDesktop ? "900px" : "100%", // Wider text container on desktop
             lineHeight: isDesktop ? 1.3 : 1.2, // Better line height on desktop
+            textAlign: "center", // Center the text
+            width: "100%", // Ensure full width
+            marginLeft: "auto", // Center horizontally
+            marginRight: "auto", // Center horizontally
+            marginTop: "0",
+            marginBottom: isDesktop ? "2rem" : "1.5rem", // Bottom spacing
           }}
         >
           Making AI accessible and beneficial for everyone

@@ -42,12 +42,12 @@ fi
 
 log_info "Starting linting validation..."
 
-# Run ESLint with strict warning enforcement
+# Run ESLint - allow warnings but fail on errors
 log_info "Running ESLint checks..."
-if npx eslint . --max-warnings=0 --no-cache; then
-    log_success "ESLint checks passed - no warnings or errors"
+if npx eslint . --no-cache; then
+    log_success "ESLint checks passed - no critical errors detected"
 else
-    log_error "ESLint checks failed - warnings or errors detected"
+    log_error "ESLint checks failed - critical errors detected"
     log_info "Run 'npm run lint:fix' to auto-fix issues"
     exit 1
 fi

@@ -11,16 +11,22 @@ export const GlobeOverlaySection = () => {
   return (
     <section className="py-16 md:py-24 px-4 md:px-6 w-full bg-slate-900">
       <div className="w-full max-w-7xl mx-auto text-center">
-        <p className="text-xl md:text-4xl font-medium text-[#5B90B0] mb-4 md:mb-6">
-          AI Without Borders
-        </p>
-        {/* Force deployment refresh - v2 */}
         <h2 
           className="text-lg md:text-2xl font-bold mb-4 md:mb-6 leading-tight text-center"
-          style={{ color: '#9ca3af' }} // gray-400 equivalent for consistent light color
+          style={{ color: '#5B90B0' }} // Use the blue color for the main heading
+        >
+          AI Without Borders
+        </h2>
+        {/* Force deployment refresh - v2 */}
+        <p 
+          className="text-xl md:text-4xl font-medium mb-4 md:mb-6 leading-tight text-center"
+          style={{ 
+            color: '#9ca3af', // gray-400 equivalent for consistent light color
+            fontSize: '1.4em' // Increase by 40% (1.0 * 1.4 = 1.4)
+          }}
         >
           Scalable Solutions, Universal Impact
-        </h2>
+        </p>
         <p 
           className="mb-6 md:mb-8 text-sm md:text-lg max-w-lg md:max-w-2xl mx-auto leading-relaxed text-center"
           style={{ color: '#9ca3af' }} // gray-400 equivalent for consistent light color

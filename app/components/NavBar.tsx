@@ -146,6 +146,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
                 borderRadius: "8px",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
                 display: "inline-block",
+                color: "white", // Ensure white text in both light and dark mode
               }}
             >
               Contact

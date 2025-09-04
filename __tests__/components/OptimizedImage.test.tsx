@@ -6,7 +6,7 @@ import OptimizedImage from '../../app/components/OptimizedImage';
 // Mock next/image
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: vi.fn().mockImplementation(({ src, alt, onLoad, priority, blurDataURL, fill, ...props }) => {
+  default: vi.fn().mockImplementation(({ src, alt, priority, blurDataURL, fill, ...props }) => {
     // Properly format boolean props for React
     return (
       <img 
