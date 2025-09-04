@@ -134,13 +134,10 @@ describe('Footer', () => {
     // Check if the element has the gradient background style
     expect(copyrightText).toHaveStyle({
       background: 'linear-gradient(90deg, #3A5F77 0%, #5B90B0 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       fontWeight: '500'
     });
-    
-    // Check webkit properties separately as they might not be supported in test environment
-    const element = copyrightText as HTMLElement;
-    expect(element.style.WebkitBackgroundClip || element.style.backgroundClip).toBe('text');
-    expect(element.style.WebkitTextFillColor).toBe('transparent');
   });
 
   it('has hover effects on navigation links', () => {

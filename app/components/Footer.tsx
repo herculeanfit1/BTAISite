@@ -63,7 +63,7 @@ export const Footer = () => {
                 background: "linear-gradient(90deg, #3A5F77 0%, #5B90B0 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
-                fontWeight: "500",
+                fontWeight: 500,
               }}
             >
               © {new Date().getFullYear()} Bridging Trust AI. All rights

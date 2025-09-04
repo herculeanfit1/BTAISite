@@ -2,188 +2,146 @@
 
 This document provides an overview of the GitHub Actions workflow configurations used for the Bridging Trust AI project.
 
-## Active Workflows
+## Key Workflows
 
-### 1. **Cost-Optimized CI** (`.github/workflows/cost-optimized-ci.yml`)
+1. **Azure Static Web Apps Deployment** (`.github/workflows/azure-static-web-apps.yml`)
 
-   - **Primary deployment workflow** for Azure Static Web Apps
-   - **Cost-conscious strategy**: Minimal GitHub Actions usage, comprehensive local testing
-   - Runs on push to `main` and pull requests
-   - **Three-phase approach**:
-     - Minimal validation (dependency checks, quick build)
-     - Azure deployment (with cache-busting timestamps)
-     - Cost monitoring and cleanup
-   - **Timeout limits**: 10min validation, 15min deployment to control costs
-   - **Concurrent run limits** to prevent resource waste
+   - Builds, tests, and deploys the Next.js app to Azure Static Web Apps
+   - Includes comprehensive test suites before deployment
+   - Provides staging environments for pull requests
 
-### 2. **Dependabot Security** (`.github/workflows/dependabot-security.yml`)
+2. **Repository Backup** (`.github/workflows/backup-repository.yml`)
 
-   - Automated security review for dependency updates
-   - Runs security audits and tests on Dependabot PRs
-   - Auto-approval comments for passed security checks
-   - Weekly npm updates, monthly GitHub Actions updates
-
-### 3. **Repository Backup** (`.github/workflows/backup-repository-fixed.yml`)
-
-   - Creates backups of the codebase
+   - Creates daily backups of the codebase at 10pm
+   - Automatically backs up after successful deployments
    - Supports manual triggering
-   - Fixed version addressing previous backup issues
 
-## Disabled/Legacy Workflows
+3. **Hybrid Testing** (`.github/workflows/hybrid-tests.yml`)
 
-The following workflows are disabled (`.disabled` extension) but preserved for reference:
-- `azure-static-web-apps-bridgingtrust-website.yml` - Original Azure deployment
-- `ci-pipeline.yml` - Legacy CI pipeline
-- `deploy.yml` - Old deployment workflow
-- `hybrid-tests.yml` - Complex testing setup
-- `visual-regression.yml` - Visual testing
-- `dependency-checks.yml` - Standalone dependency checks
+   - Runs tests in both Docker containers (for consistency) and local environments (for real-world behavior)
+   - Includes E2E, unit, integration, and performance tests
+   - Artifacts are preserved for debugging
 
-## Local CI/CD Strategy
+4. **UI Tests** (`.github/workflows/ui-tests.yml`)
 
-The project follows a **"Local-First, Cloud-Minimal"** approach to minimize GitHub Actions costs:
+   - Runs component and page tests
+   - Performs visual regression testing
 
-### Local Testing Scripts
+5. **Security Tests** (`.github/workflows/security-tests.yml`)
 
-1. **Pre-Commit Validation** (`scripts/pre-commit-validation.sh`)
-   - Comprehensive 7-phase testing: dependencies, code quality, functionality, build, Docker, security, performance
-   - **Mandatory tests**: Core functionality, build validation
-   - **Optional tests**: Docker, security, performance (can be skipped with `--quick` flag)
+   - Runs specialized security tests
 
-2. **Local CI Simulation** (`scripts/local-ci-test.sh`)
-   - Simulates full CI/CD process locally
-   - Environment setup, clean builds, static site generation
-   - Security report generation
+6. **Visual Regression Tests** (`.github/workflows/visual-regression.yml`)
 
-3. **Pre-Push Validation** (`scripts/validate-before-push.sh`)
-   - Wrapper for comprehensive validation before pushing
-   - Explains cost-conscious strategy to developers
+   - Performs detailed visual regression testing
 
-### GitHub Actions Configuration
+7. **General Playwright Tests** (`.github/workflows/playwright.yml`)
+   - Runs core Playwright test suites
 
-**Current Standards:**
-- **Node.js Version**: 20.19.1 (LTS)
-- **Action Versions**: Updated to v4 (checkout@v4, setup-node@v4)
-- **Caching Strategy**: NPM caching enabled with `cache-dependency-path`
-- **Build Cache Busting**: `BUILD_TIMESTAMP` environment variable for deployments
+## GitHub Actions Configuration
+
+To ensure compatibility with the GitHub Actions runner (version 2.323.0), we've standardized our workflow configurations:
+
+1. **Consistent Action Versions**
+
+   - All actions use the v2 versions (checkout@v2, setup-node@v2, upload-artifact@v2)
+   - Using v2 versions ensures compatibility with the GitHub Actions runner
+
+2. **Node.js Version**
+
+   - All workflows use a specific Node.js version (18.17) instead of the LTS/\* tag
+   - This ensures consistent Node.js behavior across all workflows
+
+3. **Caching Strategy**
+
+   - Removed npm caching that was causing 422 errors with the GitHub Actions cache service
+   - Dependencies are installed fresh with `npm ci` to ensure clean builds
+
+4. **Upload/Download Artifacts**
+   - Using actions/upload-artifact@v2 and actions/download-artifact@v2 consistently
+   - Configuring appropriate retention periods based on artifact importance
 
 ## Testing Strategy
 
-**Current Testing Framework:**
-- **Unit Tests**: Vitest for components and API routes
-- **Integration Tests**: Vitest with custom configurations
-- **E2E Tests**: Playwright for end-to-end scenarios
-- **Security Tests**: Custom middleware and configuration validation
-- **Performance Tests**: Lighthouse and custom performance metrics
+Our testing approach combines multiple strategies:
 
-**Test Categories:**
-1. **Component Tests**: React component rendering and interaction
-2. **API Tests**: Route handlers and middleware validation
-3. **Integration Tests**: Cross-component functionality
-4. **Security Tests**: Middleware, CSRF, rate limiting
-5. **Performance Tests**: Bundle size, loading times, Core Web Vitals
+1. **Docker-based Tests**
+
+   - Run in isolated containers for consistency
+   - Ideal for unit and integration tests
+
+2. **Local Environment Tests**
+
+   - Run in a similar environment to production
+   - Better for E2E and real-world behavior testing
+
+3. **Specialized Test Suites**
+   - Security, performance, UI, and visual regression tests
+   - Each has dedicated workflows and configurations
 
 ## Deployment Process
 
-**Current Deployment Flow:**
+1. **Build and Test Phase**
 
-1. **Local Validation Phase**
-   - Developer runs `scripts/pre-commit-validation.sh` locally
-   - Comprehensive testing catches issues before push
-   - Saves GitHub Actions costs by preventing failed deployments
+   - Comprehensive test suite execution
+   - Static export of Next.js app for Azure
 
-2. **GitHub Actions Phase**
-   - **Minimal Validation**: Quick dependency and build checks
-   - **Azure Deployment**: Build with cache-busting and deploy to Azure Static Web Apps
-   - **Cost Monitoring**: Track usage and optimization metrics
+2. **Deployment Phase**
 
-3. **Azure Static Web Apps**
-   - **Production URL**: https://bridgingtrust.ai
-   - **API Routes**: Serverless functions for contact form and status endpoints
-   - **CDN Caching**: Optimized cache headers for performance
-   - **Environment Variables**: Resend API keys and email configuration
+   - Upload to Azure Static Web Apps
+   - Automatic backup after successful deployment
 
-4. **PR Environments**
-   - Pull requests get staging environments automatically
-   - Environments cleaned up when PRs are closed
+3. **PR Environments**
+   - Pull requests get their own staging environments
+   - Environments are cleaned up when PRs are closed
 
 ## Troubleshooting
 
-**Common Issues:**
+When experiencing GitHub Actions failures:
 
-1. **Test Failures**
-   - Run `npm run test:ci-basic` locally to reproduce
-   - Use `scripts/pre-commit-validation.sh --quick` for faster validation
-   - Check component mocking in test files
+1. **Caching Issues**
 
-2. **Build Issues**
-   - Clear Next.js cache: `rm -rf .next`
-   - Verify TypeScript compilation: `npm run type-check`
-   - Check for import/export issues: `npm run fix:imports`
+   - If seeing "Error: Cache service responded with 422", check that caching is disabled
+   - Ensure Node.js version is specified explicitly
 
-3. **Deployment Issues**
-   - Verify Azure Static Web Apps token is valid
-   - Check environment variables in Azure portal
-   - Monitor deployment logs in GitHub Actions
+2. **Action Version Compatibility**
 
-4. **Performance Issues**
-   - Run `npm run test:performance:all` locally
-   - Check bundle size with `npm run analyze`
-   - Verify image optimization settings
+   - Stick with v2 versions of GitHub Actions
+   - Avoid mixing v2, v3, and v4 versions
+
+3. **Artifact Upload/Download**
+   - If artifacts are failing, check retention periods and path specifications
+   - Ensure paths exist before upload attempts
 
 ## Required Secrets
 
-**GitHub Repository Secrets:**
-- `AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE` - Azure deployment token
+The following secrets need to be configured in your GitHub repository settings:
 
-**Azure Static Web Apps Environment Variables:**
-- `RESEND_API_KEY` - Email service API key
-- `EMAIL_FROM` - Sender email address  
-- `EMAIL_TO` - Recipient email address
-- `EMAIL_ADMIN` - Admin email address
-- `RESEND_TEST_MODE` - Set to "false" for production
+1. **`AZURE_STATIC_WEB_APPS_API_TOKEN`** - Token for Azure Static Web Apps deployment
+2. **`BACKUP_REPO_TOKEN`** - Personal Access Token with repo scope for backup repository
+3. **`REPO_ACCESS_TOKEN`** - Token for triggering workflows between repositories
 
 ## Local Development
 
-**Development Workflow:**
+When developing locally, you can simulate the CI/CD process using:
 
 ```bash
-# Comprehensive local validation (recommended before any commit)
-./scripts/pre-commit-validation.sh
+# Run tests as they would run in CI
+npm run test:full
 
-# Quick validation (skip optional tests)
-./scripts/pre-commit-validation.sh --quick
-
-# Simulate full CI/CD process
-./scripts/local-ci-test.sh
-
-# Run specific test suites
-npm run test:ci-basic          # Core functionality tests
-npm run test:middleware        # Security tests
-npm run test:performance:all   # Performance validation
-```
-
-**Local Environment Setup:**
-```bash
-# Install dependencies
-npm ci
-
-# Start development server
-npm run dev:http
-
-# Build for production
-npm run build
+# Build for Azure deployment
+npm run azure-deploy
 ```
 
 ## Maintenance
 
-**Monthly Tasks:**
-- Review GitHub Actions for deprecation notices
-- Update Node.js and npm dependencies with `npm run ncu`
-- Monitor cost optimization metrics in workflow logs
+1. **Regular Reviews:**
 
-**Quarterly Tasks:**
-- Security audit of workflow permissions
-- Rotation of Azure Static Web Apps tokens
-- Review and update local testing scripts
-- Validate email system and environment variables
+   - Monthly review of all GitHub Actions to ensure they're current
+   - Check for deprecation notices in actions used
+   - Update Node.js and npm dependencies
+
+2. **Security Audits:**
+   - Quarterly review of workflow permissions
+   - Rotation of access tokens and secrets
+   - Update security scanning tools and patterns
