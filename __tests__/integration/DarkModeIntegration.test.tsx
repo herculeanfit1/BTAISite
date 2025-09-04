@@ -194,7 +194,7 @@ describe('Dark Mode Integration', () => {
     render(<NavBar />);
 
     const header = screen.getByRole('navigation');
-    expect(header).toHaveClass('bg-white', 'dark:bg-gray-900');
+    expect(header).toHaveClass('bg-white/80', 'dark:bg-gray-900/80');
     expect(header).toHaveAttribute('data-theme-bg', 'true');
   });
 

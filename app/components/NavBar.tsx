@@ -111,6 +111,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
             className="inline-flex items-center justify-center rounded-md border px-2 py-1 lg:hidden"
             aria-controls="site-menu"
             aria-expanded={isOpen}
+            aria-label="Toggle menu"
             data-toggle="mobile-menu"
             onClick={() => setIsOpen(!isOpen)}
           >
@@ -121,7 +122,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
           </button>
 
           {/* Desktop nav - hidden on mobile */}
-          <nav id="site-menu" className="hidden items-center gap-6 lg:flex">
+          <div id="site-menu" className="hidden items-center gap-6 lg:flex">
             <Link
               href="/#solutions"
               className="group relative px-4 py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
@@ -145,14 +146,14 @@ export const NavBar = ({ locale }: NavBarProps) => {
             >
               Contact
             </a>
-          </nav>
+          </div>
         </div>
       </div>
 
       {/* Mobile dropdown */}
       {isOpen && (
         <div className="border-t lg:hidden" data-mobile-menu>
-          <nav className="mx-auto max-w-7xl px-4 sm:px-6 py-2 space-y-2">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 space-y-2">
             <Link
               href="/#solutions"
               className="block py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
@@ -177,7 +178,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
             >
               Contact
             </a>
-          </nav>
+          </div>
         </div>
       )}
     </header>
