@@ -116,11 +116,12 @@ export async function sendContactEmail(data: ContactFormData): Promise<EmailResu
       };
     }
 
-    // Development mode simulation
-    if (process.env.RESEND_TEST_MODE === 'true') {
+    // Development mode simulation - enable if no API key or test mode is set
+    const apiKey = process.env.RESEND_API_KEY;
+    if (process.env.RESEND_TEST_MODE === 'true' || !apiKey) {
       console.log('📧 Email would be sent (test mode):', {
-        to: process.env.EMAIL_TO,
-        from: process.env.EMAIL_FROM,
+        to: process.env.EMAIL_TO || 'sales@bridgingtrust.ai',
+        from: process.env.EMAIL_FROM || 'hello@bridgingtrust.ai',
         subject: `New Contact Form Submission from ${data.firstName} ${data.lastName}`,
         data: data,
       });
