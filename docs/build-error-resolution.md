@@ -2,80 +2,51 @@
 
 > **Goal**: Resolve all lint warnings and type errors so `ignoreBuildErrors` and `ignoreDuringBuilds` can be set to `false` in `next.config.js`.
 > **Created**: 2026-02-22
+> **Completed**: 2026-02-22
 > **Reference**: STANDARDS.md §5
 
-## Current Status
+## Final Status: COMPLETE
 
 ### TypeScript (`npm run type-check`)
 - **Status**: PASSING (zero errors)
-- `typescript.ignoreBuildErrors` can be flipped to `false` once ESLint is also clean.
 
 ### ESLint (`npm run lint`)
-- **Status**: 0 errors, ~90 warnings
-- All warnings — no errors blocking the build.
+- **Status**: PASSING (zero warnings, zero errors)
 
-## Warning Categories
+### Build Enforcement (`next.config.js`)
+- **Status**: ENABLED
+- `typescript.ignoreBuildErrors: false`
+- `eslint.ignoreDuringBuilds: false`
 
-### 1. `@typescript-eslint/no-explicit-any` (16 warnings)
-| File | Lines |
-|------|-------|
-| `src/lib/logger.ts` | 7, 44, 91, 120, 124, 128, 132 |
-| `src/lib/useAnalytics.tsx` | 9, 17, 30, 41, 55 |
-| `src/uitests/utils/visual-regression.ts` | 58, 115, 123 |
-| `src/components/common/LoadingSpinner.tsx` | (indirect via object injection) |
+## Resolution Summary
 
-**Resolution**: Replace `any` with proper types. Logger needs a generic args type; analytics hooks need typed event payloads.
+### Batch 1: `@typescript-eslint/no-unused-vars` — RESOLVED
+- Configured ESLint underscore ignore patterns (`argsIgnorePattern`, `varsIgnorePattern`, `caughtErrorsIgnorePattern`) in both `.eslintrc.json` and `eslint.config.js`
+- Removed unused imports (`Page`, `Locator`, `hasClass`, `isMobileViewport`, `Route`)
+- Removed unused type aliases (`NewsletterData`)
+- Removed unused variables (`mobileNavMenu`, `linkText`)
+- Prefixed intentionally unused params with `_` (`_e`, `_page`, `_reports`, `_request`, `_locale`, `_hasFocusStyles`)
 
-### 2. `@typescript-eslint/no-unused-vars` (14 warnings)
-| File | Lines |
-|------|-------|
-| `src/uitests/components/accessibility.spec.ts` | 15 |
-| `src/uitests/components/button.spec.ts` | 1, 2, 165, 457 |
-| `src/uitests/components/component.spec.ts` | 309 |
-| `src/uitests/components/navigation.spec.ts` | 1, 4, 91, 173 |
-| `src/uitests/performance/lighthouse.spec.ts` | 73, 76, 180, 219 |
-| `src/uitests/performance/performance.spec.ts` | 283 |
-| `src/uitests/utils/visual-regression.ts` | 64 |
-| `src/uitests/utils/test-utils.ts` | 209 |
+### Batch 2: `no-console` — RESOLVED
+- Added `eslint-disable-next-line no-console` in `logger.ts` (wraps console by design)
+- Replaced `console.log` with `logger.info`/`logger.warn` in API routes and email service
+- Used `console.debug` with eslint-disable for mock analytics provider
+- Switched `visual-regression.ts` to `console.warn` (allowed by rule)
 
-**Resolution**: Remove unused imports/variables or prefix with `_` if intentional.
+### Batch 3: `@typescript-eslint/no-explicit-any` — RESOLVED
+- Replaced `any` with `unknown` in logger data parameters
+- Replaced `Record<string, any>` with `Record<string, unknown>` in `useAnalytics.tsx`
+- Typed `visual-regression.ts` page parameter with Playwright `Page` type
+- Updated `test-utils.d.ts` interfaces to use `import("@playwright/test").Page`
 
-### 3. `no-console` (10 warnings)
-| File | Lines |
-|------|-------|
-| `src/lib/analytics.tsx` | 66, 69, 72, 75, 78 |
-| `src/lib/email.ts` | 121, 161 |
-| `src/lib/logger.ts` | 103, 106 |
-| `src/uitests/utils/visual-regression.ts` | 74, 77 |
-
-**Resolution**: Replace with `logger` utility in production paths. Logger itself may need `eslint-disable` comments since it wraps console.
-
-### 4. `security/detect-object-injection` (4 warnings)
-| File | Lines |
-|------|-------|
-| `src/components/common/LoadingSpinner.tsx` | 41, 42 |
-| `src/components/streaming/StreamingDashboard.tsx` | 169 |
-| `src/lib/logger.ts` | 93 |
-
-**Resolution**: Use Map or validate keys against allowed values.
-
-### 5. `security/detect-non-literal-regexp` (1 warning)
-| File | Lines |
-|------|-------|
-| `src/uitests/utils/test-utils.ts` | 211 |
-
-**Resolution**: Validate/escape user input before passing to RegExp constructor.
-
-## Resolution Plan
-
-1. **Batch 1** (low risk): Fix all `no-unused-vars` in uitests — 14 warnings
-2. **Batch 2**: Fix `no-console` — replace with logger or add targeted disable comments — 10 warnings
-3. **Batch 3**: Fix `no-explicit-any` — type logger, analytics, and visual regression utils — 16 warnings
-4. **Batch 4**: Fix security warnings — object injection sinks, non-literal regexp — 5 warnings
-5. **Final**: Set `ignoreBuildErrors: false` and `ignoreDuringBuilds: false` in `next.config.js`
+### Batch 4: Security warnings — RESOLVED
+- Added targeted `eslint-disable` comments with justification for type-safe object/array accesses
+- Escaped RegExp input in `test-utils.ts`
 
 ## Completion Criteria
 
-- [ ] `npm run type-check` exits 0 (already passing)
-- [ ] `npm run lint` exits 0 with zero warnings
-- [ ] `next.config.js` has `ignoreBuildErrors: false` and `ignoreDuringBuilds: false`
+- [x] `npm run type-check` exits 0 (zero errors)
+- [x] `npm run lint` exits 0 with zero warnings
+- [x] `next.config.js` has `ignoreBuildErrors: false` and `ignoreDuringBuilds: false`
+- [x] `npm run build` passes with enforcement enabled
+- [x] All 111 tests passing
