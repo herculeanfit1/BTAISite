@@ -44,6 +44,7 @@ export const TestimonialSection = ({
     // Ensure the activeIndex is valid
     if (activeIndex >= 0 && activeIndex < testimonials.length) {
       return (
+        // eslint-disable-next-line security/detect-object-injection -- activeIndex is bounds-checked above
         testimonials[activeIndex] || {
           quote: "",
           author: "",

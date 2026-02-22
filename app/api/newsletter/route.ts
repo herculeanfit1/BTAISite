@@ -34,6 +34,7 @@ async function handler(request: NextRequest) {
 
     // Bot detection - check if honeypot fields are filled
     for (const field of HONEYPOT_FIELDS) {
+      // eslint-disable-next-line security/detect-object-injection -- field is from hardcoded HONEYPOT_FIELDS array
       if (body[field]) {
         // If honeypot field is filled, pretend success but don't process
         logger.warn("Honeypot detected, ignoring newsletter submission");

@@ -38,7 +38,9 @@ export const LoadingSpinner = ({
     : "primary";
 
   // Safely access values using validated keys
+  // eslint-disable-next-line security/detect-object-injection -- validSize is validated against sizeMap keys
   const sizeClass = sizeMap[validSize] || sizeMap.md;
+  // eslint-disable-next-line security/detect-object-injection -- validColor is validated against colorMap keys
   const colorClass = colorMap[validColor] || colorMap.primary;
 
   return (

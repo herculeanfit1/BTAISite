@@ -207,7 +207,8 @@ export async function testNavigation(page: Page) {
     const href = await link.getAttribute("href");
     if (href && !href.startsWith("http")) {
       await link.click();
-      await expect(page).toHaveURL(new RegExp(href));
+      // eslint-disable-next-line security/detect-non-literal-regexp -- href is from internal nav links, not user input
+      await expect(page).toHaveURL(new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
       // Go back to home if we're not already there
       if ((await page.url()) !== "http://localhost:3000/") {

@@ -90,6 +90,7 @@ class Logger {
    */
   private log(level: LogLevel, message: string, data?: unknown): void {
     // Check if we should log this level
+    // eslint-disable-next-line security/detect-object-injection -- level is typed as LogLevel union
     if (LOG_LEVELS[level] < LOG_LEVELS[this.logLevel]) {
       return;
     }

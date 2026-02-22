@@ -166,6 +166,7 @@ async function FastPerformanceData() {
               style={{ height: `${(point / maxValue) * 100}%` }}
             ></div>
             <span className="mt-2 text-xs text-gray-500">
+              {/* eslint-disable-next-line security/detect-object-injection -- index from .map() callback */}
               {performanceData.labels[index]}
             </span>
           </div>

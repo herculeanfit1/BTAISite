@@ -140,8 +140,8 @@ export const VercelInspiredAnimation: React.FC<
 
         // Get a color for this ray using a safer method
         const colorIndex = i % rayColors.length;
-        // Use a safer approach for array access
-        const color = rayColors[colorIndex] || rayColors[0]; // Fallback to first color if undefined
+        // eslint-disable-next-line security/detect-object-injection -- colorIndex is modulo-bounded
+        const color = rayColors[colorIndex] || rayColors[0];
 
         // Brighter middle section when hovered
         const midOpacity = isHovered ? "60" : "40";
