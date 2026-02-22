@@ -49,17 +49,9 @@ export const ContactSection = () => {
         });
         form.reset();
       } else {
-        // Handle validation errors specifically
-        let errorMessage = result.message || 'There was a problem sending your message. Please try again.';
-        
-        if (result.errors && Array.isArray(result.errors)) {
-          const validationErrors = result.errors.map((error: any) => `${error.path?.join('.')}: ${error.message}`).join(', ');
-          errorMessage = `Validation failed: ${validationErrors}`;
-        }
-        
         setSubmitResult({
           success: false,
-          message: errorMessage,
+          message: result.message || 'There was a problem sending your message. Please try again.',
         });
       }
     } catch (error) {
