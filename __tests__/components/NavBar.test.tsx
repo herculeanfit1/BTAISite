@@ -5,32 +5,6 @@ import { fireEvent } from "@testing-library/dom"
 import { waitFor } from "@testing-library/dom";
 import { NavBar } from '../../app/components/NavBar';
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn().mockReturnValue(null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
 // Mock next-themes
 vi.mock("next-themes", () => ({
   useTheme: () => ({
@@ -75,10 +49,9 @@ vi.mock("next/router", () => ({
 
 describe("NavBar Component", () => {
   beforeEach(() => {
-    // Reset all mocks before each test
     vi.clearAllMocks();
 
-    // Mock window.matchMedia for theme detection
+    // Mock window.matchMedia for scroll detection
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: vi.fn().mockImplementation((query) => ({
@@ -97,9 +70,7 @@ describe("NavBar Component", () => {
   it("renders the navigation bar with logo", async () => {
     render(<NavBar />);
 
-    // Wait for the component to be fully rendered
     await waitFor(() => {
-      // Use getByRole to find the navigation element instead of document.querySelector
       const navElement = screen.getByRole("navigation", { hidden: true });
       expect(navElement).toBeInTheDocument();
     });
@@ -108,7 +79,6 @@ describe("NavBar Component", () => {
   it("displays navigation links on desktop", () => {
     render(<NavBar />);
 
-    // Check for navigation links
     expect(screen.getByText("Solutions")).toBeInTheDocument();
     expect(screen.getByText("About")).toBeInTheDocument();
     expect(screen.getByText("Contact")).toBeInTheDocument();
@@ -117,30 +87,24 @@ describe("NavBar Component", () => {
   it("renders navigation links correctly", () => {
     render(<NavBar />);
 
-    // Check for navigation links
     expect(screen.getByRole('link', { name: 'Solutions' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'About' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Contact' })).toBeInTheDocument();
   });
 
   it("toggles mobile menu when hamburger button is clicked", () => {
-    // Set viewport width to mobile
     window.innerWidth = 640;
 
     render(<NavBar />);
 
-    // Find and click the hamburger button (using aria-label "Toggle menu")
     const menuButton = screen.getByLabelText("Toggle menu");
     fireEvent.click(menuButton);
 
-    // Check if mobile menu is visible after click
-    // Use getAllByRole instead of document.querySelector
     const mobileMenuItems = screen.getAllByText(
       /(Solutions|About|Contact)/,
     );
     expect(mobileMenuItems.length).toBeGreaterThanOrEqual(3);
 
-    // Click again to close
     fireEvent.click(menuButton);
   });
 });

@@ -1,64 +1,31 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ThemeToggle } from '../../app/components/ThemeToggle';
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
+// Track theme state for mock
+let mockTheme = 'light';
+const mockSetTheme = vi.fn((theme: string) => {
+  mockTheme = theme;
 });
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+vi.mock('next-themes', () => ({
+  useTheme: () => ({
+    resolvedTheme: mockTheme,
+    setTheme: mockSetTheme,
+    theme: mockTheme,
+  }),
+}));
 
 describe('ThemeToggle', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     vi.clearAllMocks();
-    localStorageMock.getItem.mockReturnValue(null);
-    
-    // Reset document classes
-    document.documentElement.className = '';
-    
-    // Reset matchMedia to default (light mode preference)
-    window.matchMedia = vi.fn().mockImplementation(query => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
-  });
-
-  afterEach(() => {
-    // Clean up document classes after each test
-    document.documentElement.className = '';
+    mockTheme = 'light';
   });
 
   it('renders the theme toggle button', () => {
     render(<ThemeToggle />);
-    
+
     const button = screen.getByTestId('dark-mode-toggle');
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
@@ -66,119 +33,71 @@ describe('ThemeToggle', () => {
 
   it('starts in light mode by default', () => {
     render(<ThemeToggle />);
-    
+
     const button = screen.getByTestId('dark-mode-toggle');
     expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
     expect(button).toHaveAttribute('title', 'Switch to dark mode');
   });
 
-  it('respects saved theme preference from localStorage', async () => {
-    localStorageMock.getItem.mockReturnValue('dark');
-    
-    render(<ThemeToggle />);
-    
-    // Wait for useEffect to run and apply the theme
-    await waitFor(() => {
-      const button = screen.getByTestId('dark-mode-toggle');
-      expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
-      // DOM class manipulation works in browser but not in test environment
-      // expect(document.documentElement.classList.contains('dark')).toBe(true);
-    });
-  });
-
-  it('respects system preference when no saved theme', async () => {
-    window.matchMedia = vi.fn().mockImplementation(query => ({
-      matches: query === '(prefers-color-scheme: dark)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
+  it('shows dark mode UI when resolvedTheme is dark', () => {
+    mockTheme = 'dark';
 
     render(<ThemeToggle />);
-    
-    await waitFor(() => {
-      const button = screen.getByTestId('dark-mode-toggle');
-      expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
-      // DOM class manipulation works in browser but not in test environment
-      // expect(document.documentElement.classList.contains('dark')).toBe(true);
-    });
-  });
 
-  it('toggles theme when clicked', async () => {
-    render(<ThemeToggle />);
-    
     const button = screen.getByTestId('dark-mode-toggle');
-    
-    // Initially in light mode - check aria-label instead of DOM classes
-    expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
-    
-    // Click to switch to dark mode
-    fireEvent.click(button);
-    
-    await waitFor(() => {
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark');
-      expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
-      // DOM class manipulation works in browser but not in test environment
-      // expect(document.documentElement.classList.contains('dark')).toBe(true);
-    });
-    
-    // Click again to switch back to light mode
-    fireEvent.click(button);
-    
-    await waitFor(() => {
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light');
-      expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
-      // DOM class manipulation works in browser but not in test environment
-      // expect(document.documentElement.classList.contains('dark')).toBe(false);
-    });
+    expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
   });
 
-  it('updates aria-label and title when theme changes', async () => {
+  it('calls setTheme when clicked', () => {
     render(<ThemeToggle />);
-    
+
     const button = screen.getByTestId('dark-mode-toggle');
-    
-    // Initially shows "Switch to dark mode"
+    fireEvent.click(button);
+
+    expect(mockSetTheme).toHaveBeenCalledWith('dark');
+  });
+
+  it('calls setTheme("light") when in dark mode and clicked', () => {
+    mockTheme = 'dark';
+
+    render(<ThemeToggle />);
+
+    const button = screen.getByTestId('dark-mode-toggle');
+    fireEvent.click(button);
+
+    expect(mockSetTheme).toHaveBeenCalledWith('light');
+  });
+
+  it('updates aria-label and title based on theme', () => {
+    render(<ThemeToggle />);
+
+    const button = screen.getByTestId('dark-mode-toggle');
+
+    // Light mode shows "Switch to dark mode"
     expect(button).toHaveAttribute('aria-label', 'Switch to dark mode');
     expect(button).toHaveAttribute('title', 'Switch to dark mode');
-    
-    // Click to switch to dark mode
-    fireEvent.click(button);
-    
-    await waitFor(() => {
-      expect(button).toHaveAttribute('aria-label', 'Switch to light mode');
-      expect(button).toHaveAttribute('title', 'Switch to light mode');
-    });
   });
 
   it('has correct styling classes', () => {
     render(<ThemeToggle />);
-    
+
     const button = screen.getByTestId('dark-mode-toggle');
     expect(button).toHaveClass('relative', 'flex', 'h-4', 'w-4');
   });
 
-  it('displays correct icon for light mode', async () => {
+  it('displays moon icon in light mode', () => {
     render(<ThemeToggle />);
-    
-    await waitFor(() => {
-      const moonIcon = screen.getByRole('button').querySelector('svg');
-      expect(moonIcon).toHaveClass('text-blue-600');
-    });
+
+    const icon = screen.getByRole('button').querySelector('svg');
+    expect(icon).toHaveClass('text-blue-600');
   });
 
-  it('displays correct icon for dark mode', async () => {
-    localStorageMock.getItem.mockReturnValue('dark');
-    
+  it('displays sun icon in dark mode', () => {
+    mockTheme = 'dark';
+
     render(<ThemeToggle />);
-    
-    await waitFor(() => {
-      const sunIcon = screen.getByRole('button').querySelector('svg');
-      expect(sunIcon).toHaveClass('text-yellow-500');
-    });
+
+    const icon = screen.getByRole('button').querySelector('svg');
+    expect(icon).toHaveClass('text-yellow-500');
   });
 });
