@@ -155,7 +155,7 @@ describe('Dark Mode Integration', () => {
     const themeToggle = screen.getByTestId('dark-mode-toggle');
     
     // Check size classes
-    expect(themeToggle).toHaveClass('h-3', 'w-3');
+    expect(themeToggle).toHaveClass('h-4', 'w-4');
     
     // Check styling classes
     expect(themeToggle).toHaveClass(
@@ -185,8 +185,8 @@ describe('Dark Mode Integration', () => {
       const newIcon = themeToggle.querySelector('svg');
       expect(newIcon).toBeInTheDocument();
       // Icon should exist and be functional
-      expect(newIcon?.classList.contains('h-2')).toBe(true);
-      expect(newIcon?.classList.contains('w-2')).toBe(true);
+      expect(newIcon?.classList.contains('h-2.5')).toBe(true);
+      expect(newIcon?.classList.contains('w-2.5')).toBe(true);
     });
   });
 
@@ -194,7 +194,7 @@ describe('Dark Mode Integration', () => {
     render(<NavBar />);
 
     const header = screen.getByRole('navigation');
-    expect(header).toHaveClass('bg-white/80', 'dark:bg-gray-900/80');
+    expect(header).toHaveClass('bg-white', 'dark:bg-gray-900');
     expect(header).toHaveAttribute('data-theme-bg', 'true');
   });
 

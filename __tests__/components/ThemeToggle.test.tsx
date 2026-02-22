@@ -159,7 +159,7 @@ describe('ThemeToggle', () => {
     render(<ThemeToggle />);
     
     const button = screen.getByTestId('dark-mode-toggle');
-    expect(button).toHaveClass('relative', 'flex', 'h-3', 'w-3');
+    expect(button).toHaveClass('relative', 'flex', 'h-4', 'w-4');
   });
 
   it('displays correct icon for light mode', async () => {
