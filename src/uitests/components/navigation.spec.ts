@@ -1,7 +1,6 @@
-import { test, expect, type Page, type Locator } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   skipTest,
-  isMobileViewport,
   isDesktopViewport,
 } from "../utils/test-utils";
 
@@ -87,11 +86,6 @@ test.describe("Navigation Component", () => {
     // Hamburger menu should be visible on mobile
     await expect(hamburgerMenu).toBeVisible();
 
-    // Track the mobile nav menu for potential future tests
-    const mobileNavMenu = page.locator(
-      ".mobile-menu, .menu-dropdown, [aria-label='mobile navigation']"
-    );
-
     // Click hamburger menu to open mobile nav (if it's toggleable)
     await hamburgerMenu.click();
 
@@ -168,11 +162,6 @@ test.describe("Navigation Component", () => {
 
     // Check hamburger button is visible
     await expect(hamburgerButton).toBeVisible();
-
-    // Check that nav menu is not fully visible initially
-    const mobileNavMenu = page.locator(
-      'nav:not(:visible), [class*="mobile-menu"], [class*="nav-menu"]'
-    );
 
     // Get the current state
     const isMenuVisibleInitially = await page.evaluate(() => {

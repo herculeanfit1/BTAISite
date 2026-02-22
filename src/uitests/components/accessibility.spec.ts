@@ -12,7 +12,7 @@ test.describe("Site-wide Accessibility", () => {
       try {
         await page.goto(path);
         await page.waitForLoadState("networkidle");
-      } catch (e) {
+      } catch (_e) {
         skipTest(`Page ${path} not found or failed to load`);
         return;
       }

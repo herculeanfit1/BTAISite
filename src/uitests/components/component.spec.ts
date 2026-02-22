@@ -306,7 +306,7 @@ test.describe("UI Components", () => {
             "pricing-card"
           );
         }
-      } catch (e) {
+      } catch (_e) {
         // Pricing page might not exist, continue with other tests
         console.log("Pricing page not found or error navigating to it");
       }

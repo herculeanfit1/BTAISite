@@ -280,7 +280,7 @@ test.describe("Bundle Size Analysis", () => {
               size: text.length,
               isModule: script.getAttribute("type") === "module",
             };
-          } catch (e) {
+          } catch (_e) {
             return {
               src,
               size: 0,

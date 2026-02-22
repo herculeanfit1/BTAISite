@@ -61,7 +61,7 @@ async function takeAndCompareScreenshot(
 ): Promise<void> {
   try {
     // Take a screenshot
-    const screenshot = await page.screenshot({
+    await page.screenshot({
       fullPage: false,
       path: `test-results/screenshots/${screenshotName}.png`,
     });
@@ -72,7 +72,7 @@ async function takeAndCompareScreenshot(
         maxDiffPixelRatio: threshold,
       });
       console.log(`✅ Visual regression test passed for ${screenshotName}`);
-    } catch (e) {
+    } catch (_e) {
       // If baseline doesn't exist, this will fail but we should continue
       console.log(
         `⚠️ No baseline found for ${screenshotName} - creating first version`

@@ -70,24 +70,25 @@ const lighthouseMobileConfig: LighthouseConfigType = {
 
 // Define the audit function for integration testing
 const playAudit = async ({
-  page,
+  _page,
   config,
   thresholds,
-  reports,
+  _reports,
 }: {
-  page: any;
+  _page: unknown;
   config: LighthouseConfigType;
   thresholds: Record<string, number>;
-  reports: {
+  _reports: {
     formats?: Record<string, boolean>;
     name?: string;
     directory?: string;
-    [key: string]: any;
   };
 }) => {
   // This is a stub function that would normally run Lighthouse
   // In a real implementation, this would integrate with Lighthouse
+  // eslint-disable-next-line no-console
   console.log(`Running Lighthouse audit with config:`, JSON.stringify(config));
+  // eslint-disable-next-line no-console
   console.log(`Using thresholds:`, JSON.stringify(thresholds));
   // Normally this would return Lighthouse results
 };
@@ -177,7 +178,7 @@ test.describe("Lighthouse performance tests", () => {
       try {
         await page.goto(path);
         await page.waitForLoadState("networkidle");
-      } catch (e) {
+      } catch (_e) {
         skipTest(`Page ${path} not found or failed to load`);
         await context.close();
         return;
@@ -185,10 +186,10 @@ test.describe("Lighthouse performance tests", () => {
 
       // Run Lighthouse audit
       await playAudit({
-        page: page,
+        _page: page,
         config: lighthouseDesktopConfig,
         thresholds: THRESHOLD,
-        reports: {
+        _reports: {
           formats: {
             html: true,
           },
@@ -216,7 +217,7 @@ test.describe("Lighthouse performance tests", () => {
       try {
         await page.goto(path);
         await page.waitForLoadState("networkidle");
-      } catch (e) {
+      } catch (_e) {
         skipTest(`Page ${path} not found or failed to load`);
         await context.close();
         return;
@@ -224,14 +225,14 @@ test.describe("Lighthouse performance tests", () => {
 
       // Run Lighthouse audit with mobile configuration
       await playAudit({
-        page: page,
+        _page: page,
         config: lighthouseMobileConfig,
         thresholds: {
           ...THRESHOLD,
           // Mobile performance thresholds can be slightly lower
           performance: 70,
         },
-        reports: {
+        _reports: {
           formats: {
             html: true,
           },

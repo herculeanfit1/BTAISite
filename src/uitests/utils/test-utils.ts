@@ -206,7 +206,6 @@ export async function testNavigation(page: Page) {
   for (const link of await navLinks.all()) {
     const href = await link.getAttribute("href");
     if (href && !href.startsWith("http")) {
-      const linkText = await link.textContent();
       await link.click();
       await expect(page).toHaveURL(new RegExp(href));
 

@@ -1,5 +1,5 @@
-import { test, expect, type Page, type Locator } from "@playwright/test";
-import { skipTest, getComputedStyle, hasClass } from "../utils/test-utils";
+import { test, expect } from "@playwright/test";
+import { skipTest, getComputedStyle } from "../utils/test-utils";
 
 test.describe("Button Component", () => {
   // Test setup for component testing
@@ -162,7 +162,7 @@ test.describe("Button Component", () => {
               return true;
             }
           }
-        } catch (e) {
+        } catch (_e) {
           // Accessing cross-origin stylesheets will throw an error
           continue;
         }
@@ -454,7 +454,7 @@ test.describe("Button Component", () => {
       expect(isFocused).toBeTruthy();
 
       // Check for visible focus indicator
-      const hasFocusStyles = await button.evaluate((el) => {
+      const _hasFocusStyles = await button.evaluate((el) => {
         const style = window.getComputedStyle(el);
         return (
           (style.outline !== "0px none" && style.outline !== "none") ||

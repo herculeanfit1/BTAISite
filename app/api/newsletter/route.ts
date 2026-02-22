@@ -18,8 +18,6 @@ const newsletterSchema = z.object({
     .optional(),
 });
 
-type NewsletterData = z.infer<typeof newsletterSchema>;
-
 // Honeypot field names to check (hidden fields that bots might fill)
 const HONEYPOT_FIELDS = ["website", "url", "address", "phone"];
 

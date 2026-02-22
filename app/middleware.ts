@@ -4,7 +4,7 @@ import { randomBytes } from 'crypto';
 /**
  * Middleware to generate CSP nonces and set security headers
  */
-export function middleware(request: NextRequest) {
+export function middleware(_request: NextRequest) {
   const response = NextResponse.next();
   
   // Generate a cryptographically secure nonce for this request

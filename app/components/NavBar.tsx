@@ -21,7 +21,7 @@ interface NavBarProps {
 }
 
 // Main NavBar component that gets exported
-export const NavBar = ({ locale }: NavBarProps) => {
+export const NavBar = ({ locale: _locale }: NavBarProps) => {
   // State for mobile menu toggle and scroll detection
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Route } from "next";
 
 /**
  * AI Without Borders Section Component
