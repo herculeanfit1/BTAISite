@@ -9,9 +9,6 @@
  * - Mobile hamburger menu with dropdown
  * - Scroll effect that adds shadow when scrolling down
  * - Theme toggle in the upper left corner
- *
- * The component ensures proper spacing, sizing, and responsive behavior
- * to match the production website appearance.
  */
 
 import { useState, useEffect } from "react";
@@ -45,7 +42,7 @@ export const NavBar = ({ locale }: NavBarProps) => {
     e.preventDefault();
     const contactSection = document.getElementById('contact');
     if (contactSection) {
-      contactSection.scrollIntoView({ 
+      contactSection.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -53,22 +50,15 @@ export const NavBar = ({ locale }: NavBarProps) => {
   };
 
   return (
-    <header
-      role="navigation"
-      className={`fixed top-0 right-0 left-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${isScrolled ? "shadow-lg" : "shadow-sm"}`}
-      style={{
-        paddingTop: "0.75rem",
-        paddingBottom: "0.75rem",
-        backgroundColor: "rgb(255, 255, 255)", // Solid white in light mode
-        opacity: 1, // Ensure full opacity
-      }}
+    <nav
+      className={`fixed top-0 right-0 left-0 z-50 w-full py-3 transition-all duration-300 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${isScrolled ? "shadow-lg" : "shadow-sm"}`}
       data-theme-bg="true"
     >
       {/* Theme Toggle in Very Top Corner */}
       <div className="absolute top-2 left-2 z-[1001]">
         <ThemeToggle />
       </div>
-      
+
       <div className="w-full px-6">
         <div className="mx-auto flex h-12 max-w-[1400px] items-center justify-between">
           {/* Company Logo and Name */}
@@ -80,21 +70,11 @@ export const NavBar = ({ locale }: NavBarProps) => {
                   alt="Bridging Trust AI Logo"
                   width={108}
                   height={108}
-                  className="mr-3 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110"
-                  style={{
-                    objectFit: "contain",
-                    borderRadius: "50%",
-                    backgroundColor: "#f0f7fc",
-                    border: "2px solid #e5f1fa",
-                  }}
+                  className="mr-3 overflow-hidden rounded-full object-contain bg-[#f0f7fc] border-2 border-[#e5f1fa] transition-transform duration-300 group-hover:scale-110"
                 />
                 {/* Company name with gradient text effect */}
                 <span
-                  className="text-xl font-bold whitespace-nowrap bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text text-transparent dark:from-[#5B90B0] dark:to-[#9CAEB8]"
-                  style={{
-                    fontWeight: "700",
-                    fontSize: "2.01rem", // Increased by 15% (1.75 * 1.15)
-                  }}
+                  className="whitespace-nowrap font-bold text-[2.01rem] bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text text-transparent dark:from-[#5B90B0] dark:to-[#9CAEB8]"
                 >
                   &nbsp;&nbsp;Bridging Trust AI
                 </span>
@@ -103,51 +83,30 @@ export const NavBar = ({ locale }: NavBarProps) => {
           </div>
 
           {/* Desktop Navigation - always visible and right-justified */}
-          <div className="ml-auto flex items-center" style={{ gap: "1.5rem" }}>
+          <div className="ml-auto flex items-center gap-6">
             {/* Solutions link with hover underline effect */}
             <Link
               href="/#solutions"
-              className="group relative px-4 py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
-              style={{
-                fontWeight: 600,
-                overflow: "hidden",
-                fontSize: "1.05rem",
-                display: "inline-block",
-              }}
+              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
             >
               <span className="relative z-10">Solutions</span>
               <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            
+
             {/* About link with hover underline effect */}
             <Link
               href="/#about"
-              className="group relative px-4 py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
-              style={{
-                fontWeight: 600,
-                overflow: "hidden",
-                fontSize: "1.05rem",
-                display: "inline-block",
-              }}
+              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
             >
               <span className="relative z-10">About</span>
               <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            
+
             {/* Contact button styled as a call-to-action */}
             <a
               href="#contact"
               onClick={handleContactClick}
-              className="rounded-lg px-6 py-2 font-medium text-white bg-[#5B90B0] dark:bg-[#3A5F77] transition-all hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] hover:shadow-md cursor-pointer"
-              style={{
-                fontWeight: 600,
-                fontSize: "1.05rem",
-                padding: "10px 24px",
-                borderRadius: "8px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                display: "inline-block",
-                color: "white", // Ensure white text in both light and dark mode
-              }}
+              className="inline-block cursor-pointer rounded-lg bg-[#5B90B0] dark:bg-[#3A5F77] px-6 py-2.5 text-[1.05rem] font-semibold text-white shadow-sm transition-all hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] hover:shadow-md"
             >
               Contact
             </a>
@@ -227,6 +186,6 @@ export const NavBar = ({ locale }: NavBarProps) => {
           </div>
         </div>
       )}
-    </header>
+    </nav>
   );
 };
