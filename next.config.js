@@ -56,26 +56,12 @@ const nextConfig = {
     ],
   },
 
-  /**
-   * TypeScript type checking during builds
-   *
-   * Re-enabled as part of security improvements.
-   * See docs/security-improvements.md for details.
-   */
   typescript: {
-    // Re-enabled type checking for enhanced security and code quality
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
-  /**
-   * ESLint checking during builds
-   *
-   * We allow ESLint warnings but fail on errors.
-   * See docs/security-improvements.md for details on the plan to fix all ESLint issues.
-   */
   eslint: {
-    // Don't fail the build on ESLint warnings, but still report them
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
   // Enable CSS optimization experiments

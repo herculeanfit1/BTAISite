@@ -8,12 +8,12 @@ interface VisualRegressionTestVariant {
   setup?: () => Promise<void>;
   cleanup?: () => Promise<void>;
   threshold?: number;
-  page?: any;
+  page?: import("@playwright/test").Page;
 }
 
 // Type for testVisualRegression function with variants support
 interface TestVisualRegressionOptions {
-  page: any;
+  page: import("@playwright/test").Page;
   name: string;
   variants?: VisualRegressionTestVariant[];
   defaultThreshold?: number;
@@ -24,7 +24,7 @@ interface TestCase {
   name: string;
   url: string;
   waitForSelector?: string;
-  page?: any;
+  page?: import("@playwright/test").Page;
 }
 
 // declare module for text content tests
@@ -39,4 +39,4 @@ interface PerformanceMetrics {
   lcp?: number;
   cls?: number;
   fid?: number;
-} 
+}
