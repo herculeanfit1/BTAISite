@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Cross-site standards**: See `STANDARDS.md` in this repo for shared conventions
+> that apply across all TK web properties. This file documents BTAISite-specific
+> details only. STANDARDS.md takes precedence on any conflicting guidance.
+
 ## Project Overview
 
 Bridging Trust AI marketing/consulting website built with **Next.js 15.4.x** (App Router), **React 19**, **TypeScript 5** (strict), and **Tailwind CSS 4.1**. Deployed on **Azure Static Web Apps** with a working contact form powered by Resend email service.
@@ -70,21 +74,15 @@ npm run validate:quick    # Quick validation
 `@/components/*`, `@/lib/*`, `@/types/*` — configured in tsconfig.json
 
 ### Contact Form / Email Pipeline
-The contact form (`app/api/contact/route.ts`) uses: Zod validation → honeypot bot detection (`_gotcha` field) → per-IP rate limiting (5/hour) → circuit breaker pattern → Resend API for dual delivery (user confirmation + admin notification). Email templates in `src/lib/email-templates/`.
+The contact form (`app/api/contact/route.ts`) uses: Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `src/lib/email-templates/`.
 
 ### Key Patterns
-- **Server Components by default** — only add `'use client'` for true interactivity
-- **Named exports** for components; default exports for pages
-- **Zod validation** on all API inputs
-- **Dark mode** — class-based via next-themes; always include `dark:` Tailwind variants
+- **Dark mode** — class-based via next-themes; ThemeToggle uses `useTheme()` hook
 - **CSP/security headers** — generated in middleware with nonce; no inline styles/scripts that break CSP
 - **ESM modules** throughout (`"type": "module"` in package.json)
 
 ## Testing
 
-- **Primary runner**: Vitest with happy-dom environment
-- **E2E**: Playwright (Chromium, Firefox, WebKit)
-- **Coverage ratchet**: CI floor ≥ 30%, local target ≥ 70%
 - **Docker testing** available for consistent cross-platform results (avoids Rollup platform issues)
 - **Pre-commit hooks**: Husky + lint-staged runs ESLint fix and affected tests on staged files
 
@@ -95,12 +93,8 @@ The contact form (`app/api/contact/route.ts`) uses: Zod validation → honeypot 
 - **Environment variables**: Managed in Azure portal (RESEND_API_KEY, EMAIL_FROM, EMAIL_TO, etc.)
 - **Images unoptimized**: Required for Azure Static Web Apps compatibility (`next.config.js`)
 
-## Conventions
+## BTAISite-Specific Notes
 
-- TypeScript strict mode; avoid `any` (isolate and justify if unavoidable)
-- Tailwind utilities only — no inline styles or unscoped global CSS
-- Files soft-capped at 150 lines (app code) / 250 lines (config/infra)
-- Use `logger` instead of `console.log` in production paths
-- Conventional commits: `feat`, `fix`, `refactor`, etc.
-- API route pattern: zod validate → rate-limit → action → typed `Response.json`
 - Node 20.19.1 required (18.x incompatible, 23.x causes issues)
+- Use `logger` instead of `console.log` in production paths
+- i18n via next-intl with locale routing (en, es, fr)
