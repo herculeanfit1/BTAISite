@@ -1,34 +1,32 @@
 # Bridging Trust AI CODEOWNERS file
-# This file defines who is responsible for reviewing and approving changes to different parts of the codebase.
 # https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 
-# Default owners for everything in the repo
-# These users will be requested for review when someone opens a pull request
+# Default owner for everything
 * @herculeanfit1
 
-# App directory
-/app/ @herculeanfit1
-
-# API routes
-/app/api/ @herculeanfit1
+# CI/CD configuration
+/.github/ @herculeanfit1
+/ci/ @herculeanfit1
+/scripts/ @herculeanfit1
 
 # Infrastructure and configuration
-/.github/ @herculeanfit1
-/scripts/ @herculeanfit1
 /*.config.js @herculeanfit1
 /*.config.mjs @herculeanfit1
 /next.config.js @herculeanfit1
-/tailwind.config.js @herculeanfit1
 
-# Email function
-/email-function/ @herculeanfit1
-
-# Security-related files
+# Security-sensitive files
 /middleware.ts @herculeanfit1
+/src/lib/email.ts @herculeanfit1
+/src/lib/rate-limit.ts @herculeanfit1
+/app/api/ @herculeanfit1
+
+# Standards documents
+STANDARDS.md @herculeanfit1
+CLAUDE.md @herculeanfit1
 
 # Documentation
 /docs/ @herculeanfit1
 
 # Tests
 /__tests__/ @herculeanfit1
-/e2e/ @herculeanfit1 
+/src/uitests/ @herculeanfit1
