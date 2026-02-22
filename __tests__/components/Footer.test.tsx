@@ -113,9 +113,9 @@ describe('Footer', () => {
 
   it('has proper spacing between navigation links', () => {
     render(<Footer />);
-    
+
     const linksContainer = screen.getByText('About').closest('.flex');
-    expect(linksContainer).toHaveClass('mb-16', 'flex', 'flex-row', 'items-center', 'justify-center', 'space-x-8');
+    expect(linksContainer).toHaveClass('mb-16', 'flex', 'flex-row', 'items-center', 'justify-center', 'gap-14');
   });
 
   it('includes horizontal divider', () => {
@@ -128,25 +128,21 @@ describe('Footer', () => {
 
   it('has proper gradient styling for copyright text', () => {
     render(<Footer />);
-    
+
     const copyrightText = screen.getByText(/© \d{4} Bridging Trust AI. All rights reserved./);
-    
-    // Check if the element has inline styles applied (the component uses inline styles)
-    expect(copyrightText).toHaveStyle({
-      background: 'linear-gradient(90deg, #3A5F77 0%, #5B90B0 100%)',
-      fontWeight: '500'
-    });
-    
-    // Verify the element exists and has the expected content
+
+    // Check Tailwind gradient classes
+    expect(copyrightText).toHaveClass('bg-gradient-to-r', 'from-[#3A5F77]', 'to-[#5B90B0]', 'bg-clip-text', 'font-medium', 'text-transparent');
+
     expect(copyrightText).toBeInTheDocument();
     expect(copyrightText.tagName).toBe('P');
   });
 
   it('has hover effects on navigation links', () => {
     render(<Footer />);
-    
+
     const aboutLink = screen.getByRole('link', { name: 'About' });
-    expect(aboutLink).toHaveClass('transition-colors', 'hover:text-[#5B90B0]');
+    expect(aboutLink).toHaveClass('text-gray-500', 'transition-colors', 'hover:text-[#5B90B0]');
   });
 
   it('maintains proper accessibility with semantic HTML', () => {
