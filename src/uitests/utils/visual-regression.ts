@@ -4,7 +4,7 @@
  * This utility provides functions to test visual regression of components
  * with support for multiple variants (dark mode, mobile, etc.)
  */
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { skipTest } from "./test-utils";
 
 /**
@@ -55,7 +55,7 @@ export async function testVisualRegression(
  * @param threshold Difference threshold (0-1)
  */
 async function takeAndCompareScreenshot(
-  page: any,
+  page: Page,
   screenshotName: string,
   threshold: number
 ): Promise<void> {
@@ -89,7 +89,7 @@ async function takeAndCompareScreenshot(
  * Create variants for dark mode testing
  */
 export function createDarkModeVariants(
-  page: unknown,
+  page: Page,
   setupFn?: () => Promise<void>,
   cleanupFn?: () => Promise<void>
 ): VisualRegressionTestVariant[] {
@@ -111,19 +111,15 @@ export function createDarkModeVariants(
         // Switch to dark mode
         await setupFn?.();
         // Add dark mode class to html element
-        if (page && typeof page === "object" && "evaluate" in page) {
-          await (page as any).evaluate(() => {
-            document.documentElement.classList.add("dark");
-          });
-        }
+        await page.evaluate(() => {
+          document.documentElement.classList.add("dark");
+        });
       },
       async cleanup() {
         // Remove dark mode class
-        if (page && typeof page === "object" && "evaluate" in page) {
-          await (page as any).evaluate(() => {
-            document.documentElement.classList.remove("dark");
-          });
-        }
+        await page.evaluate(() => {
+          document.documentElement.classList.remove("dark");
+        });
         await cleanupFn?.();
       },
       threshold: 0.1,

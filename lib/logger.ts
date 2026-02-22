@@ -4,7 +4,7 @@ interface LogEntry {
   message: string;
   level: LogLevel;
   timestamp: string;
-  data?: any;
+  data?: unknown;
 }
 
 // Set default log level based on environment
@@ -41,7 +41,7 @@ class Logger {
   private createLogEntry(
     level: LogLevel,
     message: string,
-    data?: any,
+    data?: unknown,
   ): LogEntry {
     return {
       message,
@@ -88,7 +88,7 @@ class Logger {
   /**
    * Log a message if the level is greater than or equal to the configured log level
    */
-  private log(level: LogLevel, message: string, data?: any): void {
+  private log(level: LogLevel, message: string, data?: unknown): void {
     // Check if we should log this level
     if (LOG_LEVELS[level] < LOG_LEVELS[this.logLevel]) {
       return;
@@ -119,19 +119,19 @@ class Logger {
     this.sendToRemoteService(entry);
   }
 
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: unknown): void {
     this.log("debug", message, data);
   }
 
-  info(message: string, data?: any): void {
+  info(message: string, data?: unknown): void {
     this.log("info", message, data);
   }
 
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: unknown): void {
     this.log("warn", message, data);
   }
 
-  error(message: string, data?: any): void {
+  error(message: string, data?: unknown): void {
     this.log("error", message, data);
   }
 }
