@@ -71,10 +71,10 @@ async function takeAndCompareScreenshot(
       await expect(page).toHaveScreenshot(`${screenshotName}.png`, {
         maxDiffPixelRatio: threshold,
       });
-      console.log(`✅ Visual regression test passed for ${screenshotName}`);
+      console.warn(`✅ Visual regression test passed for ${screenshotName}`);
     } catch (_e) {
       // If baseline doesn't exist, this will fail but we should continue
-      console.log(
+      console.warn(
         `⚠️ No baseline found for ${screenshotName} - creating first version`
       );
     }

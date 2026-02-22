@@ -86,9 +86,7 @@ const playAudit = async ({
 }) => {
   // This is a stub function that would normally run Lighthouse
   // In a real implementation, this would integrate with Lighthouse
-  // eslint-disable-next-line no-console
   console.log(`Running Lighthouse audit with config:`, JSON.stringify(config));
-  // eslint-disable-next-line no-console
   console.log(`Using thresholds:`, JSON.stringify(thresholds));
   // Normally this would return Lighthouse results
 };

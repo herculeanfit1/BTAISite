@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { logger } from '../../lib/logger';
 
 // Lazy initialization to avoid build-time errors
 let resendClient: Resend | null = null;
@@ -118,7 +119,7 @@ export async function sendContactEmail(data: ContactFormData): Promise<EmailResu
 
     // Development mode simulation
     if (process.env.RESEND_TEST_MODE === 'true') {
-      console.log('📧 Email would be sent (test mode):', {
+      logger.info('📧 Email would be sent (test mode):', {
         to: process.env.EMAIL_TO,
         from: process.env.EMAIL_FROM,
         subject: `New Contact Form Submission from ${data.firstName} ${data.lastName}`,
@@ -158,7 +159,7 @@ export async function sendContactEmail(data: ContactFormData): Promise<EmailResu
       html: generateAdminNotificationEmail(data),
     });
 
-    console.log('📧 Emails sent successfully:', {
+    logger.info('📧 Emails sent successfully:', {
       confirmation: confirmationResult.data?.id,
       admin: adminResult.data?.id,
     });

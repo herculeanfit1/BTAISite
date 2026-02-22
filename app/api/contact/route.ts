@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendContactEmail, type ContactFormData } from '@/src/lib/email';
+import { logger } from '@/lib/logger';
 
 // Validation schema using Zod
 const contactFormSchema = z.object({
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Bot protection: Check honeypot field
     if (body._gotcha && body._gotcha.trim() !== '') {
-      console.log('🤖 Bot detected via honeypot field:', { ipAddress, userAgent });
+      logger.warn('🤖 Bot detected via honeypot field:', { ipAddress, userAgent });
       return NextResponse.json(
         { success: false, message: 'Invalid submission' },
         { status: 400, headers: corsHeaders }
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Validate form data
     const validationResult = contactFormSchema.safeParse(body);
     if (!validationResult.success) {
-      console.log('❌ Validation failed:', validationResult.error.errors);
+      logger.warn('❌ Validation failed:', validationResult.error.errors);
       return NextResponse.json(
         { 
           success: false, 
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ Contact form submission successful:', {
+    logger.info('✅ Contact form submission successful:', {
       name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
       company: formData.company,

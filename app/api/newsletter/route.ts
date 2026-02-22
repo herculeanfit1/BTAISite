@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { withRateLimit } from "../../../lib/rate-limit";
 import { z } from "zod";
+import { logger } from "../../../lib/logger";
 
 // Define schema for validation
 const newsletterSchema = z.object({
@@ -35,7 +36,7 @@ async function handler(request: NextRequest) {
     for (const field of HONEYPOT_FIELDS) {
       if (body[field]) {
         // If honeypot field is filled, pretend success but don't process
-        console.log("Honeypot detected, ignoring newsletter submission");
+        logger.warn("Honeypot detected, ignoring newsletter submission");
         return NextResponse.json(
           {
             success: true,
@@ -71,7 +72,7 @@ async function handler(request: NextRequest) {
 
     // TODO: In production, implement actual email list subscription
     // For now, we'll just log the information and return a success response
-    console.log("Newsletter subscription:", sanitizedData);
+    logger.info("Newsletter subscription:", sanitizedData);
 
     // In a real implementation, you would:
     // 1. Add the email to your newsletter service (e.g., Mailchimp, ConvertKit)

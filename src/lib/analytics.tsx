@@ -63,19 +63,24 @@ const googleAnalyticsProvider: AnalyticsProvider = {
 // Mock analytics provider for development and testing
 const mockAnalyticsProvider: AnalyticsProvider = {
   init: () => {
-    console.log("[Mock Analytics] Initialized");
+    // eslint-disable-next-line no-console
+    console.debug("[Mock Analytics] Initialized");
   },
   pageView: (url: string) => {
-    console.log(`[Mock Analytics] Page view: ${url}`);
+    // eslint-disable-next-line no-console
+    console.debug(`[Mock Analytics] Page view: ${url}`);
   },
   track: (name: EventName, properties?: EventProperties) => {
-    console.log(`[Mock Analytics] Event: ${name}`, properties || {});
+    // eslint-disable-next-line no-console
+    console.debug(`[Mock Analytics] Event: ${name}`, properties || {});
   },
   identify: (userId: string, traits?: Record<string, unknown>) => {
-    console.log(`[Mock Analytics] Identify user: ${userId}`, traits || {});
+    // eslint-disable-next-line no-console
+    console.debug(`[Mock Analytics] Identify user: ${userId}`, traits || {});
   },
   reset: () => {
-    console.log("[Mock Analytics] Reset user data");
+    // eslint-disable-next-line no-console
+    console.debug("[Mock Analytics] Reset user data");
   },
 };
 
