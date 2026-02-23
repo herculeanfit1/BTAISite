@@ -1,8 +1,12 @@
 "use client";
 
+/**
+ * Locale Error Component for Next.js App Router
+ *
+ * Uses inline styles to ensure proper rendering even if CSS fails to load.
+ */
+
 import { useEffect } from "react";
-import Link from "next/link";
-import { Button } from "../components/Button";
 
 interface ErrorComponentProps {
   error: Error & { digest?: string };
@@ -11,20 +15,20 @@ interface ErrorComponentProps {
 
 export default function Error({ error, reset }: ErrorComponentProps) {
   useEffect(() => {
-    // Log the error to an error reporting service
     console.error("Unhandled error:", error);
   }, [error]);
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <div className="w-full max-w-lg text-center">
-        <div className="mb-8">
-          <div className="bg-error/10 text-error mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+    <div style={{ display: "flex", minHeight: "70vh", alignItems: "center", justifyContent: "center", padding: "0 1rem" }}>
+      <div style={{ width: "100%", maxWidth: "32rem", textAlign: "center" }}>
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{ margin: "0 auto 1rem", display: "flex", width: "4rem", height: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#ef4444" }}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
-              className="h-8 w-8"
+              width="32"
+              height="32"
             >
               <path
                 fillRule="evenodd"
@@ -33,32 +37,33 @@ export default function Error({ error, reset }: ErrorComponentProps) {
               />
             </svg>
           </div>
-          <h1 className="mb-2 text-3xl font-bold">Something went wrong</h1>
-          <p className="mb-6 text-gray-600 dark:text-gray-400">
-            We're sorry, but we encountered an unexpected error.
+          <h1 style={{ marginBottom: "0.5rem", fontSize: "1.875rem", fontWeight: "bold" }}>Something went wrong</h1>
+          <p style={{ marginBottom: "1.5rem", color: "#6b7280" }}>
+            We encountered an unexpected error.
+            <span style={{ display: "block", marginTop: "0.5rem", fontSize: "0.875rem", color: "#9ca3af" }}>
+              {error.message}
+            </span>
             {error.digest && (
-              <span className="mt-2 block text-sm text-gray-500 dark:text-gray-500">
+              <span style={{ display: "block", marginTop: "0.25rem", fontSize: "0.75rem", color: "#9ca3af" }}>
                 Error ID: {error.digest}
               </span>
             )}
           </p>
         </div>
 
-        <div className="flex flex-col justify-center gap-4 sm:flex-row">
-          <Button
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+          <button
             onClick={() => reset()}
-            className="bg-primary hover:bg-primary-dark text-white"
+            style={{ padding: "0.5rem 1.5rem", backgroundColor: "#5B90B0", color: "white", borderRadius: "0.375rem", fontWeight: 500, cursor: "pointer", border: "none", fontSize: "1rem" }}
           >
             Try again
-          </Button>
-          <Link href="/" passHref>
-            <Button
-              variant="outline"
-              className="border-gray-300 dark:border-gray-700"
-            >
-              Return to homepage
-            </Button>
-          </Link>
+          </button>
+          <a
+            href="/"
+            style={{ padding: "0.5rem 1.5rem", border: "1px solid #d1d5db", borderRadius: "0.375rem", fontWeight: 500, color: "#374151", textDecoration: "none", fontSize: "1rem" }}
+          >
+            Return to homepage
+          </a>
         </div>
       </div>
     </div>

@@ -70,8 +70,8 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: ""
-          skip_app_build: false
+          output_location: ".next"
+          skip_app_build: true
         env:
           NODE_VERSION: "20.19.1"
 
@@ -120,8 +120,8 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: ""
-          skip_app_build: false
+          output_location: ".next"
+          skip_app_build: true
         env:
           NODE_VERSION: "20.19.1"
 
