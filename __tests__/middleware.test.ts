@@ -126,7 +126,7 @@ describe('Middleware tests', () => {
     };
     
     // Update the NextResponse.next mock to return our mockResponse
-    (NextResponse.next as jest.Mock).mockReturnValue(mockResponse);
+    (NextResponse.next as ReturnType<typeof vi.fn>).mockReturnValue(mockResponse);
     
     // Mock environment
     vi.stubEnv('NODE_ENV', 'development');
