@@ -4,27 +4,21 @@ This directory contains the GitHub Actions workflows for the Bridging Trust AI p
 
 ## Active Workflows
 
-- `azure-static-web-apps.yml` - Main deployment workflow for Azure Static Web Apps
-- `middleware-test.yml` - Tests for static export compatibility with middleware
-- `visual-regression.yml` - Visual regression testing
-- `hybrid-tests.yml` - Tests for hybrid rendering scenarios
-- `dependency-checks.yml` - Security scanning for dependencies
-- `dependabot-security.yml` - Dependabot security updates
-- `backup-repository.yml` - Repository backup routine
-- `auto-log-analysis.yml` - Automated log analysis
+| Workflow | File | Trigger |
+|----------|------|---------|
+| Azure Static Web Apps Deployment | `cost-optimized-ci.yml` | Push to `main`, PRs to `main` |
+| Dependabot Security Review | `dependabot-security.yml` | Dependabot PRs only |
 
-## Disabled Workflows
+## Deployment Workflow (`cost-optimized-ci.yml`)
 
-The following workflows have been disabled (renamed with `.disabled` extension) to prevent conflicts:
+Three jobs, only one runs per trigger:
 
-- `azure-static-web-apps-happy-rock-0a93fdf0f.yml.disabled` - Deprecated Azure deployment workflow
-- `ci-pipeline.yml.disabled` - Legacy CI pipeline that duplicates functionality
-- `deploy.yml.disabled` - Old deployment workflow
+- **`deploy-main-to-azure`** — Push to `main`: build + deploy to Azure SWA
+- **`deploy-pr-to-azure`** — PR opened/updated: build + deploy preview
+- **`cleanup-pr`** — PR closed: tear down preview environment
 
-## Workflow Maintenance Guidelines
+Local validation (`npm run validate`) is required before pushing — the workflow is deployment-only with no CI/CD pipeline.
 
-1. Always check for workflow conflicts before adding new workflows
-2. Keep the number of concurrent workflows minimal to avoid resource contention
-3. Use environment variables consistently across workflows
-4. Document any workflow changes in commit messages
-5. Test workflows on branches before merging to main 
+## Dependabot Workflow (`dependabot-security.yml`)
+
+Runs `npm audit` and tests on Dependabot PRs, then auto-comments results.

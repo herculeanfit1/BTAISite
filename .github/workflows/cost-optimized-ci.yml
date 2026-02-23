@@ -141,34 +141,3 @@ jobs:
           action: "close"
           app_location: "/"
 
-  # =============================================================================
-  # COST MONITORING JOB
-  # =============================================================================
-  # Track workflow costs and duration
-  cost-monitoring:
-    if: always()
-    needs: [deploy-main-to-azure, deploy-pr-to-azure]
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    
-    steps:
-      - name: Log workflow metrics
-        run: |
-          echo "📊 WORKFLOW COST METRICS"
-          echo "========================"
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Run ID: ${{ github.run_id }}"
-          echo "Trigger: ${{ github.event_name }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Started: $(date -u)"
-          echo ""
-          echo "💰 COST OPTIMIZATION NOTES:"
-          echo "- Main branch: Direct deployment (local validation required)"
-          echo "- Pull requests: Direct deployment (local validation required)"
-          echo "- NO CI/CD pipeline in GitHub Actions - all local"
-          echo "- Fast deployment-only workflow for production"
-          echo "- Strict timeouts enforced"
-          echo "- Concurrent runs cancelled"
-          echo ""
-          echo "✅ Cost-optimized workflow completed" 
