@@ -1,13 +1,10 @@
 import { it as test, expect, describe, beforeAll } from "vitest";
 
-// We need to handle the ESM import differently
-// Using a more flexible type to avoid compatibility issues with actual config
-let nextConfig: Record<string, any>;
+let nextConfig: Record<string, unknown>;
 
 beforeAll(async () => {
-  // Import the Next.js config dynamically
-  const configModule = await import("../next.config.cjs");
-  nextConfig = configModule.default;
+  const configModule = await import("../next.config.js");
+  nextConfig = configModule.default as Record<string, unknown>;
 });
 
 describe("Next.js Configuration", () => {
@@ -23,10 +20,6 @@ describe("Next.js Configuration", () => {
     expect(nextConfig.compress).toBe(true);
   });
 
-  test("has static export enabled", () => {
-    expect(nextConfig.output).toBe('export');
-  });
-
   test("has proper image optimization settings", () => {
     expect(nextConfig.images).toMatchObject({
       formats: expect.arrayContaining(["image/avif", "image/webp"]),
@@ -39,15 +32,19 @@ describe("Next.js Configuration", () => {
     });
   });
 
-  test("handles console statements in different environments", () => {
-    // This test is simplified as we've removed the compiler configuration
-    // Just check it runs without error
-    expect(true).toBe(true);
+  test("has TypeScript build enforcement enabled", () => {
+    expect(nextConfig.typescript).toMatchObject({
+      ignoreBuildErrors: false,
+    });
   });
 
-  test("has experimental optimizations enabled", () => {
-    expect(nextConfig.experimental).toMatchObject({
-      optimizeCss: true,
+  test("has ESLint build enforcement enabled", () => {
+    expect(nextConfig.eslint).toMatchObject({
+      ignoreDuringBuilds: false,
     });
+  });
+
+  test("does not force static export (API routes enabled)", () => {
+    expect(nextConfig.output).toBeUndefined();
   });
 });
