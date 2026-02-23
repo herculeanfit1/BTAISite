@@ -62,7 +62,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
       <div className="w-full px-6">
         <div className="mx-auto flex h-12 max-w-[1400px] items-center justify-between">
           {/* Company Logo and Name */}
-          <div className="flex items-center gap-4 ml-8">
+          <div className="flex items-center gap-4 ml-10">
             <div className="group flex flex-shrink-0 items-center">
               <Link href="/" className="flex items-center">
                 <Image
