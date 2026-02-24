@@ -76,6 +76,28 @@ npm run validate:quick    # Quick validation
 ### Contact Form / Email Pipeline
 The contact form (`app/api/contact/route.ts`) uses: Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `src/lib/email-templates/`.
 
+### Service Layer & Data Flow
+
+```
+Client (ContactSection.tsx)
+  → POST /api/contact (app/api/contact/route.ts)
+    → Zod schema validation
+    → Honeypot check (_gotcha field)
+    → sendContactEmail() (src/lib/email.ts)
+      → checkRateLimit() — in-memory IP-based, 5 req/hour
+      → checkCircuitBreaker() — 5 failures opens, 5 min timeout
+      → Resend API — dual delivery:
+        1. User confirmation email (email-templates/contact-confirmation.ts)
+        2. Admin notification email (email-templates/admin-notification.ts)
+```
+
+**Key abstractions in `src/lib/`:**
+- **`email.ts`** — Resend client (lazy-init), rate limiting, circuit breaker, dual email delivery
+- **`rate-limit.ts`** — Generic rate limit middleware for API routes (Map-based, IP keyed, auto-cleanup)
+- **`validation.ts`** — Shared validators (email, name, message, phone) and `sanitizeInput()` for XSS prevention
+
+**Additional `src/lib/` modules:** `logger.ts` (structured logging), `env.ts` (env var access), `metadata.ts` (SEO), `route-types.ts` (typed route definitions)
+
 ### Key Patterns
 - **Dark mode** — class-based via next-themes; ThemeToggle uses `useTheme()` hook
 - **CSP/security headers** — generated in middleware with nonce; no inline styles/scripts that break CSP
