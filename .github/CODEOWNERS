@@ -4,25 +4,31 @@
 # Default owner for everything
 * @herculeanfit1
 
-# CI/CD configuration
-/.github/ @herculeanfit1
-/ci/ @herculeanfit1
-/scripts/ @herculeanfit1
-
-# Infrastructure and configuration
-/*.config.js @herculeanfit1
-/*.config.mjs @herculeanfit1
-/next.config.js @herculeanfit1
-
 # Security-sensitive files
-/middleware.ts @herculeanfit1
 /src/lib/email.ts @herculeanfit1
 /src/lib/rate-limit.ts @herculeanfit1
-/app/api/ @herculeanfit1
+/app/api/** @herculeanfit1
+/middleware.ts @herculeanfit1
+/staticwebapp.config.json @herculeanfit1
+/.npmrc @herculeanfit1
+
+# CI/CD and Docker
+/.github/** @herculeanfit1
+/ci/** @herculeanfit1
+/scripts/** @herculeanfit1
+Dockerfile* @herculeanfit1
+docker-compose*.yml @herculeanfit1
 
 # Standards documents
 STANDARDS.md @herculeanfit1
 CLAUDE.md @herculeanfit1
+
+# Configuration
+/next.config.js @herculeanfit1
+/tsconfig.json @herculeanfit1
+/eslint.config.js @herculeanfit1
+/package.json @herculeanfit1
+/package-lock.json @herculeanfit1
 
 # Documentation
 /docs/ @herculeanfit1
