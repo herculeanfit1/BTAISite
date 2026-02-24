@@ -2,7 +2,7 @@
 
 > **Scope**: All web properties managed by TK (currently BTAISite, SchedulEd/AIStudyPlans).
 > **Authority**: This file is the single source of truth for shared conventions. Repo-specific `CLAUDE.md` files supplement but never contradict this document.
-> **Last updated**: 2026-02-22
+> **Last updated**: 2026-02-23
 
 ---
 
@@ -59,6 +59,19 @@ Additional requirements:
 - No inline `<script>` or `style=""` attributes that require `unsafe-inline`.
 - Security headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`.
 - Input sanitization on all user-provided strings before storage or email.
+
+### Environment Variable Hygiene
+- **Never track `.env` files** in git — only `.env.example` / `.env.local.example` with placeholder values.
+- `.gitignore` must include `.env*` pattern.
+- Production secrets managed in deployment platform (Azure portal).
+- Document all required variables in `.env.example`.
+
+### CODEOWNERS
+Every repo must have `.github/CODEOWNERS` covering:
+- Security-sensitive files (API routes, auth, rate limiting, middleware, email)
+- CI/CD configuration (`.github/`, `ci/`, `Dockerfile*`)
+- Standards documents (`STANDARDS.md`, `CLAUDE.md`)
+- Package manifests (`package.json`, `package-lock.json`, `.npmrc`)
 
 ### Dependencies
 - Run `npm audit` before any release. No `critical` or `high` vulnerabilities in production deps.
@@ -138,6 +151,17 @@ CI floors are ratcheted up as coverage improves — never lowered.
 - Lazy load below-fold content.
 - Fonts: Use `next/font` for self-hosted fonts. Minimize external font requests.
 - Bundle analysis: Run `ANALYZE=true npm run build` periodically to check bundle size.
+
+---
+
+## BTAISite-Specific Notes
+
+These conventions apply only to the BTAISite repository:
+
+- **Tailwind CSS v4 cascade layer rules** — all custom CSS must be inside `@layer` blocks; see CLAUDE.md "Critical: Tailwind CSS v4 Rules" for details
+- **ESM module system** — `"type": "module"` in package.json; use `import`/`export`, not `require`
+- **Vitest** for unit/integration tests (not Jest) — config in `vitest.config.js`
+- **Node 20.19.1** strict requirement — enforced in `.nvmrc` and `package.json` engines field; 18.x and 23.x are incompatible
 
 ---
 
