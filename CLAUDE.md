@@ -81,6 +81,49 @@ The contact form (`app/api/contact/route.ts`) uses: Zod validation -> honeypot b
 - **CSP/security headers** — generated in middleware with nonce; no inline styles/scripts that break CSP
 - **ESM modules** throughout (`"type": "module"` in package.json)
 
+## Critical: Tailwind CSS v4 Rules
+
+This project uses **Tailwind CSS v4.1** with the v4 engine (`@tailwindcss/postcss`). These rules prevent recurring production breakages:
+
+### 1. All custom CSS MUST be in `@layer` blocks
+In CSS cascade layers, **unlayered CSS beats layered CSS regardless of specificity**. Since Tailwind v4 puts all utilities in `@layer utilities`, any unlayered rule like `* { margin: 0 }` or `.flex { display: flex }` will silently override every Tailwind utility. This caused `mx-auto`, `px-6`, `rounded-lg`, and all responsive variants to stop working.
+
+```css
+/* WRONG — overrides ALL Tailwind margin/padding utilities */
+* { margin: 0; padding: 0; }
+section { padding-top: 4rem; }
+input { border-radius: 0; }
+
+/* CORRECT — lives in @layer base, utilities take precedence */
+@layer base {
+  section { padding-top: 4rem; }
+}
+@layer components {
+  .my-class { ... }
+}
+```
+
+### 2. Use `@import "tailwindcss"` (NOT v3 directives)
+The v3 directives (`@tailwind base/utilities/components`) partially work in v4 but **silently skip responsive variants**. Zero `sm:`, `md:`, `lg:` rules will be generated.
+
+```css
+/* WRONG — v3 syntax, responsive variants silently missing */
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+/* CORRECT — v4 unified import */
+@import "tailwindcss";
+```
+
+### 3. `tailwind.config.js` is IGNORED by v4
+Tailwind v4 does not read `tailwind.config.js` unless explicitly referenced with `@config`. Custom theme values must use `@theme` blocks in CSS or the `@config` directive. The existing `tailwind.config.js` in this repo is a legacy file.
+
+### 4. Only ONE `<html>` and `<body>` tag
+Only `app/layout.tsx` (root layout) renders `<html>` and `<body>`. The `app/[locale]/layout.tsx` is a **pass-through** (`<>{children}</>`) — it must NOT wrap children in `<html>` or `<body>`. Nested HTML tags cause React hydration failure, which triggers the error boundary and breaks the entire site.
+
+### 5. Error boundaries use inline styles only
+`app/error.tsx` and `app/[locale]/error.tsx` use **inline styles**, not Tailwind classes. Error boundaries must render even when CSS fails to load.
+
 ## Testing
 
 - **Docker testing** available for consistent cross-platform results (avoids Rollup platform issues)
