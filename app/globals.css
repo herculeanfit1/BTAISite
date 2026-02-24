@@ -6,6 +6,17 @@
 /* Tailwind CSS v4 */
 @import "tailwindcss";
 
+/* Register custom theme values so Tailwind generates utilities like
+   text-primary, bg-accent, bg-dark, duration-2000, etc. */
+@theme {
+  --color-primary: rgb(91, 144, 176);
+  --color-primary-dark: rgb(58, 95, 119);
+  --color-accent: rgb(156, 174, 184);
+  --color-dark: rgb(31, 31, 37);
+  --transition-duration-2000: 2000ms;
+  --transition-duration-3000: 3000ms;
+}
+
 /*
  * IMPORTANT: All custom CSS must be in @layer blocks so it doesn't
  * override Tailwind utilities. In CSS cascade layers, unlayered CSS

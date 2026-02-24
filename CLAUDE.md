@@ -137,8 +137,8 @@ The v3 directives (`@tailwind base/utilities/components`) partially work in v4 b
 @import "tailwindcss";
 ```
 
-### 3. `tailwind.config.js` is IGNORED by v4
-Tailwind v4 does not read `tailwind.config.js` unless explicitly referenced with `@config`. Custom theme values must use `@theme` blocks in CSS or the `@config` directive. The existing `tailwind.config.js` in this repo is a legacy file.
+### 3. Theme customization uses `@theme` blocks in CSS
+Tailwind v4 does not read `tailwind.config.js` (deleted from this repo). Custom colors and other theme values are defined in the `@theme` block in `globals.css`. To add a new color utility, add `--color-mycolor: ...` to the `@theme` block.
 
 ### 4. Only ONE `<html>` and `<body>` tag
 Only `app/layout.tsx` (root layout) renders `<html>` and `<body>`. The `app/[locale]/layout.tsx` is a **pass-through** (`<>{children}</>`) — it must NOT wrap children in `<html>` or `<body>`. Nested HTML tags cause React hydration failure, which triggers the error boundary and breaks the entire site.
