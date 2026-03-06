@@ -9,6 +9,7 @@ const contactFormSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(50, 'Last name too long'),
   email: z.string().email('Invalid email address').max(100, 'Email too long'),
   company: z.string().max(100, 'Company name too long').optional(),
+  interest: z.enum(['governance-assessment', 'data-readiness', 'copilot-readiness', 'general', '']).optional(),
   message: z.string().min(10, 'Message must be at least 10 characters').max(2000, 'Message too long'),
   _gotcha: z.string().optional(), // Honeypot field for bot protection
 });

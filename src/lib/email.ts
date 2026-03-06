@@ -35,6 +35,7 @@ export interface ContactFormData {
   lastName: string;
   email: string;
   company?: string;
+  interest?: string;
   message: string;
   ipAddress?: string;
   userAgent?: string;
