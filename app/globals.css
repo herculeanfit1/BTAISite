@@ -6,6 +6,9 @@
 /* Tailwind CSS v4 */
 @import "tailwindcss";
 
+/* Tell Tailwind v4 to use class-based dark mode (required for next-themes) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Register custom theme values so Tailwind generates utilities like
    text-primary, bg-accent, bg-dark, duration-2000, etc. */
 @theme {
@@ -622,13 +625,13 @@
     transition-duration: 300ms;
   }
 
-  /* Navigation bar solid background fix */
+  /* Navigation bar solid background — uses class-based dark mode */
   [data-theme-bg="true"] {
     background-color: rgb(255, 255, 255) !important;
     backdrop-filter: none !important;
   }
 
-  .dark [data-theme-bg="true"] {
+  :where(.dark, .dark *) [data-theme-bg="true"] {
     background-color: rgb(17, 24, 39) !important;
   }
 }
