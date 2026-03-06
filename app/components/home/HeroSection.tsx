@@ -1,76 +1,58 @@
-"use client";
+import dynamic from "next/dynamic";
+import { HeroScrollIndicator } from "./HeroScrollIndicator";
 
-import { useState, useEffect } from "react";
+const HeroBackground = dynamic(() => import("./HeroBackground"), {
+  ssr: false,
+});
+
+const HeroAnimatedContent = dynamic(
+  () =>
+    import("./HeroAnimatedContent").then((mod) => ({
+      default: mod.HeroAnimatedContent,
+    })),
+  { ssr: false },
+);
 
 /**
- * HeroSection Component
+ * HeroSection — Server Component shell
  *
- * The main banner with headline for the homepage.
+ * Renders the full hero as static HTML (visible before JS loads).
+ * Client sub-components enhance with animations after hydration.
  */
 export const HeroSection = () => {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsDesktop(window.innerWidth >= 768);
-
-      const handleResize = () => {
-        setIsDesktop(window.innerWidth >= 768);
-      };
-
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }
-  }, []);
-
   return (
-    <section
-      className="bg-[#3A5F77] dark:bg-[#2A4A5C] w-full text-center flex flex-col justify-center items-center"
-      style={{
-        paddingTop: isDesktop ? "2rem" : "8rem",
-        paddingBottom: "0.6rem",
-        paddingLeft: isDesktop ? "4rem" : "1.5rem",
-        paddingRight: isDesktop ? "4rem" : "1.5rem",
-        minHeight: "70vh",
-      }}
-    >
-      <div className="absolute inset-0 opacity-10"></div>
-      <div className="w-full max-w-[1280px] mx-auto px-6">
-        <h1
-          className="font-extrabold leading-[1.05] text-center mx-auto w-full mt-0 mb-6 sm:mb-8 text-white"
-          style={{
-            fontSize: "clamp(2rem, 8vw, 4rem)",
-            textWrap: "balance",
-            maxWidth: isDesktop ? "900px" : "100%",
-          }}
-        >
-          AI is moving faster than governance. We help you close the gap.
-        </h1>
-        <p
-          className="text-gray-200 dark:text-gray-300 text-center"
-          style={{
-            maxWidth: isDesktop ? "700px" : "100%",
-            margin: isDesktop ? "0 auto 3rem auto" : "0 auto 2rem auto",
-            fontSize: isDesktop ? "1.25rem" : "1rem",
-            lineHeight: 1.6,
-            paddingLeft: isDesktop ? "2rem" : "0",
-            paddingRight: isDesktop ? "2rem" : "0",
-          }}
-        >
-          Bridging Trust AI helps organizations govern, secure, and
-          operationalize AI — with deep expertise across Microsoft 365, Copilot,
-          Purview, Azure, and the security and compliance frameworks that make
-          adoption defensible.
-        </p>
-        <div className="flex flex-row justify-center items-center gap-4">
+    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden hero-aurora pt-20">
+      {/* Static aurora gradient is applied via the hero-aurora class */}
+
+      {/* Client-side animated background layers (orbs + particles) */}
+      <HeroBackground />
+
+      {/* SSR fallback: static text visible before JS */}
+      <noscript>
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 text-center">
+          <h1
+            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
+            style={{ textWrap: "balance", maxWidth: 900 }}
+          >
+            AI that earns trust, one partnership at a time.
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 mb-10">
+            Helping businesses answer: How can AI improve my operations?
+          </p>
           <a
             href="#contact"
-            className="inline-block px-6 py-3 rounded-md font-medium text-center cursor-pointer transition-all duration-200 bg-white dark:bg-gray-100 text-[#3A5F77] hover:bg-gray-100 dark:hover:bg-white"
+            className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] text-white"
           >
-            Book a Governance Assessment
+            Start a Conversation &rarr;
           </a>
         </div>
-      </div>
+      </noscript>
+
+      {/* Client-side animated text content */}
+      <HeroAnimatedContent />
+
+      {/* Scroll indicator */}
+      <HeroScrollIndicator />
     </section>
   );
 };

@@ -26,6 +26,46 @@
  * beats layered CSS regardless of specificity.
  */
 
+/* Hero section keyframes — kept outside @layer so they're globally available
+   but they only define animations, not property overrides. */
+@keyframes hero-aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes hero-float-1 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -40px); }
+  66% { transform: translate(-20px, 20px); }
+}
+
+@keyframes hero-float-2 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-40px, 30px); }
+  66% { transform: translate(25px, -35px); }
+}
+
+@keyframes hero-float-3 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(35px, 25px); }
+  66% { transform: translate(-30px, -40px); }
+}
+
+@keyframes hero-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora { animation: none !important; }
+  .hero-shimmer { animation: none !important; }
+}
+
 @layer base {
   :root {
     --foreground-rgb: 30, 30, 30;
@@ -605,6 +645,23 @@
   .hero-section {
     position: relative;
     overflow: hidden;
+  }
+
+  .hero-aurora {
+    background: linear-gradient(-45deg, #1a2a3a, #3A5F77, #2a4a5a, #5B90B0);
+    background-size: 400% 400%;
+    animation: hero-aurora 15s ease infinite;
+  }
+
+  :where(.dark, .dark *) .hero-aurora {
+    background: linear-gradient(-45deg, #0f1a24, #2A4A5C, #1a3040, #3A5F77);
+    background-size: 400% 400%;
+  }
+
+  .hero-shimmer {
+    background: linear-gradient(90deg, #5B90B0, #7ECEC1, #5B90B0, #7ECEC1);
+    background-size: 200% 100%;
+    animation: hero-shimmer 3s linear infinite;
   }
 
   .flex-center {
