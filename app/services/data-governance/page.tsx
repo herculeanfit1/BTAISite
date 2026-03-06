@@ -69,6 +69,7 @@ export default function DataGovernancePage() {
       ctaHeading="Is your data ready for AI?"
       ctaDescription="Start with a Data Readiness Assessment to understand your classification gaps, permission risks, and Purview maturity before deploying Copilot."
       ctaButtonText="Request a Data Readiness Assessment"
+      ctaInterest="data-readiness"
     />
   );
 }

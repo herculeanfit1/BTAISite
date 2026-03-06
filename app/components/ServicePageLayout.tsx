@@ -16,6 +16,7 @@ interface ServicePageLayoutProps {
   ctaHeading: string;
   ctaDescription: string;
   ctaButtonText: string;
+  ctaInterest?: string;
 }
 
 export const ServicePageLayout = ({
@@ -27,6 +28,7 @@ export const ServicePageLayout = ({
   ctaHeading,
   ctaDescription,
   ctaButtonText,
+  ctaInterest,
 }: ServicePageLayoutProps) => {
   return (
     <div className="w-full min-h-screen bg-white dark:bg-gray-900">
@@ -117,7 +119,7 @@ export const ServicePageLayout = ({
           <h2 className="text-2xl font-bold mb-4 text-white">{ctaHeading}</h2>
           <p className="text-lg mb-8 text-white/90">{ctaDescription}</p>
           <Link
-            href="/#contact"
+            href={ctaInterest ? `/?interest=${ctaInterest}#contact` : "/#contact"}
             className="inline-block rounded-lg bg-white px-8 py-3 font-semibold text-[#3A5F77] transition-colors hover:bg-gray-100"
           >
             {ctaButtonText}

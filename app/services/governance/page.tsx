@@ -69,6 +69,7 @@ export default function GovernancePage() {
       ctaHeading="Ready to govern AI with confidence?"
       ctaDescription="Start with an AI Governance Readiness Assessment to understand where you stand and what\u2019s needed to move forward."
       ctaButtonText="Book a Governance Assessment"
+      ctaInterest="governance-assessment"
     />
   );
 }

@@ -80,6 +80,7 @@ export default function EnablementPage() {
       ctaHeading="Ready to deploy AI in Microsoft 365?"
       ctaDescription="Start with a Copilot Readiness Review to assess your technical, governance, and organizational readiness for Microsoft AI adoption."
       ctaButtonText="Schedule a Copilot Readiness Review"
+      ctaInterest="copilot-readiness"
     />
   );
 }

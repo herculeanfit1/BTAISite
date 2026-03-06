@@ -64,6 +64,9 @@ export function HeroAnimatedContent() {
   const handleCtaClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
       e.preventDefault();
+      const url = new URL(window.location.href);
+      url.searchParams.set("interest", "general");
+      window.history.replaceState({}, "", url.toString());
       const el = document.getElementById("contact");
       if (el) el.scrollIntoView({ behavior: "smooth" });
     },
