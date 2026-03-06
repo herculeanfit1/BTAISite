@@ -3,6 +3,7 @@ import { NavBar } from "./components/NavBar";
 import { Footer } from "./components/Footer";
 import { ThemeProvider } from "next-themes";
 import { TelemetryProvider } from "./components/TelemetryProvider";
+import { CookieConsent } from "./components/CookieConsent";
 
 export const metadata = {
   title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
@@ -56,6 +57,7 @@ export default function RootLayout({
             <NavBar />
             <main className="flex-grow">{children}</main>
             <Footer />
+            <CookieConsent />
           </TelemetryProvider>
         </ThemeProvider>
       </body>

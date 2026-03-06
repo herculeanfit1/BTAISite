@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Metadata } from "next";
+import { ManageCookiesButton } from "../components/ManageCookiesButton";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Bridging Trust AI",
@@ -160,6 +161,15 @@ const PrivacyPage = () => {
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Resend</span>: Email delivery for contact form submissions</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Azure Static Web Apps</span>: Website hosting (Microsoft)</li>
               </ul>
+            </div>
+
+            {/* Cookie Preferences */}
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Cookie Preferences</h2>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                You can change your cookie preferences at any time. Click the button below to reset your consent and choose again.
+              </p>
+              <ManageCookiesButton />
             </div>
 
             {/* International Data Transfers */}

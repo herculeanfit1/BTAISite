@@ -11,6 +11,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { ManageCookiesButton } from "./ManageCookiesButton";
 
 export const Footer = () => {
   return (
@@ -43,6 +44,11 @@ export const Footer = () => {
             >
               Terms
             </Link>
+          </div>
+
+          {/* Cookie preferences */}
+          <div className="mb-16">
+            <ManageCookiesButton />
           </div>
 
           {/* Spacer before divider */}
