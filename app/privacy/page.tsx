@@ -30,6 +30,7 @@ const styles: Record<string, CSSProperties> = {
   // Header section
   headerSection: {
     padding: "3rem 1.5rem",
+    paddingTop: "6rem",
     textAlign: "center" as const,
     width: "100%",
   },
