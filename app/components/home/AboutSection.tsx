@@ -55,21 +55,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                     }
               }
             >
-              {/* Founder 1 - Bill (now first) */}
-              <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
-                <div style={styles.profileImage}>
-                  {/* Placeholder for Bill's image */}
-                </div>
-                <h3 style={styles.founderName}>Bill Schneider</h3>
-                <p style={styles.founderRole}>
-                  Co-Founder
-                </p>
-                <p style={{ ...styles.founderBio, textAlign: "center" }}>
-                  Bill Schneider brings 25 years of IT leadership to Bridging Trust AI, with deep experience helping organizations align technology strategy with business outcomes. His expertise spans Microsoft 365, Azure, security architecture, and the operational governance that makes technology adoption sustainable. Bill&#39;s focus at Bridging Trust AI is on helping leadership teams navigate AI adoption with clarity — ensuring that governance, security, and practical implementation work together rather than in tension. He specializes in translating complex technical and compliance requirements into actionable roadmaps that leadership, IT, and security stakeholders can align around.
-                </p>
-              </div>
-
-              {/* Founder 2 - Terence (now second) */}
+              {/* Founder 1 - Terence (left) */}
               <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
                 <div style={styles.profileImage}>
                   <Image
@@ -90,6 +76,20 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
                   Terence Kolstad is a Minnesota-based technology strategist and AI governance advisor who helps organizations adopt AI with the structure, security, and data discipline needed to scale responsibly. With 18 years of experience designing, building, and securing cloud and on-premises environments, he brings a practical operator&#39;s perspective to AI readiness, Microsoft 365 governance, and secure modernization. His work sits at the intersection of AI governance, data governance, security, and Microsoft technologies — helping organizations evaluate risk, strengthen data foundations, and operationalize tools like Microsoft Copilot with confidence. As Co-Founder of Bridging Trust AI, he focuses on helping clients move beyond AI hype into governed execution — where innovation, productivity, and trust grow together.
+                </p>
+              </div>
+
+              {/* Founder 2 - Bill (right) */}
+              <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
+                <div style={styles.profileImage}>
+                  {/* Placeholder for Bill's image */}
+                </div>
+                <h3 style={styles.founderName}>Bill Schneider</h3>
+                <p style={styles.founderRole}>
+                  Co-Founder
+                </p>
+                <p style={{ ...styles.founderBio, textAlign: "center" }}>
+                  Bill Schneider brings 25 years of IT leadership to Bridging Trust AI, with deep experience helping organizations align technology strategy with business outcomes. His expertise spans Microsoft 365, Azure, security architecture, and the operational governance that makes technology adoption sustainable. Bill&#39;s focus at Bridging Trust AI is on helping leadership teams navigate AI adoption with clarity — ensuring that governance, security, and practical implementation work together rather than in tension. He specializes in translating complex technical and compliance requirements into actionable roadmaps that leadership, IT, and security stakeholders can align around.
                 </p>
               </div>
             </div>
