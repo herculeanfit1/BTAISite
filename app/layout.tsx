@@ -4,18 +4,18 @@ import { Footer } from "./components/Footer";
 import { ThemeProvider } from "next-themes";
 
 export const metadata = {
-  title: "Bridging Trust AI - Making AI Accessible",
+  title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
   description:
-    "Creating trust in AI through education, implementation, and ethical practices. We help organizations deploy responsible AI solutions.",
+    "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
   keywords:
-    "artificial intelligence, ethical AI, AI education, AI implementation, AI transparency, responsible AI",
+    "AI governance, Microsoft Copilot readiness, data governance, AI compliance, Microsoft 365 governance, Purview, AI risk management, responsible AI, Copilot deployment, AI enablement",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ),
   openGraph: {
-    title: "Bridging Trust AI - Making AI Accessible",
+    title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
     description:
-      "Creating trust in AI through education, implementation, and ethical practices.",
+      "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
     url: "https://bridgingtrust.ai",
     siteName: "Bridging Trust AI",
     images: [
@@ -31,9 +31,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bridging Trust AI - Making AI Accessible",
+    title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
     description:
-      "Creating trust in AI through education, implementation, and ethical practices.",
+      "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
     images: ["/public/og-image.jpg"],
   },
   robots: {
