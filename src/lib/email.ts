@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { logger } from '../../lib/logger';
+import { trackEvent } from './telemetry';
 
 // Lazy initialization to avoid build-time errors
 let resendClient: Resend | null = null;
@@ -75,6 +76,7 @@ function checkCircuitBreaker(): boolean {
     if (now - circuitBreakerState.lastFailureTime > CIRCUIT_BREAKER_TIMEOUT) {
       circuitBreakerState.isOpen = false;
       circuitBreakerState.failures = 0;
+      trackEvent('email_circuit_breaker_closed');
     } else {
       return false;
     }
@@ -90,6 +92,9 @@ function recordFailure() {
   
   if (circuitBreakerState.failures >= CIRCUIT_BREAKER_THRESHOLD) {
     circuitBreakerState.isOpen = true;
+    trackEvent('email_circuit_breaker_open', {
+      failures: circuitBreakerState.failures.toString(),
+    });
   }
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendContactEmail, type ContactFormData } from '@/src/lib/email';
 import { logger } from '@/lib/logger';
+import { trackEvent, trackException } from '@/src/lib/telemetry';
 
 // Validation schema using Zod
 const contactFormSchema = z.object({
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendContactEmail(formData);
 
     if (emailResult.rateLimited) {
+      trackEvent('contact_rate_limited', { ip: ipAddress });
       return NextResponse.json(
         { 
           success: false, 
@@ -122,6 +124,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    trackEvent('contact_form_submission', {
+      interest: formData.interest || 'not-specified',
+    });
+
     logger.info('✅ Contact form submission successful:', {
       name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
@@ -138,6 +144,7 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
+    trackException(error instanceof Error ? error : new Error(String(error)), { source: 'contact-api' });
     console.error('❌ Contact API error:', error);
     return NextResponse.json(
       { 
