@@ -62,33 +62,26 @@ export const LevelingSection = () => {
   return (
     <section id="leveling" style={sectionStyles}>
       <div style={containerStyles}>
-        <h2 style={headingStyles}>Empowering Ambitious Businesses</h2>
+        <h2 style={headingStyles}>The Challenges You&#39;re Facing</h2>
         <p style={paragraphStyles}>
-          We equip agile organizations to operate with the technological muscle
-          traditionally reserved for industry giants.
+          Organizations across every industry are under pressure to adopt AI — but moving fast without the right foundation creates risk. These are the problems we solve.
         </p>
-        <p style={paragraphStyles}>Our clients gain:</p>
         <ul style={listStyles}>
           <li style={listItemStyles}>
-            <span style={strongStyles}>Right-Sized Enterprise AI</span>: Proven,
-            enterprise-class AI frameworks tailored to your scale, objectives,
-            and budget.
+            <span style={strongStyles}>&ldquo;We want Copilot, but we don&#39;t know if our data is ready.&rdquo;</span>{" "}
+            Most organizations have classification gaps, overshared content, and unclear retention policies that make broad AI deployment risky. We help you find and fix those gaps before they become incidents.
           </li>
           <li style={listItemStyles}>
-            <span style={strongStyles}>Accelerated Time-to-Value</span>: A
-            rapid-deployment methodology that moves from use-case validation to
-            production in weeks—not quarters—so you realize ROI sooner.
+            <span style={strongStyles}>&ldquo;We need AI governance before we can scale.&rdquo;</span>{" "}
+            Leadership wants AI, but there&#39;s no framework for who approves what, how risk is assessed, or what acceptable use looks like. We build the governance structure so AI can move from pilot to production.
           </li>
           <li style={listItemStyles}>
-            <span style={strongStyles}>Focused Competitive Advantage</span>:
-            Collaborative discovery that pinpoints the highest-impact AI
-            opportunities in your value chain, ensuring resources flow to
-            initiatives that materially shift your market position.
+            <span style={strongStyles}>&ldquo;We have too many environments and unclear controls.&rdquo;</span>{" "}
+            Power Platform sprawl, ungoverned Copilot Studio agents, and inconsistent admin configurations create shadow AI risk. We help you inventory, rationalize, and govern.
           </li>
           <li style={listItemStyles}>
-            <span style={strongStyles}>Built-In Capability Transfer</span>:
-            Every engagement embeds training, documentation, and governance so
-            your team can confidently operate and evolve the solution.
+            <span style={strongStyles}>&ldquo;We need to enable AI without creating compliance exposure.&rdquo;</span>{" "}
+            Regulated industries and security-conscious organizations can&#39;t afford to deploy AI and figure out compliance later. We align AI initiatives with your existing security, compliance, and risk posture from day one.
           </li>
         </ul>
       </div>
