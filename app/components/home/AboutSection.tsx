@@ -21,13 +21,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
           <div style={styles.sectionBlock}>
             <h3 style={styles.heading3}>Our Story</h3>
             <p style={styles.paragraph}>
-              Bridging Trust AI began with a simple observation: the breakthroughs we delivered for global enterprises should not be reserved for organizations with nine-figure IT budgets. Drawing on decades of combined experience architecting secure, AI-enabled solutions for complex, highly regulated environments, our founders set out to translate that same caliber of innovation into pragmatic, right-sized programs for growth-minded companies.
-            </p>
-            <p style={styles.paragraph}>
-              We have led large-scale transformations—modernizing data estates, automating business processes, and hardening cloud infrastructures—so we understand both the promise and the pitfalls of enterprise AI. Today, we package that institutional knowledge into streamlined engagements that remove the typical barriers of cost, complexity, and change-management risk.
-            </p>
-            <p style={styles.paragraph}>
-              Our mission is straightforward: empower leadership teams to adopt AI with confidence, governance, and measurable ROI. Whether you're piloting Microsoft Copilot, evaluating ethical guardrails, or scaling a new AI-driven product, we bridge the gap between visionary strategy and operational reality—so your organization can compete at enterprise speed without losing its agility.
+              Bridging Trust AI was founded on a straightforward observation: organizations are under enormous pressure to adopt AI, but most lack the governance, data readiness, and operational discipline to do it safely. Our founders bring decades of combined experience architecting secure, governed environments across Microsoft 365, Azure, and complex enterprise infrastructure. We started Bridging Trust AI to help organizations close the gap between AI ambition and operational reality — so they can adopt AI with confidence, not just enthusiasm.
             </p>
           </div>
 
@@ -36,9 +30,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
             <h3 style={styles.heading3}>Our Mission</h3>
             <div style={styles.missionBox}>
               <p style={styles.quoteText}>
-                "To make AI accessible and beneficial for everyone by bridging
-                technical expertise with business needs, enabling smaller
-                companies to compete effectively with industry giants."
+                &ldquo;To help organizations adopt AI with the governance, security, and operational discipline needed to scale with confidence.&rdquo;
               </p>
             </div>
           </div>
@@ -73,12 +65,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                   Co-Founder
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
-                  Bill Schneider helps organizations unlock the potential of
-                  technology. With 25 years of leadership in IT, he's an expert
-                  in finding practical ways to streamline work, keep data safe,
-                  and manage resources wisely. Bill's experience spans a range
-                  of technologies—from Microsoft 365 and Azure to AI-driven
-                  tools that empower teams to adapt and thrive.
+                  Bill Schneider brings 25 years of IT leadership to Bridging Trust AI, with deep experience helping organizations align technology strategy with business outcomes. His expertise spans Microsoft 365, Azure, security architecture, and the operational governance that makes technology adoption sustainable. Bill&#39;s focus at Bridging Trust AI is on helping leadership teams navigate AI adoption with clarity — ensuring that governance, security, and practical implementation work together rather than in tension. He specializes in translating complex technical and compliance requirements into actionable roadmaps that leadership, IT, and security stakeholders can align around.
                 </p>
               </div>
 
@@ -102,13 +89,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                   Co-Founder
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
-                  Terence Kolstad is a Minnesota‑based IT strategist with 18
-                  years of experience designing, building, and securing cloud
-                  and on‑premises environments for mid‑market and enterprise
-                  customers. As Lead Solutions Architect at Cyber Advisors, he
-                  guides clients through Microsoft 365, Azure, and Veeam
-                  transformations that harden security postures while unlocking
-                  productivity.
+                  Terence Kolstad is a Minnesota-based technology strategist and AI governance advisor who helps organizations adopt AI with the structure, security, and data discipline needed to scale responsibly. With 18 years of experience designing, building, and securing cloud and on-premises environments, he brings a practical operator&#39;s perspective to AI readiness, Microsoft 365 governance, and secure modernization. His work sits at the intersection of AI governance, data governance, security, and Microsoft technologies — helping organizations evaluate risk, strengthen data foundations, and operationalize tools like Microsoft Copilot with confidence. As Co-Founder of Bridging Trust AI, he focuses on helping clients move beyond AI hype into governed execution — where innovation, productivity, and trust grow together.
                 </p>
               </div>
             </div>
@@ -126,30 +107,26 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
             >
               <div style={styles.approachCard}>
                 <h4 style={{ ...styles.approachHeading, textAlign: "center" }}>
-                  Human-Centered
+                  Governance-First
                 </h4>
                 <p style={{ textAlign: "center" }}>
-                  We design AI solutions that complement human work, enhance
-                  capabilities, and respect human values and judgment.
+                  Every engagement starts with understanding your risk posture, compliance requirements, and organizational readiness. We build the governance foundation before deploying capabilities.
                 </p>
               </div>
               <div style={styles.approachCard}>
                 <h4 style={{ ...styles.approachHeading, textAlign: "center" }}>
-                  Ethical & Transparent
+                  Security-Aligned
                 </h4>
                 <p style={{ textAlign: "center" }}>
-                  We prioritize explainable AI that stakeholders can understand,
-                  trust, and verify, with clear frameworks for responsible use.
+                  AI adoption must work within your existing security and compliance framework, not around it. We align AI initiatives with your controls, policies, and regulatory obligations.
                 </p>
               </div>
               <div style={styles.approachCard}>
                 <h4 style={{ ...styles.approachHeading, textAlign: "center" }}>
-                  Results-Driven
+                  Implementation-Ready
                 </h4>
                 <p style={{ textAlign: "center" }}>
-                  Our solutions are designed with clear business outcomes in
-                  mind, focused on delivering measurable value and competitive
-                  advantage.
+                  We don&#39;t stop at strategy decks. Our work produces actionable frameworks, hardened configurations, and operational playbooks your team can execute and maintain.
                 </p>
               </div>
             </div>
