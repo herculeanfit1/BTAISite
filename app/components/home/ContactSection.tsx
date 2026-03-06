@@ -1,17 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+
+const INTEREST_OPTIONS = [
+  { value: "", label: "Select an option (optional)" },
+  { value: "governance-assessment", label: "AI Governance Readiness Assessment" },
+  { value: "data-readiness", label: "Data Readiness Assessment" },
+  { value: "copilot-readiness", label: "Copilot Readiness Review" },
+  { value: "general", label: "General Inquiry" },
+] as const;
 
 /**
  * Contact Section Component
  * Displays the contact form for visitors to reach out with Resend email integration
  */
 export const ContactSection = () => {
+  const searchParams = useSearchParams();
+  const [interest, setInterest] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
+
+  useEffect(() => {
+    const param = searchParams?.get("interest");
+    if (param && INTEREST_OPTIONS.some((o) => o.value === param)) {
+      setInterest(param);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,6 +45,7 @@ export const ContactSection = () => {
       lastName: formData.get('lastName') as string,
       email: formData.get('email') as string,
       company: formData.get('company') as string,
+      interest: formData.get('interest') as string,
       message: formData.get('message') as string,
       _gotcha: formData.get('_gotcha') as string, // Honeypot field
     };
@@ -48,6 +67,7 @@ export const ContactSection = () => {
           message: result.message || 'Thank you for your message! We\'ll get back to you soon.',
         });
         form.reset();
+        setInterest("");
       } else {
         setSubmitResult({
           success: false,
@@ -160,6 +180,29 @@ export const ContactSection = () => {
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-base text-gray-900 dark:text-gray-100 outline-none transition-all duration-200 focus:border-[#5B90B0] focus:ring-1 focus:ring-[#5B90B0]"
                   placeholder="Enter your email address"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="interest" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  What are you interested in?
+                </label>
+                <select
+                  id="interest"
+                  name="interest"
+                  value={interest}
+                  onChange={(e) => setInterest(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-base text-gray-900 dark:text-gray-100 outline-none transition-all duration-200 focus:border-[#5B90B0] focus:ring-1 focus:ring-[#5B90B0]"
+                >
+                  {INTEREST_OPTIONS.map((option) => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.value === ""}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
