@@ -3,31 +3,18 @@
 import Link from "next/link";
 import { features } from "@/app/data/features";
 
-interface FeaturesSectionProps {
-  isDesktop: boolean;
-}
-
 /**
  * Features Section Component
  * Cards highlighting key services
  */
-export const FeaturesSection = ({ isDesktop }: FeaturesSectionProps) => {
+export const FeaturesSection = () => {
   return (
     <section id="solutions" className="w-full py-20 px-6 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-[1280px] mx-auto px-6">
         <h2 className="text-2xl font-bold mb-6 text-center leading-tight text-gray-900 dark:text-gray-100">
           What We Do
         </h2>
-        <div
-          style={{
-            display: "grid",
-            gap: isDesktop ? "2rem" : "1.5rem",
-            gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr",
-            maxWidth: isDesktop ? "none" : "400px",
-            margin: isDesktop ? "0" : "0 auto",
-            padding: isDesktop ? "0" : "0 1rem",
-          }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-[400px] md:max-w-none mx-auto md:mx-0 px-4 md:px-0">
           {features.map((feature) => (
             <div
               key={feature.id}

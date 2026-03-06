@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const PrivacyPage = () => {
   return (
-    <div className="w-full min-h-screen bg-white dark:bg-gray-900 pb-16" style={{ fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', lineHeight: 1.5, WebkitTextSizeAdjust: "100%" }}>
+    <div className="w-full min-h-screen bg-white dark:bg-gray-900 pb-16 leading-normal">
       {/* Header Section */}
       <div className="w-full pt-24 pb-12 px-6 text-center bg-[#3A5F77] dark:bg-[#2A4A5C]">
         <div className="w-full max-w-[1280px] mx-auto px-6">

@@ -16,8 +16,7 @@ export const LevelingSection = () => {
           Organizations across every industry are under pressure to adopt AI — but moving fast without the right foundation creates risk. These are the problems we solve.
         </p>
         <ul
-          className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-4xl mx-auto"
-          style={{ listStyleType: "disc", paddingLeft: "1.5rem" }}
+          className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-4xl mx-auto list-disc pl-6"
         >
           <li className="mb-4">
             <span className="font-semibold text-gray-800 dark:text-gray-200">&ldquo;We want Copilot, but we don&#39;t know if our data is ready.&rdquo;</span>{" "}

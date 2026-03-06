@@ -23,8 +23,7 @@ export function HeroScrollIndicator() {
     <div
       ref={ref}
       aria-hidden="true"
-      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 transition-opacity duration-500"
-      style={{ opacity: visible ? 0.5 : 0 }}
+      className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-10 transition-opacity duration-500 ${visible ? "opacity-50" : "opacity-0"}`}
     >
       <svg
         className="w-6 h-6 text-[#F5F0EB] animate-bounce"

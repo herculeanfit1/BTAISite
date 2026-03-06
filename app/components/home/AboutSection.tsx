@@ -2,15 +2,11 @@
 
 import Image from "next/image";
 
-interface AboutSectionProps {
-  isDesktop: boolean;
-}
-
 /**
  * About Section Component
  * Displays company information, founders, and approach
  */
-export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
+export const AboutSection = () => {
   return (
     <section id="about" className="w-full py-20 px-6 bg-white dark:bg-gray-900">
       <div className="w-full max-w-[1280px] mx-auto px-6">
@@ -45,16 +41,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
             <h3 className="text-xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">
               Our Founders
             </h3>
-            <div
-              style={{
-                display: "grid",
-                gap: "2rem",
-                gridTemplateColumns: isDesktop ? "repeat(2, 1fr)" : "1fr",
-                maxWidth: isDesktop ? "100%" : "400px",
-                margin: isDesktop ? "0" : "0 auto",
-                padding: isDesktop ? "0" : "0 1rem",
-              }}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[400px] md:max-w-full mx-auto md:mx-0 px-4 md:px-0">
               {/* Founder 1 - Terence (left) */}
               <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
                 <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
@@ -63,11 +50,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                     alt="Terence Kolstad"
                     width={128}
                     height={128}
-                    style={{
-                      objectFit: "cover",
-                      width: "100%",
-                      height: "100%",
-                    }}
+                    className="object-cover w-full h-full"
                   />
                 </div>
                 <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
@@ -104,13 +87,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
             <h3 className="text-xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">
               Our Approach
             </h3>
-            <div
-              style={{
-                display: "grid",
-                gap: "2rem",
-                gridTemplateColumns: isDesktop ? "repeat(3, 1fr)" : "1fr",
-              }}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <h4 className="text-xl font-bold mb-3 text-center text-gray-900 dark:text-gray-100">
                   Governance-First
