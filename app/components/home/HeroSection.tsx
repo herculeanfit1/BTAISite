@@ -33,7 +33,7 @@ export const HeroSection = () => {
       <noscript>
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 text-center">
           <h1
-            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
+            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
             style={{ textWrap: "balance", maxWidth: 900 }}
           >
             AI that earns trust, one partnership at a time.

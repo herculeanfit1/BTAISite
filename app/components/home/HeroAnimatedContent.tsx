@@ -79,7 +79,7 @@ export function HeroAnimatedContent() {
         <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 text-center">
           {/* Headline with staggered word reveal */}
           <m.h1
-            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-5xl md:text-6xl lg:text-7xl"
+            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-3xl sm:text-5xl md:text-6xl lg:text-7xl"
             style={{ textWrap: "balance", maxWidth: 900 }}
             variants={containerVariants}
             initial="hidden"
@@ -106,13 +106,13 @@ export function HeroAnimatedContent() {
 
           {/* Subheadline with word rotation */}
           <div
-            className="h-16 md:h-12 flex items-center justify-center mb-10"
+            className="min-h-16 md:h-12 flex flex-col md:flex-row items-center justify-center mb-10 gap-1 md:gap-0"
             aria-label={ARIA_LABEL}
           >
-            <span className="text-xl md:text-2xl text-gray-300 mr-2">
+            <span className="text-base sm:text-xl md:text-2xl text-gray-300 md:mr-2">
               Helping businesses answer:
             </span>
-            <span className="relative inline-block w-[320px] md:w-[380px] h-8 text-left overflow-hidden">
+            <span className="relative inline-block w-full sm:w-[320px] md:w-[380px] h-8 text-center md:text-left overflow-hidden">
               <AnimatePresence mode="wait">
                 <m.span
                   key={phraseIndex}
