@@ -71,10 +71,10 @@ export const ContactSection = () => {
         <div className="mx-auto max-w-4xl">
           <div className="mb-16 text-center">
             <h2 className="mb-6 text-center text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-              Contact Us
+              Start a Conversation
             </h2>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-              Have questions or ready to start your AI journey? Fill out the form below and our team will get back to you promptly.
+              Whether you need an AI governance assessment, a Copilot readiness review, or help building the data foundation for responsible AI adoption — we&#39;d like to hear from you.
             </p>
           </div>
 
