@@ -44,7 +44,7 @@ export const HeroSection = () => {
             maxWidth: isDesktop ? "900px" : "100%",
           }}
         >
-          Making AI accessible and beneficial for everyone
+          AI is moving faster than governance. We help you close the gap.
         </h1>
         <p
           style={{
@@ -58,8 +58,7 @@ export const HeroSection = () => {
             paddingRight: isDesktop ? "2rem" : "0",
           }}
         >
-          We bridge the gap between advanced AI technology and human-centered
-          implementation.
+          Bridging Trust AI helps organizations govern, secure, and operationalize AI — with deep expertise across Microsoft 365, Copilot, Purview, Azure, and the security and compliance frameworks that make adoption defensible.
         </p>
         <div
           style={{
@@ -71,7 +70,7 @@ export const HeroSection = () => {
             href="#contact"
             style={{ ...buttonStyles.button, ...buttonStyles.buttonWhite }}
           >
-            Get Started
+            Book a Governance Assessment
           </a>
         </div>
       </div>
