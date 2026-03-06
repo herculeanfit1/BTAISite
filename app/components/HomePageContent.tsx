@@ -9,7 +9,7 @@ import { ContactSection } from "./home/ContactSection";
 
 /**
  * HomePageContent Component
- * 
+ *
  * Client component that handles responsive behavior for the homepage
  * Contains all sections with proper responsive breakpoint detection
  */
@@ -36,63 +36,35 @@ export const HomePageContent = () => {
     }
   }, []);
 
+  const wrapperProps = {
+    className: "w-full min-h-screen text-gray-900 dark:text-gray-100",
+    style: {
+      fontFamily:
+        'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      lineHeight: 1.5,
+      WebkitTextSizeAdjust: "100%" as const,
+    },
+  };
+
   // Prevent hydration mismatch by showing a fallback until mounted
   if (!isMounted) {
     return (
-      <div
-        style={{
-          fontFamily:
-            'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          lineHeight: 1.5,
-          color: "#1F1F25",
-          width: "100%",
-          minHeight: "100vh",
-          WebkitTextSizeAdjust: "100%",
-        }}
-      >
-        {/* Hero Section */}
+      <div {...wrapperProps}>
         <HeroSection />
-
-        {/* Leveling the Playing Field Section */}
         <LevelingSection />
-
-        {/* Features Section - default to mobile */}
         <FeaturesSection isDesktop={false} />
-
-        {/* About Us Section - default to mobile */}
         <AboutSection isDesktop={false} />
-
-        {/* Contact Section */}
         <ContactSection />
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        fontFamily:
-          'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        lineHeight: 1.5,
-        color: "#1F1F25",
-        width: "100%",
-        minHeight: "100vh",
-        WebkitTextSizeAdjust: "100%", // Safari-specific text size adjustment
-      }}
-    >
-      {/* Hero Section */}
+    <div {...wrapperProps}>
       <HeroSection />
-
-      {/* Leveling the Playing Field Section */}
       <LevelingSection />
-
-      {/* Features Section */}
       <FeaturesSection isDesktop={isDesktop} />
-
-      {/* About Us Section */}
       <AboutSection isDesktop={isDesktop} />
-
-      {/* Contact Section */}
       <ContactSection />
     </div>
   );
