@@ -157,7 +157,7 @@ const PrivacyPage = () => {
             {/* Last Updated */}
             <div style={styles.sectionBlock}>
               <p style={styles.text}>
-                <span style={styles.strong}>Last Updated:</span> March 1, 2025
+                <span style={styles.strong}>Last Updated:</span> March 6, 2026
               </p>
             </div>
 
@@ -165,39 +165,50 @@ const PrivacyPage = () => {
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Introduction</h2>
               <p style={styles.text}>
-                Bridging Trust AI LLC ("we," "us," or "our") is committed to
-                protecting your privacy and ensuring your experience on our
-                website is secure and transparent.
+                Bridging Trust AI LLC (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) is committed to protecting your privacy and ensuring your experience on our website is secure and transparent.
               </p>
               <p style={styles.text}>
-                This Privacy Policy explains how we collect, use, disclose, and
-                safeguard the personal information you provide through our
-                contact form.
+                This Privacy Policy explains how we collect, use, disclose, and safeguard the personal information you provide through our website and services.
               </p>
             </div>
 
             {/* Information We Collect */}
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Information We Collect</h2>
+              <h3 style={styles.heading3}>Information you provide directly</h3>
               <p style={styles.text}>
-                We only collect the following personal information when you
-                submit our contact form: first name, last name, company name,
-                email address, and any notes or description you provide to help
-                us respond to your inquiry.
+                We collect the following personal information when you submit our contact form: first name, last name, company name, email address, and any notes or description you provide to help us respond to your inquiry.
+              </p>
+              <h3 style={styles.heading3}>Information collected automatically</h3>
+              <p style={styles.text}>
+                When you visit our website, we may automatically collect certain technical information including your IP address (for rate limiting and security purposes), browser type, referring URL, and pages visited. We use Google Analytics to understand how visitors use our site. Google Analytics uses cookies and collects anonymized usage data in accordance with Google&#39;s privacy policy.
+              </p>
+              <h3 style={styles.heading3}>Information from service engagements</h3>
+              <p style={styles.text}>
+                During consulting engagements, clients may provide us with access to organizational data, configurations, documentation, or other materials necessary to deliver our services. The handling of such data is governed by the specific engagement agreement in place.
               </p>
             </div>
 
-            {/* How We Use Your Information */}
+            {/* Use of Information */}
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Use of Information</h2>
               <p style={styles.text}>
-                We use the information you provide solely to respond to your
-                inquiries, provide support, and share relevant information about
-                our IT consulting and app development services.
+                We use the information we collect to:
+              </p>
+              <ul style={styles.list}>
+                <li style={styles.listItem}>Respond to your inquiries and provide support</li>
+                <li style={styles.listItem}>Deliver our consulting and advisory services</li>
+                <li style={styles.listItem}>Share relevant information about our AI governance, data governance, and Microsoft AI enablement services</li>
+                <li style={styles.listItem}>Improve our website functionality and user experience</li>
+                <li style={styles.listItem}>Maintain security and prevent abuse (including rate limiting)</li>
+                <li style={styles.listItem}>Comply with legal obligations</li>
+              </ul>
+              <p style={styles.text}>
+                We do not sell your personal information to third parties.
               </p>
             </div>
 
-            {/* Disclosure of Your Information */}
+            {/* Disclosure of Information */}
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Disclosure of Information</h2>
               <p style={styles.text}>
@@ -205,17 +216,16 @@ const PrivacyPage = () => {
               </p>
               <ul style={styles.list}>
                 <li style={styles.listItem}>
-                  With service providers who perform services on our behalf
+                  With service providers who perform services on our behalf (including our email delivery provider, Resend, for processing contact form submissions)
                 </li>
                 <li style={styles.listItem}>
-                  To comply with legal obligations
+                  To comply with legal obligations, court orders, or government requests
                 </li>
                 <li style={styles.listItem}>
-                  To protect our rights and the rights of others
+                  To protect our rights, property, or safety, and the rights of others
                 </li>
                 <li style={styles.listItem}>
-                  In connection with a business transaction, such as a merger or
-                  acquisition
+                  In connection with a business transaction, such as a merger, acquisition, or sale of assets, in which case you would be notified of any change in ownership or control of your personal information
                 </li>
               </ul>
             </div>
@@ -224,9 +234,18 @@ const PrivacyPage = () => {
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Data Security</h2>
               <p style={styles.text}>
-                We implement reasonable administrative, technical, and physical
-                safeguards to protect your information from unauthorized access,
-                disclosure, alteration, or destruction.
+                We implement reasonable administrative, technical, and physical safeguards to protect your information from unauthorized access, disclosure, alteration, or destruction. These measures include encrypted transmission (HTTPS/TLS), server-side input validation, rate limiting on form submissions, and bot protection mechanisms.
+              </p>
+              <p style={styles.text}>
+                No method of electronic transmission or storage is 100% secure. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.
+              </p>
+            </div>
+
+            {/* Data Retention */}
+            <div style={styles.sectionBlock}>
+              <h2 style={styles.heading2}>Data Retention</h2>
+              <p style={styles.text}>
+                We retain contact form submissions and inquiry data for as long as necessary to respond to your inquiry and maintain our business relationship. Engagement-related data is retained in accordance with the terms of the applicable engagement agreement and our record retention practices. You may request deletion of your data at any time.
               </p>
             </div>
 
@@ -234,21 +253,55 @@ const PrivacyPage = () => {
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Your Rights</h2>
               <p style={styles.text}>
-                You may request access to, correction of, or deletion of your
-                personal data at any time by contacting us using the information
-                below.
+                Depending on your jurisdiction, you may have the following rights regarding your personal data:
+              </p>
+              <ul style={styles.list}>
+                <li style={styles.listItem}><span style={styles.strong}>Access</span>: Request a copy of the personal data we hold about you</li>
+                <li style={styles.listItem}><span style={styles.strong}>Correction</span>: Request correction of inaccurate or incomplete data</li>
+                <li style={styles.listItem}><span style={styles.strong}>Deletion</span>: Request deletion of your personal data</li>
+                <li style={styles.listItem}><span style={styles.strong}>Portability</span>: Request a copy of your data in a portable format</li>
+                <li style={styles.listItem}><span style={styles.strong}>Objection</span>: Object to certain processing of your personal data</li>
+              </ul>
+              <p style={styles.text}>
+                To exercise any of these rights, contact us using the information below. We will respond to your request within 30 days.
               </p>
             </div>
 
             {/* Children's Privacy */}
             <div style={styles.sectionBlock}>
-              <h2 style={styles.heading2}>Children's Privacy</h2>
+              <h2 style={styles.heading2}>Children&#39;s Privacy</h2>
               <p style={styles.text}>
-                Our services are not directed to individuals under the age of
-                18. We do not knowingly collect personal information from
-                children. If you believe we have collected personal information
-                from a child, please contact us so we can promptly remove the
-                information.
+                Our website and services are not directed to individuals under the age of 18. We do not knowingly collect personal information from children through our website.
+              </p>
+              <p style={styles.text}>
+                Bridging Trust AI LLC also develops software products that may be used in educational contexts. Any such products that collect, process, or interact with data belonging to minors will maintain separate, product-specific privacy policies that comply with applicable children&#39;s privacy laws, including COPPA (Children&#39;s Online Privacy Protection Act) and relevant state regulations. Those product-specific privacy policies will be made available within the applicable product.
+              </p>
+              <p style={styles.text}>
+                If you believe we have inadvertently collected personal information from a child through this website, please contact us immediately so we can promptly remove the information.
+              </p>
+            </div>
+
+            {/* Third-Party Services */}
+            <div style={styles.sectionBlock}>
+              <h2 style={styles.heading2}>Third-Party Services</h2>
+              <p style={styles.text}>
+                Our website may contain links to third-party websites or services. We are not responsible for the privacy practices of these third parties. We encourage you to review the privacy policies of any third-party services you access through our website.
+              </p>
+              <p style={styles.text}>
+                We use the following third-party services:
+              </p>
+              <ul style={styles.list}>
+                <li style={styles.listItem}><span style={styles.strong}>Google Analytics</span>: Website traffic analysis (anonymized data)</li>
+                <li style={styles.listItem}><span style={styles.strong}>Resend</span>: Email delivery for contact form submissions</li>
+                <li style={styles.listItem}><span style={styles.strong}>Azure Static Web Apps</span>: Website hosting (Microsoft)</li>
+              </ul>
+            </div>
+
+            {/* International Data Transfers */}
+            <div style={styles.sectionBlock}>
+              <h2 style={styles.heading2}>International Data Transfers</h2>
+              <p style={styles.text}>
+                Our website is hosted in the United States. If you access our website from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers are located. By using our website, you consent to the transfer of your information to the United States.
               </p>
             </div>
 
@@ -256,9 +309,7 @@ const PrivacyPage = () => {
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Changes to This Privacy Policy</h2>
               <p style={styles.text}>
-                We may update this Privacy Policy from time to time, and we will
-                post the revised version with the updated effective date on this
-                page.
+                We may update this Privacy Policy from time to time, and we will post the revised version with the updated effective date on this page. We encourage you to review this Privacy Policy periodically for any changes.
               </p>
             </div>
 
@@ -266,8 +317,7 @@ const PrivacyPage = () => {
             <div style={styles.sectionBlock}>
               <h2 style={styles.heading2}>Contact Us</h2>
               <p style={styles.text}>
-                If you have any questions or concerns about this Privacy Policy,
-                please contact us at privacy@bridgingtrustai.com.
+                If you have any questions or concerns about this Privacy Policy, please contact us at privacy@bridgingtrust.ai.
               </p>
             </div>
 
