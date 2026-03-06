@@ -56,7 +56,7 @@ export const Footer = () => {
 
           {/* Copyright text */}
           <div className="text-center text-sm text-gray-500">
-            <p className="bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text font-medium text-transparent">
+            <p className="bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] dark:from-[#5B90B0] dark:to-[#9CAEB8] bg-clip-text font-medium text-transparent">
               &copy; {new Date().getFullYear()} Bridging Trust AI. All rights
               reserved.
             </p>
