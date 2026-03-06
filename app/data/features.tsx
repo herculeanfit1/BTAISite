@@ -51,6 +51,7 @@ export const features: FeatureData[] = [
       "Alignment with NIST AI RMF, SOC 2, and emerging regulatory expectations",
       "AI adoption governance for Microsoft 365 environments",
     ],
+    link: "/services/governance",
   },
   {
     id: 2,
@@ -81,6 +82,7 @@ export const features: FeatureData[] = [
       "Access, retention, and DLP alignment for AI workloads",
       "Governance for prompts, agents, and connected data sources",
     ],
+    link: "/services/data-governance",
   },
   {
     id: 3,
@@ -111,5 +113,6 @@ export const features: FeatureData[] = [
       "Entra, Intune, and admin-center hardening for AI readiness",
       "Licensing advisory and secure rollout patterns",
     ],
+    link: "/services/enablement",
   },
 ];

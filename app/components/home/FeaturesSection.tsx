@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { features } from "@/app/data/features";
 
 interface FeaturesSectionProps {
@@ -48,6 +49,14 @@ export const FeaturesSection = ({ isDesktop }: FeaturesSectionProps) => {
                   </li>
                 ))}
               </ul>
+              {feature.link && (
+                <Link
+                  href={feature.link}
+                  className="inline-flex items-center mt-5 text-[#5B90B0] dark:text-[#7BA8C4] font-medium hover:underline"
+                >
+                  Learn more <span className="ml-1">&rarr;</span>
+                </Link>
+              )}
             </div>
           ))}
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { styles } from "@/app/styles/home";
 import { features } from "@/app/data/features";
 
@@ -33,6 +34,11 @@ export const FeaturesSection = ({ isDesktop }: FeaturesSectionProps) => {
                   <li key={bullet} style={{ marginBottom: "0.35rem" }}>{bullet}</li>
                 ))}
               </ul>
+              {feature.link && (
+                <Link href={feature.link} style={{ display: "inline-flex", alignItems: "center", marginTop: "1.25rem", color: "#5B90B0", fontWeight: 500 }}>
+                  Learn more &rarr;
+                </Link>
+              )}
             </div>
           ))}
         </div>

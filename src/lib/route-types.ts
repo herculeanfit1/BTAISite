@@ -25,7 +25,10 @@ export type AppRoutes =
   | "/about"
   | "/contact"
   | "/privacy"
-  | "/terms";
+  | "/terms"
+  | "/services/governance"
+  | "/services/data-governance"
+  | "/services/enablement";
 
 // Type for dynamic route paths (with :param or [param])
 export type DynamicRoute = string;
