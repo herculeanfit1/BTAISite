@@ -10,22 +10,16 @@ export interface FeatureData {
   icon: React.ReactNode;
   title: string;
   description: string;
-  link: string;
+  bullets: string[];
+  link?: string;
 }
 
 /**
  * Feature data with SVG icons
- * Each feature contains:
- * - id: Unique identifier
- * - icon: SVG element for the feature icon
- * - title: Display name of the feature (updated for business value messaging)
- * - description: Detailed explanation of the feature (updated to focus on business outcomes)
- * - link: URL to learn more about the feature
- *
- * UPDATED: July 2024 - Changed headline and copy to focus on specific AI solution offerings:
- * - Card 1: Executive Enablement (Leadership Accelerator)
- * - Card 2: Copilot Compliance (Governance & Compliance)
- * - Card 3: App Development (Scalable AI Engineering)
+ * Three governance-aligned service pillars:
+ * - Card 1: AI Governance & Readiness
+ * - Card 2: Data Governance & Security for AI
+ * - Card 3: Microsoft AI Enablement & Implementation
  */
 export const features: FeatureData[] = [
   {
@@ -47,10 +41,16 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "AI Leadership Accelerator",
+    title: "AI Governance & Readiness",
     description:
-      "Empower your leadership team to strategically leverage AI. Our executive programs provide the knowledge and tools to drive successful AI adoption at the highest level of your organization.",
-    link: "/coming-soon",
+      "We help organizations build the governance frameworks, policies, and operational structures needed to adopt AI responsibly and at scale.",
+    bullets: [
+      "AI governance frameworks and steering committee design",
+      "Acceptable use policies and responsible AI guardrails",
+      "Risk tiering, evidence checklists, and control mapping",
+      "Alignment with NIST AI RMF, SOC 2, and emerging regulatory expectations",
+      "AI adoption governance for Microsoft 365 environments",
+    ],
   },
   {
     id: 2,
@@ -71,10 +71,16 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "Governance & Compliance Solutions",
+    title: "Data Governance & Security for AI",
     description:
-      "Implement AI tools safely with our comprehensive governance framework. We ensure your AI deployments comply with regulations while maintaining security, ethics, and risk management.",
-    link: "/coming-soon",
+      "AI is only as good as the data it can access — and only as safe as the controls around it. We help you get your data house in order before broad AI deployment.",
+    bullets: [
+      "Data classification and sensitivity labeling readiness",
+      "Microsoft Purview-aligned governance strategy",
+      "Tenant data exposure review before Copilot rollout",
+      "Access, retention, and DLP alignment for AI workloads",
+      "Governance for prompts, agents, and connected data sources",
+    ],
   },
   {
     id: 3,
@@ -95,9 +101,15 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "Scalable AI Engineering",
+    title: "Microsoft AI Enablement & Implementation",
     description:
-      "Build custom AI applications tailored to your specific business needs. Our engineering team creates scalable, secure solutions that deliver immediate ROI while future-proofing your technology investment.",
-    link: "/coming-soon",
+      "We don't just write the strategy — we help you implement the controls. From readiness assessment to secure rollout, we turn AI governance into operational reality.",
+    bullets: [
+      "Microsoft Copilot readiness assessment and deployment planning",
+      "Copilot Studio and agent governance",
+      "Power Platform governance for AI use cases",
+      "Entra, Intune, and admin-center hardening for AI readiness",
+      "Licensing advisory and secure rollout patterns",
+    ],
   },
 ];
