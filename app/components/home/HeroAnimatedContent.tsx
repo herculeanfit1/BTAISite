@@ -156,9 +156,8 @@ export function HeroAnimatedContent() {
             <div className="flex flex-wrap items-center justify-center gap-3">
               {[
                 "Enterprise Ready",
-                "SOC 2 Aligned",
-                "NIST Framework",
-                "Microsoft Ecosystem",
+                "NIST AI RMF Aligned",
+                "Microsoft & Beyond",
               ].map((badge) => (
                 <span
                   key={badge}
