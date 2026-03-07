@@ -41,11 +41,16 @@ npm run test:unit         # Unit tests only
 npm run test:watch        # Watch mode
 npm run test:coverage     # Coverage report
 npm run test:api          # API endpoint tests
-npm run test:integration  # Integration tests
+npm run test:integration  # Integration tests (uses vitest.integration.config.js)
 npm run test:middleware    # Middleware/security tests
 npm run test:e2e          # Playwright E2E tests
 npm run test:docker       # All tests in Docker (consistent environment)
 npm run test:docker:quick # Quick Docker tests (unit + middleware)
+
+# Run a single test file
+npx vitest run __tests__/components/NavBar.test.tsx
+# Run a single Playwright test
+npx playwright test src/uitests/pages/home.spec.ts
 ```
 
 ### Validation (run before pushing)
@@ -71,7 +76,7 @@ npm run validate:quick    # Quick validation
 - **`ci/`** — CI/CD shell scripts; `g_master.sh` orchestrates all quality gates
 
 ### Path Aliases (use these)
-`@/components/*`, `@/lib/*`, `@/types/*` — configured in tsconfig.json
+`@/*` resolves to project root (`"./*"`). Specific mappings: `@/components/*` → `src/components/`, `@/lib/*` → `src/lib/`, `@/types/*` → `src/types/`. Configured in tsconfig.json.
 
 ### Contact Form / Email Pipeline
 The contact form (`app/api/contact/route.ts`) uses: Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `src/lib/email-templates/`.
@@ -146,10 +151,22 @@ Only `app/layout.tsx` (root layout) renders `<html>` and `<body>`. The `app/[loc
 ### 5. Error boundaries use inline styles only
 `app/error.tsx` and `app/[locale]/error.tsx` use **inline styles**, not Tailwind classes. Error boundaries must render even when CSS fails to load.
 
+## Local Environment Setup
+
+For local email testing, create `.env.local`:
+```bash
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_FROM=hello@bridgingtrust.ai
+EMAIL_TO=sales@bridgingtrust.ai
+EMAIL_ADMIN=admin@bridgingtrust.ai
+RESEND_TEST_MODE=true
+```
+
 ## Testing
 
 - **Docker testing** available for consistent cross-platform results (avoids Rollup platform issues)
 - **Pre-commit hooks**: Husky + lint-staged runs ESLint fix and affected tests on staged files
+- **Coverage ratchet**: CI floors (30% lines/branches) must never drop vs `main` for touched packages
 
 ## Deployment
 
@@ -158,8 +175,13 @@ Only `app/layout.tsx` (root layout) renders `<html>` and `<body>`. The `app/[loc
 - **Environment variables**: Managed in Azure portal (RESEND_API_KEY, EMAIL_FROM, EMAIL_TO, etc.)
 - **Images unoptimized**: Required for Azure Static Web Apps compatibility (`next.config.js`)
 
+## Performance Budgets
+
+Home and key pages must meet: **LCP ≤ 2.5s**, **CLS ≤ 0.1**, **INP ≤ 200ms**, **Perf score ≥ 90**. No regressions vs `main` for changed pages. Run `ANALYZE=true npm run build` to check bundle size.
+
 ## BTAISite-Specific Notes
 
 - Node 20.19.1 required (18.x incompatible, 23.x causes issues)
 - Use `logger` instead of `console.log` in production paths
 - i18n via next-intl with locale routing (en, es, fr)
+- ADRs for architectural decisions go in `docs/adr/NNNN-title.md`

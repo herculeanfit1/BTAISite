@@ -21,8 +21,7 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
     // Return placeholder with same dimensions to avoid layout shift
     return (
       <div
-        className={`h-4 w-4 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 ${className}`}
-        style={{ minWidth: "16px", minHeight: "16px" }}
+        className={`h-4 w-4 min-w-4 min-h-4 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 ${className}`}
       />
     );
   }
@@ -32,11 +31,10 @@ export const ThemeToggle = ({ className = "" }: ThemeToggleProps) => {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={`relative flex h-4 w-4 items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 shadow-sm border border-gray-200 dark:border-gray-600 ${className}`}
+      className={`relative z-[1000] flex h-4 w-4 min-w-4 min-h-4 items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 shadow-sm border border-gray-200 dark:border-gray-600 ${className}`}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       data-testid="dark-mode-toggle"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      style={{ minWidth: "16px", minHeight: "16px", zIndex: 1000, position: "relative" }}
     >
       {isDark ? (
         <svg className="h-2.5 w-2.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">

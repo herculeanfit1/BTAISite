@@ -1,85 +1,40 @@
-import { render } from "@testing-library/react"
-import { screen } from "@testing-library/dom";
-import { HeroSection } from '../../app/components/HeroSection';
+import { render } from "@testing-library/react";
+import { vi } from "vitest";
+
+// Mock next/dynamic to render nothing (dynamic imports tested via E2E)
+vi.mock("next/dynamic", () => ({
+  default: () => {
+    return function DynamicStub() {
+      return null;
+    };
+  },
+}));
+
+import { HeroSection } from "../../app/components/home/HeroSection";
 
 describe("HeroSection Component", () => {
-  it("renders with title", () => {
-    render(
-      <HeroSection
-        title="Test Title"
-        subtitle="Test Subtitle"
-        ctaButton={{
-          text: "Get Started",
-          href: "/contact",
-        }}
-      />,
-    );
-
-    // The title should be rendered in an h1 element
-    expect(screen.getByText("Test Title")).toBeInTheDocument();
-
-    // Don't look for the button text since it might not be rendered correctly in tests
-  });
-
-  it("renders with title and secondary button", () => {
-    const { container } = render(
-      <HeroSection
-        title="Test Title"
-        subtitle="Test Subtitle"
-        ctaButton={{
-          text: "Get Started",
-          href: "/contact",
-        }}
-        secondaryButton={{
-          text: "Learn More",
-          href: "/about",
-        }}
-      />,
-    );
-
-    expect(screen.getByText("Test Title")).toBeInTheDocument();
-
-    // Check for anchor tags which would be our buttons
-    const links = container.querySelectorAll("a");
-    expect(links.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders with image placeholder when enabled", () => {
-    const { container } = render(
-      <HeroSection
-        title="Test Title"
-        subtitle="Test Subtitle"
-        ctaButton={{
-          text: "Get Started",
-          href: "/contact",
-        }}
-        hasImagePlaceholder={true}
-      />,
-    );
-
-    // Check if the section has the proper class for hero section
-    const heroSection = container.querySelector("section");
-    expect(heroSection).toBeInTheDocument();
-  });
-
-  it("renders with title highlight when provided", () => {
-    const { container } = render(
-      <HeroSection
-        title="Test Title with Highlight"
-        titleHighlight="Highlight"
-        subtitle="Test Subtitle"
-        ctaButton={{
-          text: "Get Started",
-          href: "/contact",
-        }}
-      />,
-    );
-
-    // Get the section element directly
+  it("renders the hero section element", () => {
+    const { container } = render(<HeroSection />);
     const section = container.querySelector("section");
     expect(section).toBeInTheDocument();
+  });
 
-    // Check that the component renders correctly with the provided props
-    expect(section).not.toBeNull();
+  it("renders the noscript fallback with headline", () => {
+    const { container } = render(<HeroSection />);
+    const noscript = container.querySelector("noscript");
+    expect(noscript).toBeInTheDocument();
+  });
+
+  it("has the aurora background class", () => {
+    const { container } = render(<HeroSection />);
+    const section = container.querySelector("section");
+    expect(section?.classList.contains("hero-aurora")).toBe(true);
+  });
+
+  it("renders with proper responsive classes", () => {
+    const { container } = render(<HeroSection />);
+    const section = container.querySelector("section");
+    expect(section?.classList.contains("min-h-screen")).toBe(true);
+    expect(section?.classList.contains("overflow-hidden")).toBe(true);
   });
 });

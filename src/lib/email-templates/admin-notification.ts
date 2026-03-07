@@ -1,6 +1,15 @@
 import type { ContactFormData } from '../email';
 
+const INTEREST_LABELS: Record<string, string> = {
+  'governance-assessment': 'AI Governance Readiness Assessment',
+  'data-readiness': 'Data Readiness Assessment',
+  'copilot-readiness': 'Copilot Readiness Review',
+  'general': 'General Inquiry',
+};
+
 export function generateAdminNotificationEmail(data: ContactFormData): string {
+  const interestLabel = data.interest ? INTEREST_LABELS[data.interest] || data.interest : 'Not specified';
+
   const timestamp = new Date().toLocaleString('en-US', {
     timeZone: 'America/Chicago',
     year: 'numeric',
@@ -190,7 +199,12 @@ export function generateAdminNotificationEmail(data: ContactFormData): string {
                 <div class="detail-value"><strong>${data.company}</strong></div>
             </div>
             ` : ''}
-            
+
+            <div class="detail-row">
+                <div class="detail-label">Interest:</div>
+                <div class="detail-value"><strong>${interestLabel}</strong></div>
+            </div>
+
             <div class="detail-row">
                 <div class="detail-label">Submitted:</div>
                 <div class="detail-value">${timestamp} (Central Time)</div>

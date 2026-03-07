@@ -425,7 +425,7 @@ const ContactForm = () => {
       <div className="text-sm text-gray-500 dark:text-gray-400">
         <p>
           By submitting this form, you agree to our{" "}
-          <Link href="/coming-soon" className="text-primary hover:underline">
+          <Link href="/privacy" className="text-primary hover:underline">
             Privacy Policy
           </Link>
           .

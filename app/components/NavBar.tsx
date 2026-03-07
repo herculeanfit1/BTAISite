@@ -62,7 +62,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
       <div className="w-full px-6">
         <div className="mx-auto flex h-12 max-w-[1400px] items-center justify-between">
           {/* Company Logo and Name */}
-          <div className="flex items-center gap-4 ml-10">
+          <div className="flex items-center gap-2 md:gap-4 ml-2 md:ml-10">
             <div className="group flex flex-shrink-0 items-center">
               <Link href="/" className="flex items-center">
                 <Image
@@ -70,11 +70,11 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
                   alt="Bridging Trust AI Logo"
                   width={108}
                   height={108}
-                  className="mr-3 overflow-hidden rounded-full object-contain bg-[#f0f7fc] border-2 border-[#e5f1fa] transition-transform duration-300 group-hover:scale-110"
+                  className="mr-2 md:mr-3 w-14 h-14 md:w-[108px] md:h-[108px] overflow-hidden rounded-full object-contain bg-[#f0f7fc] border-2 border-[#e5f1fa] transition-transform duration-300 group-hover:scale-110"
                 />
                 {/* Company name with gradient text effect */}
                 <span
-                  className="whitespace-nowrap font-bold text-[2.01rem] bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text text-transparent dark:from-[#5B90B0] dark:to-[#9CAEB8]"
+                  className="whitespace-nowrap font-bold text-lg md:text-[2.01rem] bg-gradient-to-r from-[#3A5F77] to-[#5B90B0] bg-clip-text text-transparent dark:from-[#5B90B0] dark:to-[#9CAEB8]"
                 >
                   &nbsp;&nbsp;Bridging Trust AI
                 </span>
@@ -82,8 +82,8 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
             </div>
           </div>
 
-          {/* Desktop Navigation - always visible and right-justified */}
-          <div className="ml-auto flex items-center gap-6">
+          {/* Desktop Navigation - hidden on mobile, visible on md+ */}
+          <div className="hidden md:flex ml-auto items-center gap-6">
             {/* Solutions link with hover underline effect */}
             <Link
               href="/#solutions"

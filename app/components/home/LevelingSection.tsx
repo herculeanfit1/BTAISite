@@ -3,92 +3,36 @@
 /**
  * LevelingSection Component
  *
- * Displays the "Empowering Ambitious Businesses" section with a list of benefits.
- * This section highlights how the company helps businesses compete with larger competitors.
- *
- * @returns {JSX.Element} The rendered leveling section
+ * Displays the "The Challenges You're Facing" section with problem statements.
  */
 export const LevelingSection = () => {
-  // Styles for the section
-  const sectionStyles = {
-    padding: "5rem 1.5rem",
-    backgroundColor: "#F9FAFB",
-    width: "100%",
-  };
-
-  // Styles for the container
-  const containerStyles = {
-    width: "100%",
-    maxWidth: "1280px",
-    margin: "0 auto",
-    padding: "0 1.5rem",
-  };
-
-  // Styles for the heading
-  const headingStyles = {
-    fontSize: "2rem",
-    fontWeight: "bold" as const,
-    marginBottom: "1.5rem",
-    textAlign: "center" as const,
-    lineHeight: 1.2,
-  };
-
-  // Styles for the paragraph
-  const paragraphStyles = {
-    marginBottom: "1.25rem",
-  };
-
-  // Styles for the list
-  const listStyles = {
-    listStyleType: "disc",
-    paddingLeft: "1.5rem",
-    color: "#4B5563",
-    marginBottom: "2rem",
-    lineHeight: 1.6,
-    maxWidth: "64rem",
-    margin: "0 auto 2rem auto",
-  };
-
-  // Styles for list items
-  const listItemStyles = {
-    marginBottom: "1rem",
-  };
-
-  // Styles for bold text in list items
-  const strongStyles = {
-    fontWeight: 600,
-  };
-
   return (
-    <section id="leveling" style={sectionStyles}>
-      <div style={containerStyles}>
-        <h2 style={headingStyles}>Empowering Ambitious Businesses</h2>
-        <p style={paragraphStyles}>
-          We equip agile organizations to operate with the technological muscle
-          traditionally reserved for industry giants.
+    <section id="leveling" className="w-full py-20 px-6 bg-gray-50 dark:bg-gray-900">
+      <div className="w-full max-w-[1280px] mx-auto px-6">
+        <h2 className="text-2xl font-bold mb-6 text-center leading-tight text-gray-900 dark:text-gray-100">
+          The Challenges You&#39;re Facing
+        </h2>
+        <p className="mb-5 text-gray-600 dark:text-gray-400">
+          Organizations across every industry are under pressure to adopt AI — but moving fast without the right foundation creates risk. These are the problems we solve.
         </p>
-        <p style={paragraphStyles}>Our clients gain:</p>
-        <ul style={listStyles}>
-          <li style={listItemStyles}>
-            <span style={strongStyles}>Right-Sized Enterprise AI</span>: Proven,
-            enterprise-class AI frameworks tailored to your scale, objectives,
-            and budget.
+        <ul
+          className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed max-w-4xl mx-auto list-disc pl-6"
+        >
+          <li className="mb-4">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">&ldquo;We want Copilot, but we don&#39;t know if our data is ready.&rdquo;</span>{" "}
+            Most organizations have classification gaps, overshared content, and unclear retention policies that make broad AI deployment risky. We help you find and fix those gaps before they become incidents.
           </li>
-          <li style={listItemStyles}>
-            <span style={strongStyles}>Accelerated Time-to-Value</span>: A
-            rapid-deployment methodology that moves from use-case validation to
-            production in weeks—not quarters—so you realize ROI sooner.
+          <li className="mb-4">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">&ldquo;We need AI governance before we can scale.&rdquo;</span>{" "}
+            Leadership wants AI, but there&#39;s no framework for who approves what, how risk is assessed, or what acceptable use looks like. We build the governance structure so AI can move from pilot to production.
           </li>
-          <li style={listItemStyles}>
-            <span style={strongStyles}>Focused Competitive Advantage</span>:
-            Collaborative discovery that pinpoints the highest-impact AI
-            opportunities in your value chain, ensuring resources flow to
-            initiatives that materially shift your market position.
+          <li className="mb-4">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">&ldquo;We have too many environments and unclear controls.&rdquo;</span>{" "}
+            Power Platform sprawl, ungoverned Copilot Studio agents, and inconsistent admin configurations create shadow AI risk. We help you inventory, rationalize, and govern.
           </li>
-          <li style={listItemStyles}>
-            <span style={strongStyles}>Built-In Capability Transfer</span>:
-            Every engagement embeds training, documentation, and governance so
-            your team can confidently operate and evolve the solution.
+          <li className="mb-4">
+            <span className="font-semibold text-gray-800 dark:text-gray-200">&ldquo;We need to enable AI without creating compliance exposure.&rdquo;</span>{" "}
+            Regulated industries and security-conscious organizations can&#39;t afford to deploy AI and figure out compliance later. We align AI initiatives with your existing security, compliance, and risk posture from day one.
           </li>
         </ul>
       </div>

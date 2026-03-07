@@ -1,80 +1,60 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { heroStyles } from "@/app/styles/sections/hero";
-import { typographyStyles } from "@/app/styles/components/typography";
-import { layoutStyles } from "@/app/styles/components/layout";
-import { buttonStyles } from "@/app/styles/components/buttons";
+import dynamic from "next/dynamic";
+import { HeroScrollIndicator } from "./HeroScrollIndicator";
+
+const HeroBackground = dynamic(() => import("./HeroBackground"), {
+  ssr: false,
+});
+
+const HeroAnimatedContent = dynamic(
+  () =>
+    import("./HeroAnimatedContent").then((mod) => ({
+      default: mod.HeroAnimatedContent,
+    })),
+  { ssr: false },
+);
 
 /**
- * HeroSection Component
+ * HeroSection — Server Component shell
  *
- * The main banner with headline for the homepage.
- *
- * @returns {JSX.Element} The rendered hero section
+ * Renders the full hero as static HTML (visible before JS loads).
+ * Client sub-components enhance with animations after hydration.
  */
 export const HeroSection = () => {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsDesktop(window.innerWidth >= 768);
-      
-      const handleResize = () => {
-        setIsDesktop(window.innerWidth >= 768);
-      };
-
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }
-  }, []);
-
-  const heroStyle = isDesktop ? heroStyles.heroDesktop : heroStyles.hero;
-
   return (
-    <section style={{ ...heroStyle, backgroundColor: "#3A5F77" }}>
-      <div style={layoutStyles.overlay}></div>
-      <div style={layoutStyles.container}>
-        <h1
-          className="font-extrabold leading-[1.05] text-center mx-auto w-full mt-0 mb-6 sm:mb-8"
-          style={{
-            fontSize: 'clamp(2rem, 8vw, 4rem)',
-            textWrap: 'balance',
-            color: "white",
-            maxWidth: isDesktop ? "900px" : "100%",
-          }}
-        >
-          Making AI accessible and beneficial for everyone
-        </h1>
-        <p
-          style={{
-            ...typographyStyles.paragraph,
-            color: "#E5E7EB",
-            maxWidth: isDesktop ? "700px" : "100%", // Responsive max width
-            margin: isDesktop ? "0 auto 3rem auto" : "0 auto 2rem auto", // More bottom margin on desktop
-            fontSize: isDesktop ? "1.25rem" : "1rem", // Larger text on desktop
-            lineHeight: 1.6,
-            paddingLeft: isDesktop ? "2rem" : "0", // Extra horizontal padding on desktop
-            paddingRight: isDesktop ? "2rem" : "0",
-          }}
-        >
-          We bridge the gap between advanced AI technology and human-centered
-          implementation.
-        </p>
-        <div
-          style={{
-            ...buttonStyles.buttonContainer,
-            ...buttonStyles.buttonContainerRow,
-          }}
-        >
+    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden hero-aurora pt-20">
+      {/* Static aurora gradient is applied via the hero-aurora class */}
+
+      {/* Client-side animated background layers (orbs + particles) */}
+      <HeroBackground />
+
+      {/* SSR fallback: static text visible before JS */}
+      <noscript>
+        <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 text-center">
+          <h1
+            className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
+            style={{ textWrap: "balance", maxWidth: 900 }}
+          >
+            AI that earns trust, one partnership at a time.
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 mb-10">
+            Helping businesses answer: How can AI improve my operations?
+          </p>
           <a
             href="#contact"
-            style={{ ...buttonStyles.button, ...buttonStyles.buttonWhite }}
+            className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] text-white"
           >
-            Get Started
+            Start a Conversation &rarr;
           </a>
         </div>
-      </div>
+      </noscript>
+
+      {/* Client-side animated text content */}
+      <HeroAnimatedContent />
+
+      {/* Scroll indicator */}
+      <HeroScrollIndicator />
     </section>
   );
 };

@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { HomePageContent } from "../components/HomePageContent";
 
 export const metadata: Metadata = {
-  title: "Bridging Trust AI - Ethical AI Solutions",
+  title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
   description:
-    "Building ethical AI solutions that enhance human capabilities while maintaining transparency.",
+    "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations.",
 };
 
 interface PageProps {
