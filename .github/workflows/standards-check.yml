@@ -165,11 +165,11 @@ jobs:
         if: steps.detect.outputs.type == 'node'
         run: |
           if [ -f "package-lock.json" ]; then
-            npm ci
+            npm ci --ignore-engines
           elif [ -f "yarn.lock" ]; then
             yarn install --frozen-lockfile
           else
-            npm install
+            npm install --ignore-engines
           fi
 
       - name: Node — run linter
