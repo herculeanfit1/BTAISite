@@ -1,0 +1,11 @@
+# BTAISite uses Husky + lint-staged for git hooks.
+# This file satisfies the Herculean ecosystem standards check.
+repos:
+  - repo: local
+    hooks:
+      - id: no-dot-env
+        name: Block .env commits
+        entry: >
+          bash -c 'for f in "$@"; do case "$f" in .env|.env.local|.env.bak|.env.backup) echo "BLOCKED: $f"; exit 1;; esac; done' --
+        language: system
+        files: '\.env'
