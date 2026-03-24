@@ -161,6 +161,17 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Node — install dependencies
+        if: steps.detect.outputs.type == 'node'
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          elif [ -f "yarn.lock" ]; then
+            yarn install --frozen-lockfile
+          else
+            npm install
+          fi
+
       - name: Node — run linter
         if: steps.detect.outputs.type == 'node'
         run: |
