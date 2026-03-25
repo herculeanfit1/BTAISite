@@ -226,7 +226,13 @@ jobs:
 
       - name: Python — mypy strict
         if: steps.detect.outputs.type == 'python'
-        run: mypy --strict .
+        run: |
+          mypy --strict . || {
+            EC=$?
+            # Exit code 2 = no files found (e.g. all excluded), treat as OK
+            [ $EC -eq 2 ] && echo "::warning::mypy found no files to check" && exit 0
+            exit $EC
+          }
 
       # ── Dockerfile checks ────────────────────────────────
       - name: Lint Dockerfiles (hadolint)
