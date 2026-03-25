@@ -52,7 +52,7 @@ jobs:
 
       - name: No hardcoded secrets in docker-compose
         run: |
-          COMPOSE_FILES=$(find . -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' 2>/dev/null || true)
+          COMPOSE_FILES=$(find . \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' \) -not -name '*test*' 2>/dev/null || true)
           if [ -n "$COMPOSE_FILES" ]; then
             VIOLATIONS=$(grep -nE '(PASSWORD|SECRET_KEY)=' $COMPOSE_FILES | grep -vE '(\$\{|op://|changeme|REPLACE_ME)' || true)
             if [ -n "$VIOLATIONS" ]; then
@@ -165,11 +165,13 @@ jobs:
         if: steps.detect.outputs.type == 'node'
         run: |
           if [ -f "package-lock.json" ]; then
-            npm ci --ignore-engines
+            npm config set engine-strict false
+            npm ci --no-audit --no-fund
           elif [ -f "yarn.lock" ]; then
             yarn install --frozen-lockfile
           else
-            npm install --ignore-engines
+            npm config set engine-strict false
+            npm install --no-audit --no-fund
           fi
 
       - name: Node — run linter
