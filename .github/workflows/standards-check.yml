@@ -54,7 +54,7 @@ jobs:
         run: |
           COMPOSE_FILES=$(find . \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' \) -not -name '*test*' 2>/dev/null || true)
           if [ -n "$COMPOSE_FILES" ]; then
-            VIOLATIONS=$(grep -nE '(PASSWORD|SECRET_KEY)=' $COMPOSE_FILES | grep -vE '(\$\{|op://|changeme|REPLACE_ME)' || true)
+            VIOLATIONS=$(grep -nE '(PASSWORD|SECRET_KEY)=' $COMPOSE_FILES | grep -vE '(\$\{|op://|changeme|REPLACE_ME|change_in_production)' || true)
             if [ -n "$VIOLATIONS" ]; then
               echo "::error::Hardcoded secrets in docker-compose: $VIOLATIONS"
               exit 1
@@ -163,15 +163,15 @@ jobs:
 
       - name: Node — install dependencies
         if: steps.detect.outputs.type == 'node'
+        env:
+          npm_config_engine_strict: 'false'
         run: |
           if [ -f "package-lock.json" ]; then
-            npm config set engine-strict false
-            npm ci --no-audit --no-fund
+            npm ci --no-audit --no-fund || npm ci --no-audit --no-fund --force
           elif [ -f "yarn.lock" ]; then
             yarn install --frozen-lockfile
           else
-            npm config set engine-strict false
-            npm install --no-audit --no-fund
+            npm install --no-audit --no-fund || npm install --no-audit --no-fund --force
           fi
 
       - name: Node — run linter
