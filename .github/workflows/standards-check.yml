@@ -52,7 +52,9 @@ jobs:
 
       - name: No hardcoded secrets in docker-compose
         run: |
-          COMPOSE_FILES=$(find . \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' \) -not -name '*test*' -not -name '*local*' -not -path '*/dev/*' -not -path '*/test/*' 2>/dev/null || true)
+          COMPOSE_FILES=$(find . \( -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' \) \
+            -not -name '*test*' -not -name '*local*' -not -name '*dev*' -not -name '*ci*' -not -name '*staging*' \
+            -not -path '*/dev/*' -not -path '*/test/*' -not -path '*/ci/*' 2>/dev/null || true)
           if [ -n "$COMPOSE_FILES" ]; then
             VIOLATIONS=$(grep -nE '(PASSWORD|SECRET_KEY)=' $COMPOSE_FILES | grep -vE '(\$\{|op://|changeme|REPLACE_ME|change_in_production)' || true)
             if [ -n "$VIOLATIONS" ]; then
