@@ -62,6 +62,24 @@ jobs:
           npm run build
           echo "✅ Build completed for deployment"
 
+      - name: Copy SSG pages for static serving
+        run: |
+          echo "📄 Copying SSG HTML pages to static output..."
+          # Copy pre-rendered HTML pages from .next/server/app/ to root
+          # so Azure SWA can serve them as static files
+          for locale in en es fr; do
+            for page in privacy terms; do
+              src=".next/server/app/${locale}/${page}.html"
+              dest="${locale}/${page}"
+              if [ -f "$src" ]; then
+                mkdir -p "$dest"
+                cp "$src" "${dest}/index.html"
+                echo "  Copied ${src} -> ${dest}/index.html"
+              fi
+            done
+          done
+          echo "✅ SSG pages copied"
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -111,6 +129,22 @@ jobs:
           rm -rf .next
           npm run build
           echo "✅ Build completed for PR deployment"
+
+      - name: Copy SSG pages for static serving
+        run: |
+          echo "📄 Copying SSG HTML pages to static output..."
+          for locale in en es fr; do
+            for page in privacy terms; do
+              src=".next/server/app/${locale}/${page}.html"
+              dest="${locale}/${page}"
+              if [ -f "$src" ]; then
+                mkdir -p "$dest"
+                cp "$src" "${dest}/index.html"
+                echo "  Copied ${src} -> ${dest}/index.html"
+              fi
+            done
+          done
+          echo "✅ SSG pages copied"
 
       - name: Deploy PR to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1

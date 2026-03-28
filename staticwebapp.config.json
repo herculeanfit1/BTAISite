@@ -88,7 +88,13 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
-      "/*.{js,css,ico,jpg,jpeg,png,gif,svg,webp,avif,woff,woff2,ttf,otf}"
+      "/*.{js,css,ico,jpg,jpeg,png,gif,svg,webp,avif,woff,woff2,ttf,otf}",
+      "/en/privacy",
+      "/en/terms",
+      "/es/privacy",
+      "/es/terms",
+      "/fr/privacy",
+      "/fr/terms"
     ]
   },
   "responseOverrides": {
