@@ -90,10 +90,9 @@ export const AboutSection = () => {
                   Co-Founder
                 </p>
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
-                  Co-founder, Herculean Agents. Infrastructure architect specializing in
-                  agentic AI systems, Docker orchestration, and secure agent deployment.
-                  Builder of production AI agent environments with 75,000+ daily workflow
-                  executions.
+                  Infrastructure architect specializing in agentic AI systems, Docker
+                  orchestration, and secure agent deployment. Builder of production AI
+                  agent environments with 100,000+ daily workflow executions.
                 </p>
               </div>
             </div>
