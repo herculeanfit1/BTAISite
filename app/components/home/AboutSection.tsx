@@ -67,7 +67,13 @@ export const AboutSection = () => {
               {/* Founder 2 - Bill (right) */}
               <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
                 <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
-                  {/* Placeholder for Bill's image */}
+                  <Image
+                    src="/team/bill.schneider.jpeg"
+                    alt="Bill Schneider"
+                    width={128}
+                    height={128}
+                    className="object-cover w-full h-full scale-125"
+                  />
                 </div>
                 <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
                   Bill Schneider
