@@ -6,23 +6,23 @@ import { TelemetryProvider } from "./components/TelemetryProvider";
 import { CookieConsent } from "./components/CookieConsent";
 
 export const metadata = {
-  title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
+  title: "Bridging Trust AI — Better AI Starts With Better Relationships",
   description:
-    "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
+    "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
   keywords:
-    "AI governance, Microsoft Copilot readiness, data governance, AI compliance, Microsoft 365 governance, Purview, AI risk management, responsible AI, Copilot deployment, AI enablement",
+    "AI consulting, AI trust, AI governance, agent architecture, Microsoft Copilot readiness, AI team training, AI enablement, AI adoption strategy, AI agent communication, responsible AI, AI workshops, AI relationship methodology",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    process.env.NEXT_PUBLIC_APP_URL || "https://bridgingtrust.ai"
   ),
   openGraph: {
-    title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
+    title: "Bridging Trust AI — Better AI Starts With Better Relationships",
     description:
-      "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
+      "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
     url: "https://bridgingtrust.ai",
     siteName: "Bridging Trust AI",
     images: [
       {
-        url: "/public/og-image.jpg",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Bridging Trust AI",
@@ -33,10 +33,10 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
+    title: "Bridging Trust AI — Better AI Starts With Better Relationships",
     description:
-      "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations. We help you govern, secure, and operationalize AI with confidence.",
-    images: ["/public/og-image.jpg"],
+      "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,

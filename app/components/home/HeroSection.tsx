@@ -36,16 +36,16 @@ export const HeroSection = () => {
             className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
             style={{ textWrap: "balance", maxWidth: 900 }}
           >
-            AI that earns trust, one partnership at a time.
+            Better AI starts with better relationships.
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-10">
-            Helping businesses answer: How can AI improve my operations?
+            Most companies deploy AI tools. We teach organizations how to build the trust infrastructure that makes AI actually work.
           </p>
           <a
             href="#contact"
             className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] text-white"
           >
-            Start a Conversation &rarr;
+            Start the Conversation &rarr;
           </a>
         </div>
       </noscript>

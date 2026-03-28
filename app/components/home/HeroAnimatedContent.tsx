@@ -10,25 +10,23 @@ import {
 } from "motion/react";
 
 const HEADLINE_WORDS = [
+  "Better",
   "AI",
-  "that",
-  "earns",
-  "trust,",
-  "one",
-  "partnership",
-  "at",
-  "a",
-  "time.",
+  "starts",
+  "with",
+  "better",
+  "relationships.",
 ];
+
+const SHIMMER_WORD = "relationships.";
 
 const ROTATING_PHRASES = [
-  "How can AI improve my operations?",
-  "Is my data ready for AI?",
-  "What's the ROI of AI adoption?",
-  "How do I build an AI-ready team?",
+  "between your team and AI.",
+  "between AI systems and your data.",
+  "between your organization and the future.",
 ];
 
-const ARIA_LABEL = `Helping businesses answer questions like: ${ROTATING_PHRASES.join(", ")}`;
+const ARIA_LABEL = `Better AI starts with better relationships — ${ROTATING_PHRASES.join(" ")}`;
 
 const wordVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -89,7 +87,7 @@ export function HeroAnimatedContent() {
               <m.span
                 key={i}
                 className={`inline-block mr-[0.3em] ${
-                  word === "trust,"
+                  word === SHIMMER_WORD
                     ? "hero-shimmer bg-clip-text text-transparent"
                     : "text-[#F5F0EB]"
                 }`}
@@ -106,17 +104,17 @@ export function HeroAnimatedContent() {
 
           {/* Subheadline with word rotation */}
           <div
-            className="min-h-16 md:h-12 flex flex-col md:flex-row items-center justify-center mb-10 gap-1 md:gap-0"
+            className="min-h-20 md:min-h-16 flex flex-col items-center justify-center mb-10 gap-2"
             aria-label={ARIA_LABEL}
           >
-            <span className="text-base sm:text-xl md:text-2xl text-gray-300 md:mr-2">
-              Helping businesses answer:
+            <span className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed">
+              Most companies deploy AI tools. We teach organizations how to build the trust infrastructure
             </span>
-            <span className="relative inline-block w-full sm:w-[320px] md:w-[380px] h-8 text-center md:text-left overflow-hidden">
+            <span className="relative inline-block w-full sm:w-[400px] md:w-[440px] h-8 text-center overflow-hidden">
               <AnimatePresence mode="wait">
                 <m.span
                   key={phraseIndex}
-                  className="absolute left-0 text-xl md:text-2xl font-medium text-[#7ECEC1] whitespace-nowrap"
+                  className="absolute inset-x-0 text-lg md:text-xl font-medium text-[#7ECEC1] whitespace-nowrap"
                   initial={reducedMotion ? false : { y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={reducedMotion ? undefined : { y: -20, opacity: 0 }}
@@ -125,6 +123,9 @@ export function HeroAnimatedContent() {
                   {ROTATING_PHRASES[phraseIndex]}
                 </m.span>
               </AnimatePresence>
+            </span>
+            <span className="text-base sm:text-lg md:text-xl text-gray-300">
+              that makes AI actually work.
             </span>
           </div>
 
@@ -139,7 +140,7 @@ export function HeroAnimatedContent() {
               onClick={handleCtaClick}
               className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] dark:bg-[#7ECEC1] text-white dark:text-gray-900 transition-all duration-300 hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] dark:hover:text-white hover:shadow-[0_0_24px_rgba(91,144,176,0.4)]"
             >
-              Start a Conversation &rarr;
+              Start the Conversation &rarr;
             </a>
           </m.div>
 
@@ -151,13 +152,13 @@ export function HeroAnimatedContent() {
             transition={{ delay: 0.8, duration: 0.6 }}
           >
             <p className="text-sm text-gray-400 opacity-70 mb-4">
-              Trusted by forward-thinking organizations
+              Built for organizations ready to lead
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {[
-                "Enterprise Ready",
-                "NIST AI RMF Aligned",
-                "Microsoft & Beyond",
+                "AI Governance",
+                "Team Enablement",
+                "Agent Architecture",
               ].map((badge) => (
                 <span
                   key={badge}
