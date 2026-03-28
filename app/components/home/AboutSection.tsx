@@ -90,16 +90,14 @@ export const AboutSection = () => {
                   Co-Founder
                 </p>
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
-                  Terence Kolstad is a Minnesota-based technology strategist and AI
-                  governance advisor with ~20 years of experience designing, building,
-                  and securing cloud and on-premises environments. His expertise spans
-                  Microsoft 365, Azure, Entra ID, Purview, and Microsoft Copilot — with
-                  a focus on helping organizations evaluate risk, strengthen data
-                  foundations, and operationalize AI with confidence. Terence
-                  doesn&apos;t just write the strategy; he implements the controls, from
-                  tenant hardening and policy automation to infrastructure configuration.
-                  As Co-Founder of Bridging Trust AI, he helps clients move beyond AI
-                  hype into governed execution.
+                  Minnesota-based technology strategist and AI governance advisor
+                  with ~20 years of experience designing, building, and securing cloud
+                  and on-premises environments. His expertise spans Microsoft 365,
+                  Azure, Entra ID, Purview, and Microsoft Copilot — with a focus on
+                  helping organizations evaluate risk, strengthen data foundations, and
+                  operationalize AI with confidence. Terence doesn&apos;t just write
+                  the strategy; he implements the controls, from tenant hardening and
+                  policy automation to infrastructure configuration.
                 </p>
               </div>
             </div>
