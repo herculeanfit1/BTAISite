@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { HomePageContent } from "../components/HomePageContent";
 
 export const metadata: Metadata = {
-  title: "Bridging Trust AI - AI Governance & Microsoft AI Enablement",
+  title: "Bridging Trust AI — Better AI Starts With Better Relationships",
   description:
-    "AI governance, data readiness, and Microsoft AI enablement for security-conscious organizations.",
+    "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
 };
 
 interface PageProps {

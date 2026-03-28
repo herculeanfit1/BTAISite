@@ -6,9 +6,9 @@ import { isValidEmail } from "@/src/lib/validation";
 
 const INTEREST_OPTIONS = [
   { value: "", label: "Select an option (optional)" },
-  { value: "governance-assessment", label: "AI Governance Readiness Assessment" },
-  { value: "data-readiness", label: "Data Readiness Assessment" },
-  { value: "copilot-readiness", label: "Copilot Readiness Review" },
+  { value: "governance", label: "AI Governance & Data Readiness" },
+  { value: "training", label: "AI Interaction Training & Workshops" },
+  { value: "agent-architecture", label: "Agent Architecture & AI Infrastructure" },
   { value: "general", label: "General Inquiry" },
 ] as const;
 
@@ -191,12 +191,13 @@ export const ContactSection = () => {
         <div className="mx-auto max-w-4xl">
           <div className="mb-16 text-center">
             <h2 className="mb-6 text-center text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100">
-              Start a Conversation
+              Start the conversation
             </h2>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-              Whether you need an AI governance assessment, a Copilot readiness
-              review, or help building the data foundation for responsible AI
-              adoption — we&#39;d like to hear from you.
+              Every organization&apos;s AI journey is different. Whether you need
+              governance foundations, team enablement, or full agent architecture —
+              the first step is the same: an honest conversation about where you are
+              and where you want to go.
             </p>
           </div>
 

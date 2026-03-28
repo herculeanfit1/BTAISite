@@ -9,52 +9,21 @@ export interface FeatureData {
   id: number;
   icon: React.ReactNode;
   title: string;
+  label: string;
   description: string;
   bullets: string[];
+  cta: string;
   link?: string;
 }
 
 /**
  * Feature data with SVG icons
- * Three governance-aligned service pillars:
- * - Card 1: AI Governance & Readiness
- * - Card 2: Data Governance & Security for AI
- * - Card 3: Microsoft AI Enablement & Implementation
+ * Three service pillars: Govern, Relate, Build
  */
 export const features: FeatureData[] = [
   {
     id: 1,
-    icon: (
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M9 6.75V15M15 9V17.25M4.5 19.5H19.5C20.3284 19.5 21 18.8284 21 18V6C21 5.17157 20.3284 4.5 19.5 4.5H4.5C3.67157 4.5 3 5.17157 3 6V18C3 18.8284 3.67157 19.5 4.5 19.5Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-    title: "AI Governance & Readiness",
-    description:
-      "We help organizations build the governance frameworks, policies, and operational structures needed to adopt AI responsibly and at scale.",
-    bullets: [
-      "AI governance frameworks and steering committee design",
-      "Acceptable use policies and responsible AI guardrails",
-      "Risk tiering, evidence checklists, and control mapping",
-      "Alignment with NIST AI RMF, SOC 2, and emerging regulatory expectations",
-      "AI adoption governance for Microsoft 365 environments",
-    ],
-    link: "/services/governance",
-  },
-  {
-    id: 2,
+    label: "Govern",
     icon: (
       <svg
         width="24"
@@ -72,20 +41,53 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "Data Governance & Security for AI",
+    title: "AI Governance & Data Readiness",
     description:
-      "AI is only as good as the data it can access — and only as safe as the controls around it. We help you get your data house in order before broad AI deployment.",
+      "Before your organization can trust AI, your data has to be trustworthy. We assess your Microsoft 365 environment, implement data classification and governance with Purview, and build the compliance foundation that makes AI deployment defensible.",
     bullets: [
-      "Data classification and sensitivity labeling readiness",
-      "Microsoft Purview-aligned governance strategy",
-      "Tenant data exposure review before Copilot rollout",
-      "Access, retention, and DLP alignment for AI workloads",
-      "Governance for prompts, agents, and connected data sources",
+      "Microsoft Copilot readiness assessment",
+      "Data governance and classification",
+      "AI acceptable use policy development",
+      "Compliance alignment (HIPAA, SOC 2, financial services)",
+      "Shadow AI detection and remediation",
     ],
-    link: "/services/data-governance",
+    cta: "For organizations that need to get their house in order before \u2014 or alongside \u2014 AI adoption.",
+  },
+  {
+    id: 2,
+    label: "Relate",
+    icon: (
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M18 18.72a9.094 9.094 0 003.741-6.002M3.259 12.718A9.094 9.094 0 007 18.72m6-14.22a9.094 9.094 0 00-6 0M12 12a3 3 0 100-6 3 3 0 000 6zm0 0v6m-3-3h6"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    title: "AI Interaction Training & Workshops",
+    description:
+      "Your team\u2019s relationship with AI determines your ROI. We run hands-on workshops that transform how your people work with AI \u2014 from tentative prompt-and-pray to confident, strategic collaboration that produces real business value.",
+    bullets: [
+      "Executive AI orientation sessions",
+      "Team-specific workflow integration workshops",
+      "Model interaction methodology training",
+      "AI readiness assessment (where does your team actually stand?)",
+      "Ongoing advisory retainer for evolving AI landscape",
+    ],
+    cta: "For organizations where the technology is deployed but the adoption isn\u2019t happening \u2014 or isn\u2019t producing the results you expected.",
   },
   {
     id: 3,
+    label: "Build",
     icon: (
       <svg
         width="24"
@@ -103,16 +105,16 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "Microsoft AI Enablement & Implementation",
+    title: "Agent Architecture & AI Infrastructure",
     description:
-      "We don't just write the strategy — we help you implement the controls. From readiness assessment to secure rollout, we turn AI governance into operational reality.",
+      "The next wave of AI isn\u2019t chat interfaces. It\u2019s autonomous agents that work alongside your team, communicate with each other, and operate on your behalf. We design and implement the agent infrastructure that makes this possible and secure.",
     bullets: [
-      "Microsoft Copilot readiness assessment and deployment planning",
-      "Copilot Studio and agent governance",
-      "Power Platform governance for AI use cases",
-      "Entra, Intune, and admin-center hardening for AI readiness",
-      "Licensing advisory and secure rollout patterns",
+      "Autonomous agent architecture design",
+      "Agent-to-agent communication (Google A2A protocol)",
+      "Agent trust and identity verification",
+      "Memory system design for persistent AI assistants",
+      "Custom agent deployment on enterprise infrastructure",
     ],
-    link: "/services/enablement",
+    cta: "For organizations ready to move beyond chatbots into agentic AI \u2014 and need a partner who understands both the technology and the trust requirements.",
   },
 ];

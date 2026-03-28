@@ -16,20 +16,6 @@
       }
     },
     {
-      "route": "/privacy",
-      "headers": {
-        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
-        "vary": "Accept-Encoding"
-      }
-    },
-    {
-      "route": "/terms",
-      "headers": {
-        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
-        "vary": "Accept-Encoding"
-      }
-    },
-    {
       "route": "/*.html",
       "headers": {
         "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
@@ -85,14 +71,6 @@
       }
     }
   ],
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": [
-      "/*.{js,css,ico,jpg,jpeg,png,gif,svg,webp,avif,woff,woff2,ttf,otf}",
-      "/privacy",
-      "/terms"
-    ]
-  },
   "responseOverrides": {
     "401": {
       "redirect": "/login"

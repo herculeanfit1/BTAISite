@@ -43,7 +43,7 @@ export function CookieConsent() {
         <p className="text-sm text-gray-600 dark:text-gray-300 text-center sm:text-left">
           We use cookies and analytics to understand how visitors use our site and to improve your experience.
           See our{' '}
-          <a href="/privacy" className="text-[#5B90B0] dark:text-[#7BA8C4] underline hover:no-underline">
+          <a href="/en/privacy" className="text-[#5B90B0] dark:text-[#7BA8C4] underline hover:no-underline">
             Privacy Policy
           </a>{' '}
           for details.

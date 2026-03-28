@@ -104,9 +104,11 @@ Client (ContactSection.tsx)
 **Additional `src/lib/` modules:** `logger.ts` (structured logging), `env.ts` (env var access), `metadata.ts` (SEO), `route-types.ts` (typed route definitions)
 
 ### Key Patterns
+- **Single-page marketing site** — all content on main page with anchor navigation (Hero, Leveling the Playing Field, Solutions, About/Founders, Contact)
 - **Dark mode** — class-based via next-themes; ThemeToggle uses `useTheme()` hook
-- **CSP/security headers** — generated in middleware with nonce; no inline styles/scripts that break CSP
+- **CSP/security headers** — dual config: `staticwebapp.config.json` (authoritative for Azure deployment headers/routes) + `app/middleware.ts` (nonce generation, runtime headers)
 - **ESM modules** throughout (`"type": "module"` in package.json)
+- **Component exports** — named exports for components (`export const MyComponent`), default exports for page files only
 
 ## Critical: Tailwind CSS v4 Rules
 
