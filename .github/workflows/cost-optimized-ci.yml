@@ -70,11 +70,10 @@ jobs:
           for locale in en es fr; do
             for page in privacy terms; do
               src=".next/server/app/${locale}/${page}.html"
-              dest="${locale}/${page}"
               if [ -f "$src" ]; then
-                mkdir -p "$dest"
-                cp "$src" "${dest}/index.html"
-                echo "  Copied ${src} -> ${dest}/index.html"
+                mkdir -p ".next/${locale}/${page}"
+                cp "$src" ".next/${locale}/${page}/index.html"
+                echo "  Copied ${src} -> .next/${locale}/${page}/index.html"
               fi
             done
           done
@@ -136,11 +135,10 @@ jobs:
           for locale in en es fr; do
             for page in privacy terms; do
               src=".next/server/app/${locale}/${page}.html"
-              dest="${locale}/${page}"
               if [ -f "$src" ]; then
-                mkdir -p "$dest"
-                cp "$src" "${dest}/index.html"
-                echo "  Copied ${src} -> ${dest}/index.html"
+                mkdir -p ".next/${locale}/${page}"
+                cp "$src" ".next/${locale}/${page}/index.html"
+                echo "  Copied ${src} -> .next/${locale}/${page}/index.html"
               fi
             done
           done
