@@ -16,14 +16,14 @@
       }
     },
     {
-      "route": "/privacy",
+      "route": "/en/privacy",
       "headers": {
         "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
         "vary": "Accept-Encoding"
       }
     },
     {
-      "route": "/terms",
+      "route": "/en/terms",
       "headers": {
         "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
         "vary": "Accept-Encoding"

@@ -32,13 +32,13 @@ export const Footer = () => {
               About
             </a>
             <a
-              href="/privacy"
+              href="/en/privacy"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               Privacy
             </a>
             <a
-              href="/terms"
+              href="/en/terms"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               Terms
