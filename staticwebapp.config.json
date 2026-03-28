@@ -16,20 +16,6 @@
       }
     },
     {
-      "route": "/en/privacy",
-      "headers": {
-        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
-        "vary": "Accept-Encoding"
-      }
-    },
-    {
-      "route": "/en/terms",
-      "headers": {
-        "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
-        "vary": "Accept-Encoding"
-      }
-    },
-    {
       "route": "/*.html",
       "headers": {
         "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",
@@ -85,18 +71,6 @@
       }
     }
   ],
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": [
-      "/*.{js,css,ico,jpg,jpeg,png,gif,svg,webp,avif,woff,woff2,ttf,otf}",
-      "/en/privacy",
-      "/en/terms",
-      "/es/privacy",
-      "/es/terms",
-      "/fr/privacy",
-      "/fr/terms"
-    ]
-  },
   "responseOverrides": {
     "401": {
       "redirect": "/login"

@@ -8,6 +8,7 @@ name: Azure Static Web Apps Deployment
 # - Pull requests: Direct deployment only (local validation required)
 # - Local CI/CD: Run ./ci/g_master.sh before pushing to main
 # - GitHub Actions: DEPLOYMENT ONLY - no CI/CD pipeline
+# - Oryx handles Next.js build and hybrid rendering setup
 # =============================================================================
 
 on:
@@ -33,11 +34,10 @@ jobs:
   # =============================================================================
   # DIRECT DEPLOYMENT JOB (main branch pushes only)
   # =============================================================================
-  # Deploy directly to Azure - local validation assumed complete
   deploy-main-to-azure:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Fast deployment only
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -45,36 +45,6 @@ jobs:
         with:
           submodules: false
           lfs: false
-
-      - name: Setup Node.js (cached)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.19.1'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --engine-strict=false
-
-      - name: Build and prepare deployment
-        run: |
-          echo "🏗️ Building for Azure deployment..."
-          rm -rf .next deploy_output
-          npm run build
-          # Assemble deployment directory: .next output + SSG HTML pages
-          mkdir -p deploy_output
-          cp -r .next/* deploy_output/
-          # Copy SSG-rendered HTML pages to top-level paths
-          for locale in en es fr; do
-            for page in privacy terms; do
-              src=".next/server/app/${locale}/${page}.html"
-              if [ -f "$src" ]; then
-                mkdir -p "deploy_output/${locale}/${page}"
-                cp "$src" "deploy_output/${locale}/${page}/index.html"
-                echo "  Copied ${src} -> deploy_output/${locale}/${page}/index.html"
-              fi
-            done
-          done
-          echo "✅ Build completed for deployment"
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -84,8 +54,7 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "deploy_output"
-          skip_app_build: true
+          output_location: ""
         env:
           NODE_VERSION: "20.19.1"
 
@@ -97,11 +66,10 @@ jobs:
   # =============================================================================
   # PR DEPLOYMENT JOB (deployment only)
   # =============================================================================
-  # Deploy PRs directly - local validation required
   deploy-pr-to-azure:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 15  # Strict timeout for deployment
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -109,36 +77,6 @@ jobs:
         with:
           submodules: false
           lfs: false
-
-      - name: Setup Node.js (cached)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.19.1'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci --engine-strict=false
-
-      - name: Build and prepare deployment
-        run: |
-          echo "🏗️ Building PR for Azure deployment..."
-          rm -rf .next deploy_output
-          npm run build
-          # Assemble deployment directory: .next output + SSG HTML pages
-          mkdir -p deploy_output
-          cp -r .next/* deploy_output/
-          # Copy SSG-rendered HTML pages to top-level paths
-          for locale in en es fr; do
-            for page in privacy terms; do
-              src=".next/server/app/${locale}/${page}.html"
-              if [ -f "$src" ]; then
-                mkdir -p "deploy_output/${locale}/${page}"
-                cp "$src" "deploy_output/${locale}/${page}/index.html"
-                echo "  Copied ${src} -> deploy_output/${locale}/${page}/index.html"
-              fi
-            done
-          done
-          echo "✅ Build completed for PR deployment"
 
       - name: Deploy PR to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -148,8 +86,7 @@ jobs:
           action: "upload"
           app_location: "/"
           api_location: ""
-          output_location: "deploy_output"
-          skip_app_build: true
+          output_location: ""
         env:
           NODE_VERSION: "20.19.1"
 
