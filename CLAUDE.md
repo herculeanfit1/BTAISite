@@ -104,7 +104,7 @@ Client (ContactSection.tsx)
 **Additional `src/lib/` modules:** `logger.ts` (structured logging), `env.ts` (env var access), `metadata.ts` (SEO), `route-types.ts` (typed route definitions)
 
 ### Key Patterns
-- **Single-page marketing site** — all content on main page with anchor navigation (Hero, Leveling the Playing Field, Solutions, About/Founders, Contact)
+- **Single-page marketing site** — all content on main page with anchor navigation (Hero, Problem, Methodology, Solutions [Govern/Relate/Build], About/Founders, Contact)
 - **Dark mode** — class-based via next-themes; ThemeToggle uses `useTheme()` hook
 - **CSP/security headers** — dual config: `staticwebapp.config.json` (authoritative for Azure deployment headers/routes) + `app/middleware.ts` (nonce generation, runtime headers)
 - **ESM modules** throughout (`"type": "module"` in package.json)
@@ -172,10 +172,12 @@ RESEND_TEST_MODE=true
 
 ## Deployment
 
-- **Platform**: Azure Static Web Apps via GitHub Actions
+- **Platform**: Azure Static Web Apps via GitHub Actions (`cost-optimized-ci.yml`)
+- **Oryx hybrid build** — SWA's Oryx builder detects Next.js and sets up the hybrid rendering adapter. Do NOT use `skip_app_build: true` (breaks SSG page routing). `.npmrc` has `engine-strict=false` to avoid npm engine conflicts during Oryx's `npm ci`.
 - **CI in cloud is deployment-only** — run `npm run validate` locally before pushing
 - **Environment variables**: Managed in Azure portal (RESEND_API_KEY, EMAIL_FROM, EMAIL_TO, etc.)
 - **Images unoptimized**: Required for Azure Static Web Apps compatibility (`next.config.js`)
+- **Pages under `app/[locale]/`** — Privacy and terms pages must live under `app/[locale]/` (not `app/`) to be served correctly by SWA's hybrid adapter via `generateStaticParams`
 
 ## Performance Budgets
 
