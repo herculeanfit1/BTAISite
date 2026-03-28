@@ -102,13 +102,14 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                   Co-Founder & Chief Technology Officer
                 </p>
                 <p style={{ ...styles.founderBio, textAlign: "center" }}>
-                  Terence Kolstad is a Minnesota‑based IT strategist with 18
-                  years of experience designing, building, and securing cloud
-                  and on‑premises environments for mid‑market and enterprise
-                  customers. As Lead Solutions Architect at Cyber Advisors, he
-                  guides clients through Microsoft 365, Azure, and Veeam
-                  transformations that harden security postures while unlocking
-                  productivity.
+                  Technology strategist and infrastructure architect with ~20 years
+                  of experience designing, building, and securing cloud and
+                  on-premises environments. Specializing in agentic AI systems,
+                  Docker orchestration, and secure agent deployment — with
+                  production AI environments running 100,000+ daily workflow
+                  executions. His expertise spans Microsoft 365, Azure, Entra ID,
+                  Purview, and Microsoft Copilot, helping organizations move from
+                  AI strategy to governed execution.
                 </p>
               </div>
             </div>

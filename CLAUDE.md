@@ -68,12 +68,15 @@ npm run validate:quick    # Quick validation
 - **`app/middleware.ts`** — Security headers and CSP nonce generation
 
 ### Source Organization
+- **`app/components/`** — Primary component location (42+ files, actively imported)
+- **`src/components/`** — Legacy/dead copies exist here; check imports before editing — the active version is usually in `app/components/`
 - **`src/lib/`** — Utilities: email (Resend), rate limiting, Zod validation schemas, logging, i18n config, nonce generation
 - **`src/types/`** — TypeScript type definitions
 - **`lib/`** — Server-side libraries (analytics, cookies, rate-limit, i18n)
 - **`__tests__/`** — Vitest unit/integration tests (components/, api/, integration/)
 - **`src/uitests/`** — Playwright E2E tests
 - **`ci/`** — CI/CD shell scripts; `g_master.sh` orchestrates all quality gates
+- **`docs/`** — Architecture notes and ADRs (`docs/adr/NNNN-title.md`)
 
 ### Path Aliases (use these)
 `@/*` resolves to project root (`"./*"`). Specific mappings: `@/components/*` → `src/components/`, `@/lib/*` → `src/lib/`, `@/types/*` → `src/types/`. Configured in tsconfig.json.
@@ -109,6 +112,8 @@ Client (ContactSection.tsx)
 - **CSP/security headers** — dual config: `staticwebapp.config.json` (authoritative for Azure deployment headers/routes) + `app/middleware.ts` (nonce generation, runtime headers)
 - **ESM modules** throughout (`"type": "module"` in package.json)
 - **Component exports** — named exports for components (`export const MyComponent`), default exports for page files only
+- **Client islands** — only add `"use client"` when the component needs browser APIs, event handlers, or React hooks; prefer Server Components by default
+- **File size** — soft cap 150 lines (app code) / 250 lines (config/infra)
 
 ## Critical: Tailwind CSS v4 Rules
 
@@ -189,3 +194,4 @@ Home and key pages must meet: **LCP ≤ 2.5s**, **CLS ≤ 0.1**, **INP ≤ 200ms
 - Use `logger` instead of `console.log` in production paths
 - i18n via next-intl with locale routing (en, es, fr)
 - ADRs for architectural decisions go in `docs/adr/NNNN-title.md`
+- Cursor rules exist at `.cursor/rules/master-coding-rules.mdc` with overlapping guidance — CLAUDE.md is authoritative for Claude Code
