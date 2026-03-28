@@ -10,7 +10,6 @@
  */
 
 import React from "react";
-import Link from "next/link";
 import { ManageCookiesButton } from "./ManageCookiesButton";
 
 export const Footer = () => {
@@ -26,24 +25,24 @@ export const Footer = () => {
 
           {/* Simple navigation with consistent spacing */}
           <div className="mb-16 flex flex-row items-center justify-center gap-14">
-            <Link
+            <a
               href="/#about"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               About
-            </Link>
-            <Link
+            </a>
+            <a
               href="/privacy"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               Privacy
-            </Link>
-            <Link
+            </a>
+            <a
               href="/terms"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               Terms
-            </Link>
+            </a>
           </div>
 
           {/* Cookie preferences */}
