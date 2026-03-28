@@ -37,7 +37,7 @@ jobs:
   deploy-main-to-azure:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10  # Fast deployment only
 
     steps:
       - name: Checkout code
@@ -46,6 +46,36 @@ jobs:
           submodules: false
           lfs: false
 
+      - name: Setup Node.js (cached)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.1'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --engine-strict=false
+
+      - name: Build and prepare deployment
+        run: |
+          echo "🏗️ Building for Azure deployment..."
+          rm -rf .next deploy_output
+          npm run build
+          # Assemble deployment directory: .next output + SSG HTML pages
+          mkdir -p deploy_output
+          cp -r .next/* deploy_output/
+          # Copy SSG-rendered HTML pages to top-level paths
+          for locale in en es fr; do
+            for page in privacy terms; do
+              src=".next/server/app/${locale}/${page}.html"
+              if [ -f "$src" ]; then
+                mkdir -p "deploy_output/${locale}/${page}"
+                cp "$src" "deploy_output/${locale}/${page}/index.html"
+                echo "  Copied ${src} -> deploy_output/${locale}/${page}/index.html"
+              fi
+            done
+          done
+          echo "✅ Build completed for deployment"
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -53,8 +83,9 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/"
-          api_location: "app/api"
-          output_location: ".next"
+          api_location: ""
+          output_location: "deploy_output"
+          skip_app_build: true
         env:
           NODE_VERSION: "20.19.1"
 
@@ -70,7 +101,7 @@ jobs:
   deploy-pr-to-azure:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 15  # Strict timeout for deployment
 
     steps:
       - name: Checkout code
@@ -79,6 +110,36 @@ jobs:
           submodules: false
           lfs: false
 
+      - name: Setup Node.js (cached)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.1'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --engine-strict=false
+
+      - name: Build and prepare deployment
+        run: |
+          echo "🏗️ Building PR for Azure deployment..."
+          rm -rf .next deploy_output
+          npm run build
+          # Assemble deployment directory: .next output + SSG HTML pages
+          mkdir -p deploy_output
+          cp -r .next/* deploy_output/
+          # Copy SSG-rendered HTML pages to top-level paths
+          for locale in en es fr; do
+            for page in privacy terms; do
+              src=".next/server/app/${locale}/${page}.html"
+              if [ -f "$src" ]; then
+                mkdir -p "deploy_output/${locale}/${page}"
+                cp "$src" "deploy_output/${locale}/${page}/index.html"
+                echo "  Copied ${src} -> deploy_output/${locale}/${page}/index.html"
+              fi
+            done
+          done
+          echo "✅ Build completed for PR deployment"
+
       - name: Deploy PR to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -86,8 +147,9 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/"
-          api_location: "app/api"
-          output_location: ".next"
+          api_location: ""
+          output_location: "deploy_output"
+          skip_app_build: true
         env:
           NODE_VERSION: "20.19.1"
 
