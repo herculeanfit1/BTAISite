@@ -1,6 +1,7 @@
-import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { z } from "zod";
 import { sendContactEmail, type ContactFormData } from "../lib/email.js";
+import { upsertContactAndLogInquiry } from "../lib/hubspot.js";
 import { getClientIp } from "../lib/rate-limit.js";
 
 const contactFormSchema = z.object({
@@ -28,6 +29,9 @@ const contactFormSchema = z.object({
     .min(10, "Message must be at least 10 characters")
     .max(2000, "Message too long"),
   _gotcha: z.string().optional(),
+  utmSource: z.string().max(200).optional(),
+  utmMedium: z.string().max(200).optional(),
+  utmCampaign: z.string().max(200).optional(),
 });
 
 const ALLOWED_ORIGINS = [
@@ -52,6 +56,7 @@ function getCorsHeaders(request: HttpRequest): Record<string, string> {
 
 async function handler(
   request: HttpRequest,
+  context: InvocationContext,
 ): Promise<HttpResponseInit> {
   if (request.method === "OPTIONS") {
     return { status: 200, headers: getCorsHeaders(request) };
@@ -135,6 +140,35 @@ async function handler(
       company: formData.company,
       ipAddress,
     });
+
+    // HubSpot upsert — non-blocking failure: log and continue
+    try {
+      const hsResult = await upsertContactAndLogInquiry(
+        {
+          firstName: validationResult.data.firstName,
+          lastName: validationResult.data.lastName,
+          email: validationResult.data.email,
+          company: validationResult.data.company,
+          message: validationResult.data.message,
+          interest: validationResult.data.interest,
+          submissionIp: ipAddress,
+          submissionUrl: request.headers.get("referer") ?? undefined,
+          utmSource: validationResult.data.utmSource,
+          utmMedium: validationResult.data.utmMedium,
+          utmCampaign: validationResult.data.utmCampaign,
+        },
+        context.log,
+      );
+      if (!hsResult.success) {
+        context.log("hubspot.upsert.failed", { error: hsResult.error });
+      } else {
+        context.log("hubspot.upsert.succeeded", { contactId: hsResult.contactId });
+      }
+    } catch (err) {
+      context.log("hubspot.upsert.exception", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     return {
       status: 200,
