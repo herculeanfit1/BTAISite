@@ -63,26 +63,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                   : styles.grid
               }
             >
-              {/* Founder 1 - Bill (now first) */}
-              <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
-                <div style={styles.profileImage}>
-                  {/* Placeholder for Bill's image */}
-                </div>
-                <h3 style={styles.founderName}>Bill Schneider</h3>
-                <p style={styles.founderRole}>
-                  Co-Founder & Chief Executive Officer
-                </p>
-                <p style={{ ...styles.founderBio, textAlign: "center" }}>
-                  Bill Schneider helps organizations unlock the potential of
-                  technology. With 25 years of leadership in IT, he's an expert
-                  in finding practical ways to streamline work, keep data safe,
-                  and manage resources wisely. Bill's experience spans a range
-                  of technologies—from Microsoft 365 and Azure to AI-driven
-                  tools that empower teams to adapt and thrive.
-                </p>
-              </div>
-
-              {/* Founder 2 - Terence (now second) */}
+              {/* Founder 1 - Terence (left) */}
               <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
                 <div style={styles.profileImage}>
                   <Image
@@ -105,11 +86,30 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
                   Technology strategist and infrastructure architect with ~20 years
                   of experience designing, building, and securing cloud and
                   on-premises environments. Specializing in agentic AI systems,
-                  Docker orchestration, and secure agent deployment — with
-                  production AI environments running 100,000+ daily workflow
-                  executions. His expertise spans Microsoft 365, Azure, Entra ID,
-                  Purview, and Microsoft Copilot, helping organizations move from
-                  AI strategy to governed execution.
+                  Docker orchestration, and secure agent deployment — with multiple
+                  n8n AI environments deployed with 200k+ executions. His enterprise
+                  expertise also spans Microsoft 365, Azure, Entra ID, Purview, and
+                  Microsoft Copilot, helping organizations move from AI strategy to
+                  governed execution.
+                </p>
+              </div>
+
+              {/* Founder 2 - Bill (right) */}
+              <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
+                <div style={styles.profileImage}>
+                  {/* Placeholder for Bill's image */}
+                </div>
+                <h3 style={styles.founderName}>Bill Schneider</h3>
+                <p style={styles.founderRole}>
+                  Co-Founder & Chief Executive Officer
+                </p>
+                <p style={{ ...styles.founderBio, textAlign: "center" }}>
+                  Bill Schneider helps organizations unlock the potential of
+                  technology. With 25 years of leadership in IT, he's an expert
+                  in finding practical ways to streamline work, keep data safe,
+                  and manage resources wisely. Bill's experience spans a range
+                  of technologies—from Microsoft 365 and Azure to AI-driven
+                  tools that empower teams to adapt and thrive.
                 </p>
               </div>
             </div>
