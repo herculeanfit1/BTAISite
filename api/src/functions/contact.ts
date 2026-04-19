@@ -157,7 +157,7 @@ async function handler(
           utmMedium: validationResult.data.utmMedium,
           utmCampaign: validationResult.data.utmCampaign,
         },
-        context.log,
+        (msg: string, meta?: object) => context.log(msg, meta),
       );
       if (!hsResult.success) {
         context.log("hubspot.upsert.failed", { error: hsResult.error });
