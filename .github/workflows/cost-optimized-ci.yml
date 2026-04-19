@@ -89,8 +89,9 @@ jobs:
       - name: Prepare deployment package
         working-directory: api
         run: |
-          mkdir -p staging
-          cp dist/index.js staging/
+          mkdir -p staging/dist
+          cp dist/index.js staging/dist/
+          cp dist/index.js.map staging/dist/ 2>/dev/null || true
           cp host.json staging/
           cp package.json staging/
           cp package-lock.json staging/
