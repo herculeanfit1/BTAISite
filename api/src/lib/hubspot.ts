@@ -28,6 +28,15 @@ export const INTEREST_TO_INQUIRY_TOPIC: Record<string, string> = {
 
 type Logger = (msg: string, meta?: object) => void;
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 async function hubspotFetch(
   method: string,
   path: string,
@@ -94,7 +103,7 @@ async function createNote(
   const body = {
     properties: {
       hs_timestamp: new Date().toISOString(),
-      hs_note_body: `<strong>Initial inquiry submitted via contact form (${date})</strong><hr><p>${message}</p>`,
+      hs_note_body: `<strong>Initial inquiry submitted via contact form (${date})</strong><hr><p>${escapeHtml(message)}</p>`,
     },
     associations: [
       {
@@ -167,6 +176,15 @@ export async function upsertContactAndLogInquiry(
       contactId = created.id;
       log("hubspot.contact.created", { contactId });
     } else if (createRes.status === 409) {
+      // Verify this is actually a duplicate-contact conflict, not some other 409
+      const conflictBody = await createRes.json().catch(() => null) as {
+        category?: string; message?: string;
+      } | null;
+      if (conflictBody?.category !== "CONFLICT") {
+        log("hubspot.contact.unexpected409", { body: conflictBody });
+        return { success: false, error: `unexpected 409: ${conflictBody?.message ?? "unknown"}` };
+      }
+
       // Contact exists — search and update (without initial_message)
       const existingId = await findContactByEmail(submission.email, token);
       if (!existingId) {
