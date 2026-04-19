@@ -93,6 +93,7 @@ jobs:
           cp dist/index.js staging/
           cp host.json staging/
           cp package.json staging/
+          cp package-lock.json staging/
           cd staging && npm ci --omit=dev
 
       - name: Azure Login (OIDC)
