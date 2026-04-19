@@ -63,7 +63,7 @@ npm run validate:quick    # Quick validation
 
 ### App Router Structure
 - **`app/[locale]/`** — Locale-routed pages (en, es, fr) using next-intl
-- **`app/api/`** — Server-side API routes (contact form, newsletter, status, CSP reporting)
+- **`api/`** — Azure Functions v4 backend (contact, newsletter, status, cspReport, health). Linked to SWA — all `/api/*` requests proxy here
 - **`app/components/`** — React components (primary location, 42+ files)
 - **`app/middleware.ts`** — Security headers and CSP nonce generation
 
@@ -82,26 +82,44 @@ npm run validate:quick    # Quick validation
 `@/*` resolves to project root (`"./*"`). Specific mappings: `@/components/*` → `src/components/`, `@/lib/*` → `src/lib/`, `@/types/*` → `src/types/`. Configured in tsconfig.json.
 
 ### Contact Form / Email Pipeline
-The contact form (`app/api/contact/route.ts`) uses: Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `src/lib/email-templates/`.
+The contact form is handled by the Azure Functions backend (`api/src/functions/contact.ts`): Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `api/src/lib/email-templates/`.
 
 ### Service Layer & Data Flow
 
 ```
 Client (ContactSection.tsx)
-  → POST /api/contact (app/api/contact/route.ts)
-    → Zod schema validation
-    → Honeypot check (_gotcha field)
-    → sendContactEmail() (src/lib/email.ts)
-      → checkRateLimit() — in-memory IP-based, 5 req/hour
-      → checkCircuitBreaker() — 5 failures opens, 5 min timeout
-      → Resend API — dual delivery:
-        1. User confirmation email (email-templates/contact-confirmation.ts)
-        2. Admin notification email (email-templates/admin-notification.ts)
+  → POST /api/contact (SWA proxies to func-btai-site-prod)
+    → Azure Functions handler (api/src/functions/contact.ts)
+      → Zod schema validation
+      → Honeypot check (_gotcha field)
+      → sendContactEmail() (api/src/lib/email.ts)
+        → checkRateLimit() — in-memory IP-based, 5 req/hour
+        → checkCircuitBreaker() — 5 failures opens, 5 min timeout
+        → Resend API (key from Key Vault) — dual delivery:
+          1. User confirmation (reply-to: sales@bridgingtrust.ai)
+          2. Admin notification (to: sales@, cc: terence@)
 ```
 
-**Key abstractions in `src/lib/`:**
+### Azure Functions Backend (`api/`)
+- **Runtime**: Azure Functions v4, Flex Consumption (`func-btai-site-prod`)
+- **Build**: esbuild → `dist/index.js` (ESM, Node 22)
+- **Functions**: contact, newsletter, status, cspReport, health
+- **Key Vault**: `kv-btai-site-prod` — `RESEND_API_KEY` via `@Microsoft.KeyVault()` reference
+- **Managed Identity**: System-assigned, grants Key Vault Secrets User
+- **SWA Link**: All `/api/*` requests proxy to Functions via linked backend
+
+### Infrastructure as Code (`infra/`)
+- `main.bicep` — Functions, Storage, Key Vault, App Insights, SWA linked backend
+- `parameters.prod.json` — Production parameter values
+- Deploy: `az deployment group create --resource-group BTAI-RG1 --template-file infra/main.bicep --parameters infra/parameters.prod.json`
+
+### Operational Scripts (`scripts/`)
+- `wire-functions-settings.sh [--seed-kv]` — Seed KV from 1Password, wire KV references to Functions
+- `escrow-kv-to-1p.sh` — Back up KV secrets to 1Password (`BTAI-CC-BTAI-Site`)
+
+**Key abstractions in `api/src/lib/`:**
 - **`email.ts`** — Resend client (lazy-init), rate limiting, circuit breaker, dual email delivery
-- **`rate-limit.ts`** — Generic rate limit middleware for API routes (Map-based, IP keyed, auto-cleanup)
+- **`rate-limit.ts`** — Generic rate limit middleware for Azure Functions (Map-based, IP keyed, auto-cleanup)
 - **`validation.ts`** — Shared validators (email, name, message, phone) and `sanitizeInput()` for XSS prevention
 
 **Additional `src/lib/` modules:** `logger.ts` (structured logging), `env.ts` (env var access), `metadata.ts` (SEO), `route-types.ts` (typed route definitions)
@@ -177,12 +195,13 @@ RESEND_TEST_MODE=true
 
 ## Deployment
 
-- **Platform**: Azure Static Web Apps via GitHub Actions (`cost-optimized-ci.yml`)
-- **Oryx hybrid build** — SWA's Oryx builder detects Next.js and sets up the hybrid rendering adapter. Do NOT use `skip_app_build: true` (breaks SSG page routing). `.npmrc` has `engine-strict=false` to avoid npm engine conflicts during Oryx's `npm ci`.
+- **Platform**: Azure Static Web Apps + linked Azure Functions backend (`func-btai-site-prod`)
+- **SWA**: Oryx hybrid build, `cost-optimized-ci.yml`. Do NOT use `skip_app_build: true`. `.npmrc` has `engine-strict=false` for Oryx compatibility
+- **Functions**: Deployed via `func azure functionapp publish` or GitHub Actions `deploy-functions` job
+- **Secrets**: Key Vault (`kv-btai-site-prod`) via managed identity. NEVER plain-text in app settings
 - **CI in cloud is deployment-only** — run `npm run validate` locally before pushing
-- **Environment variables**: Managed in Azure portal (RESEND_API_KEY, EMAIL_FROM, EMAIL_TO, etc.)
 - **Images unoptimized**: Required for Azure Static Web Apps compatibility (`next.config.js`)
-- **Pages under `app/[locale]/`** — Privacy and terms pages must live under `app/[locale]/` (not `app/`) to be served correctly by SWA's hybrid adapter via `generateStaticParams`
+- **Pages under `app/[locale]/`** — Must live under `app/[locale]/` for SWA's hybrid adapter via `generateStaticParams`
 
 ## Performance Budgets
 
