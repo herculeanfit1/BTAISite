@@ -98,9 +98,9 @@ Core email functionality with:
 - Recommended next steps
 - Quick reply functionality
 
-### 3. API Route (`app/api/contact/route.ts`)
+### 3. Contact Function (`api/src/functions/contact.ts`)
 
-Next.js API route that handles:
+Azure Functions handler that handles:
 - Form validation with Zod schema
 - Bot protection via honeypot field
 - Rate limiting enforcement
@@ -219,10 +219,9 @@ curl -X POST https://your-site.azurestaticapps.net/api/contact \
 
 ## Deployment Notes
 
-- The system uses Next.js API routes (not Azure Functions)
-- Static export is disabled to support API routes
-- Azure Static Web Apps handles the Next.js build automatically
-- Environment variables must be set in Azure Static Web Apps configuration
+- The email system runs on Azure Functions (`func-btai-site-prod`), linked to SWA as a backend
+- Oryx builds the Next.js frontend; Functions are deployed separately via `deploy-functions` CI job
+- Secrets (`RESEND_API_KEY`) are stored in Key Vault and referenced via `@Microsoft.KeyVault()` app settings
 
 ## Future Enhancements
 
