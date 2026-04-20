@@ -1,8 +1,14 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext, output } from "@azure/functions";
 import { z } from "zod";
+import { buildClassifyMessage, QueueMessageTooLargeError } from "../lib/classify-queue.js";
 import { sendContactEmail, type ContactFormData } from "../lib/email.js";
-import { upsertContactAndLogInquiry } from "../lib/hubspot.js";
+import { INTEREST_TO_INQUIRY_TOPIC, upsertContactAndLogInquiry, type HubSpotUpsertResult } from "../lib/hubspot.js";
 import { getClientIp } from "../lib/rate-limit.js";
+
+const classifyQueueOutput = output.storageQueue({
+  queueName: "btai-lead-classify",
+  connection: "AzureWebJobsStorage",
+});
 
 const contactFormSchema = z.object({
   firstName: z
@@ -142,8 +148,9 @@ async function handler(
     });
 
     // HubSpot upsert — non-blocking failure: log and continue
+    let hsResult: HubSpotUpsertResult | undefined;
     try {
-      const hsResult = await upsertContactAndLogInquiry(
+      hsResult = await upsertContactAndLogInquiry(
         {
           firstName: validationResult.data.firstName,
           lastName: validationResult.data.lastName,
@@ -167,6 +174,40 @@ async function handler(
     } catch (err) {
       context.log("hubspot.upsert.exception", {
         error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    // Enqueue lead classification message — non-blocking
+    try {
+      if (hsResult?.success && hsResult.contactId) {
+        const interest = validationResult.data.interest;
+        const inquiryTopic = (interest && interest !== "")
+          ? (INTEREST_TO_INQUIRY_TOPIC[interest] ?? "general_inquiry")
+          : "general_inquiry";
+
+        const msg = buildClassifyMessage({
+          submittedAt: new Date().toISOString(),
+          contactId: hsResult.contactId,
+          noteId: hsResult.noteId,
+          body: validationResult.data,
+          inquiryTopic,
+          leadPriority: "p2_warm",
+          ip: ipAddress ?? null,
+          userAgent: request.headers.get("user-agent") ?? null,
+          submissionUrl: request.headers.get("referer") ?? null,
+        });
+        context.extraOutputs.set(classifyQueueOutput, msg);
+        context.log("classify.enqueued", {
+          contactId: hsResult.contactId,
+          inquiryTopic: msg.inquiry.inquiryTopic,
+        });
+      }
+    } catch (err) {
+      const tag = err instanceof QueueMessageTooLargeError
+        ? "classify.enqueue.too-large"
+        : "classify.enqueue.exception";
+      context.error(tag, {
+        message: err instanceof Error ? err.message : String(err),
       });
     }
 
@@ -195,5 +236,6 @@ app.http("contact", {
   methods: ["POST", "OPTIONS"],
   authLevel: "anonymous",
   route: "contact",
+  extraOutputs: [classifyQueueOutput],
   handler,
 });
