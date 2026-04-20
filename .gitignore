@@ -50,6 +50,10 @@ node_modules/
 /playwright/.cache/
 .mcp.json
 
+# Azure Functions build artifacts
+api/dist/
+api/staging/
+
 # Standards compliance
 .env.local
 .env.bak
