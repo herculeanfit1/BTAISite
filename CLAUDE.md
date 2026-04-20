@@ -98,14 +98,20 @@ Client (ContactSection.tsx)
         → Resend API (key from Key Vault) — dual delivery:
           1. User confirmation (reply-to: sales@bridgingtrust.ai)
           2. Admin notification (to: sales@, cc: terence@)
+      → upsertContactAndLogInquiry() (api/src/lib/hubspot.ts) [non-blocking]
+        → HubSpot CRM: create-or-update contact (13 custom properties)
+        → HubSpot CRM: create note engagement with inquiry text
+      → buildClassifyMessage() → Azure Storage Queue [non-blocking]
+        → Enqueue to btai-lead-classify for n8n/Ollama classification
 ```
 
 ### Azure Functions Backend (`api/`)
 - **Runtime**: Azure Functions v4, Flex Consumption (`func-btai-site-prod`)
-- **Build**: esbuild → `dist/index.js` (ESM, Node 22)
+- **Build**: esbuild → `dist/index.js` (ESM, Node 22). Root `tsconfig.json` excludes `api/` — the API has its own tsconfig
 - **Functions**: contact, newsletter, status, cspReport, health
-- **Key Vault**: `kv-btai-site-prod` — `RESEND_API_KEY` via `@Microsoft.KeyVault()` reference
-- **Managed Identity**: System-assigned, grants Key Vault Secrets User
+- **Key Vault**: `kv-btai-site-prod` — `RESEND_API_KEY` and `HUBSPOT_TOKEN` via `@Microsoft.KeyVault()` references
+- **Storage Queue**: `btai-lead-classify` in `stbtaisiteprod` — identity-based auth via `AzureWebJobsStorage__queueServiceUri`
+- **Managed Identity**: System-assigned, grants Key Vault Secrets User + Storage Queue Data Message Sender
 - **SWA Link**: All `/api/*` requests proxy to Functions via linked backend
 
 ### Infrastructure as Code (`infra/`)
@@ -119,6 +125,8 @@ Client (ContactSection.tsx)
 
 **Key abstractions in `api/src/lib/`:**
 - **`email.ts`** — Resend client (lazy-init), rate limiting, circuit breaker, dual email delivery
+- **`hubspot.ts`** — HubSpot CRM contact upsert (create-or-409-then-patch), note engagement creation, `INTEREST_TO_INQUIRY_TOPIC` mapping
+- **`classify-queue.ts`** — `buildClassifyMessage()` for Azure Storage Queue output binding, 8KB payload guard, message schema v1
 - **`rate-limit.ts`** — Generic rate limit middleware for Azure Functions (Map-based, IP keyed, auto-cleanup)
 - **`validation.ts`** — Shared validators (email, name, message, phone) and `sanitizeInput()` for XSS prevention
 
@@ -214,3 +222,12 @@ Home and key pages must meet: **LCP ≤ 2.5s**, **CLS ≤ 0.1**, **INP ≤ 200ms
 - i18n via next-intl with locale routing (en, es, fr)
 - ADRs for architectural decisions go in `docs/adr/NNNN-title.md`
 - Cursor rules exist at `.cursor/rules/master-coding-rules.mdc` with overlapping guidance — CLAUDE.md is authoritative for Claude Code
+
+## Recent Architecture Decisions (April 2026)
+
+- **HubSpot contact upsert + note engagement now live (P1b.1)** — `api/src/lib/hubspot.ts` creates/updates contacts with 13 custom properties under `btai_lead_intake` group, then attaches an HTML note with the inquiry text. Token from Key Vault (`HUBSPOT_TOKEN`)
+- **Azure Storage Queue `btai-lead-classify` + classify-queue.ts (P1b.2)** — after HubSpot upsert, a versioned JSON message (schema v1) is enqueued for downstream n8n/Ollama classification. Identity-based auth via `AzureWebJobsStorage` managed identity
+- **Root tsconfig.json must exclude `api/`** — the `api/` directory is a separate TypeScript project with its own tsconfig and esbuild pipeline. If `api/` is not in the root `exclude` array, `next build` will try to type-check Azure Functions code and fail (missing `@azure/functions` types). See PR #16
+- **context.log binding trap** — never pass `context.log` as a bare callback to another module. The `this`-binding is lost and calls throw silently inside non-blocking try/catch. Use arrow-wrap: `(msg, meta) => context.log(msg, meta)`. See PR #13
+- **CI concurrency groups keyed on `${{ github.workflow }}`** — prevents cross-workflow cancellation where Standards Check and SWA Deployment used to share a group. See PR #14
+- **CI concurrency groups also include `${{ github.event_name }}`** — prevents same-workflow cross-event cancellation on merge when both `push` and `pull_request:closed` fire simultaneously. See PR #18

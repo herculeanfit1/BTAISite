@@ -13,9 +13,9 @@ The Bridging Trust AI website uses a custom email relay system built with Resend
 ## Architecture
 
 ```
-Contact Form → Next.js API Route → Resend API → Email Delivery
-     ↓              ↓                  ↓            ↓
-  Validation   Rate Limiting      Email Templates  Recipients
+Contact Form → Azure Functions handler → Resend API → Email Delivery
+     ↓                  ↓                    ↓            ↓
+  Validation       Rate Limiting        Email Templates  Recipients
 ```
 
 ## Required Environment Variables
