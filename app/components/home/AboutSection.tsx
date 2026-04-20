@@ -46,7 +46,36 @@ export const AboutSection = () => {
               Our Founders
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[400px] md:max-w-full mx-auto md:mx-0 px-4 md:px-0">
-              {/* Founder 1 - Bill (left) */}
+              {/* Founder 1 - Terence (left) */}
+              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
+                <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
+                  <Image
+                    src="/team/terence.kolstad.png"
+                    alt="Terence Kolstad"
+                    width={128}
+                    height={128}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
+                  Terence Kolstad
+                </h3>
+                <p className="text-blue-500 dark:text-blue-400 text-center mb-4">
+                  Co-Founder
+                </p>
+                <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
+                  Technology strategist and infrastructure architect with ~20 years
+                  of experience designing, building, and securing cloud and
+                  on-premises environments. Specializing in agentic AI systems,
+                  Docker orchestration, and secure agent deployment — with multiple
+                  n8n AI environments deployed with 200k+ executions. His enterprise
+                  expertise also spans Microsoft 365, Azure, Entra ID, Purview, and
+                  Microsoft Copilot, helping organizations move from AI strategy to
+                  governed execution.
+                </p>
+              </div>
+
+              {/* Founder 2 - Bill (right) */}
               <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
                 <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
                   <Image
@@ -69,35 +98,6 @@ export const AboutSection = () => {
                   governance, and AI adoption strategy. Pioneer in AI agent relationship
                   methodology and the operational bridge between enterprise IT and frontier
                   AI capabilities.
-                </p>
-              </div>
-
-              {/* Founder 2 - Terence (right) */}
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
-                <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
-                  <Image
-                    src="/team/terence.kolstad.png"
-                    alt="Terence Kolstad"
-                    width={128}
-                    height={128}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-                <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
-                  Terence Kolstad
-                </h3>
-                <p className="text-blue-500 dark:text-blue-400 text-center mb-4">
-                  Co-Founder
-                </p>
-                <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
-                  Technology strategist and infrastructure architect with ~20 years
-                  of experience designing, building, and securing cloud and
-                  on-premises environments. Specializing in agentic AI systems,
-                  Docker orchestration, and secure agent deployment — with
-                  production AI environments running 100,000+ daily workflow
-                  executions. His expertise spans Microsoft 365, Azure, Entra ID,
-                  Purview, and Microsoft Copilot, helping organizations move from
-                  AI strategy to governed execution.
                 </p>
               </div>
             </div>
