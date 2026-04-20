@@ -15,8 +15,8 @@ interface ContactSubmission {
   utmCampaign?: string;
 }
 
-type HubSpotUpsertResult =
-  | { success: true; contactId: string }
+export type HubSpotUpsertResult =
+  | { success: true; contactId: string; noteId: string | null }
   | { success: false; error: string };
 
 export const INTEREST_TO_INQUIRY_TOPIC: Record<string, string> = {
@@ -98,7 +98,7 @@ async function createNote(
   message: string,
   token: string,
   log: Logger,
-): Promise<void> {
+): Promise<string | null> {
   const date = new Date().toISOString().slice(0, 10);
   const body = {
     properties: {
@@ -122,7 +122,10 @@ async function createNote(
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     log("hubspot.note.failed", { status: res.status, body: text });
+    return null;
   }
+  const data = (await res.json()) as { id: string };
+  return data.id;
 }
 
 async function findContactByEmail(
@@ -213,9 +216,9 @@ export async function upsertContactAndLogInquiry(
     }
 
     // Create note engagement
-    await createNote(contactId, submission.message, token, log);
+    const noteId = await createNote(contactId, submission.message, token, log);
 
-    return { success: true, contactId };
+    return { success: true, contactId, noteId };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log("hubspot.exception", { error: message });
