@@ -1,0 +1,374 @@
+name: Security Scan
+
+# Trivy CVE + IaC scanning — Variant B (code + optional Dockerfile, no compose
+# images). Use when the repo has no docker-compose*.yml referencing images
+# (covers both Dockerfile-only and code-only repos). The gate job fails the
+# workflow if any HIGH or CRITICAL finding remains after .trivyignore is
+# applied. SARIFs are persisted as workflow artifacts (the gate reads them
+# from there); upload to Code Scanning is best-effort (continue-on-error: true)
+# so the workflow is functional on private repos without GitHub Advanced
+# Security. Each scan job posts a sticky PR comment summarising severity
+# counts.
+#
+# Canonical source: HerculeanOlympus config/security-scan/variant-b.yml
+# Standard:         HerculeanOlympus STANDARDS.md § 11 Security Scanning
+# Reference impl:   HerculeanHydra .github/workflows/security-scan.yml
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Monday 14:00 UTC = Monday 09:00 America/Chicago
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  actions: read  # codeql-action/upload-sarif reads workflow-run context
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TRIVY_ACTION_VERSION: 'v0.36.0'
+
+jobs:
+  scan-fs:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan (SARIF)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+          exit-code: '0'
+          trivyignores: ./.trivyignore
+
+      - name: Upload SARIF to Code Scanning
+        # Tolerated failure: HerculeanHydra is private without GitHub
+        # Advanced Security, so Code Scanning ingestion is unavailable.
+        # SARIFs are still preserved as workflow artifacts and the gate
+        # job reads them. Flip continue-on-error to false once GHAS is
+        # licensed or the repo is made public.
+        if: always()
+        continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Persist SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-fs
+          path: trivy-fs.sarif
+          if-no-files-found: warn
+
+      - name: PR comment summary (filesystem)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          SARIF_FILE: trivy-fs.sarif
+          MARKER: '<!-- security-scan:trivy-fs -->'
+          TITLE: 'Trivy filesystem scan'
+        with:
+          script: |
+            const fs = require('fs');
+            const sarifPath = process.env.SARIF_FILE;
+            const marker = process.env.MARKER;
+            const title = process.env.TITLE;
+            let error = 0, warn = 0, note = 0;
+            try {
+              const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+              for (const run of sarif.runs ?? []) {
+                for (const result of run.results ?? []) {
+                  if (result.level === 'error') error++;
+                  else if (result.level === 'warning') warn++;
+                  else if (result.level === 'note') note++;
+                }
+              }
+            } catch (e) {
+              core.warning(`Could not read ${sarifPath}: ${e.message}`);
+            }
+            const status = error > 0 ? '❌ findings present' : '✅ clean';
+            const body = `${marker}\n## ${title}\n\n` +
+              `Status: **${status}**\n\n` +
+              `| Severity | Count |\n|---|---|\n` +
+              `| HIGH / CRITICAL (gate) | ${error} |\n` +
+              `| MEDIUM | ${warn} |\n` +
+              `| LOW / INFO | ${note} |\n\n` +
+              `View full results in the [Security tab](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/security/code-scanning?query=is%3Aopen+tool%3ATrivy) (requires GitHub Advanced Security — currently disabled for this private repo) or download the \`sarif-*\` workflow artifacts for the raw findings.\n`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  scan-config:
+    name: Trivy IaC config scan
+    runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy config scan (SARIF)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config.sarif
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: '0'
+          trivyignores: ./.trivyignore
+
+      - name: Upload SARIF to Code Scanning
+        # See scan-fs job for the rationale on continue-on-error.
+        if: always()
+        continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-config
+
+      - name: Persist SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-config
+          path: trivy-config.sarif
+          if-no-files-found: warn
+
+      - name: PR comment summary (config)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          SARIF_FILE: trivy-config.sarif
+          MARKER: '<!-- security-scan:trivy-config -->'
+          TITLE: 'Trivy IaC / Dockerfile config scan'
+        with:
+          script: |
+            const fs = require('fs');
+            const sarifPath = process.env.SARIF_FILE;
+            const marker = process.env.MARKER;
+            const title = process.env.TITLE;
+            let error = 0, warn = 0, note = 0;
+            try {
+              const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+              for (const run of sarif.runs ?? []) {
+                for (const result of run.results ?? []) {
+                  if (result.level === 'error') error++;
+                  else if (result.level === 'warning') warn++;
+                  else if (result.level === 'note') note++;
+                }
+              }
+            } catch (e) {
+              core.warning(`Could not read ${sarifPath}: ${e.message}`);
+            }
+            const status = error > 0 ? '❌ findings present' : '✅ clean';
+            const body = `${marker}\n## ${title}\n\n` +
+              `Status: **${status}**\n\n` +
+              `| Severity | Count |\n|---|---|\n` +
+              `| HIGH / CRITICAL (gate) | ${error} |\n` +
+              `| MEDIUM | ${warn} |\n` +
+              `| LOW / INFO | ${note} |\n\n` +
+              `View full results in the [Security tab](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/security/code-scanning?query=is%3Aopen+tool%3ATrivy) (requires GitHub Advanced Security — currently disabled for this private repo) or download the \`sarif-*\` workflow artifacts for the raw findings.\n`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  scan-secrets:
+    name: Trivy secrets scan
+    runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy secrets scan (SARIF)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-secrets.sarif
+          scanners: secret
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: '0'
+          trivyignores: ./.trivyignore
+
+      - name: Upload SARIF to Code Scanning
+        # See scan-fs job for the rationale on continue-on-error.
+        if: always()
+        continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-secrets.sarif
+          category: trivy-secrets
+
+      - name: Persist SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-secrets
+          path: trivy-secrets.sarif
+          if-no-files-found: warn
+
+      - name: PR comment summary (secrets)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          SARIF_FILE: trivy-secrets.sarif
+          MARKER: '<!-- security-scan:trivy-secrets -->'
+          TITLE: 'Trivy secrets scan'
+        with:
+          script: |
+            const fs = require('fs');
+            const sarifPath = process.env.SARIF_FILE;
+            const marker = process.env.MARKER;
+            const title = process.env.TITLE;
+            let error = 0, warn = 0, note = 0;
+            try {
+              const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+              for (const run of sarif.runs ?? []) {
+                for (const result of run.results ?? []) {
+                  if (result.level === 'error') error++;
+                  else if (result.level === 'warning') warn++;
+                  else if (result.level === 'note') note++;
+                }
+              }
+            } catch (e) {
+              core.warning(`Could not read ${sarifPath}: ${e.message}`);
+            }
+            const status = error > 0 ? '❌ secrets detected' : '✅ clean';
+            const body = `${marker}\n## ${title}\n\n` +
+              `Status: **${status}**\n\n` +
+              `| Severity | Count |\n|---|---|\n` +
+              `| HIGH / CRITICAL (gate) | ${error} |\n` +
+              `| MEDIUM | ${warn} |\n` +
+              `| LOW / INFO | ${note} |\n\n` +
+              `Any finding here is a credential/secret committed to source. Rotate the secret immediately, scrub from git history if needed, then suppress only if confirmed false-positive.\n`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  gate:
+    name: Gate on HIGH / CRITICAL
+    runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
+    needs: [scan-fs, scan-config, scan-secrets]
+    if: always()
+    steps:
+      - name: Download all SARIF artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Tally HIGH / CRITICAL findings across all SARIFs
+        id: tally
+        run: |
+          set -uo pipefail
+
+          # Fail-closed: explicitly verify each expected SARIF artifact arrived
+          # before tallying. Without this check, a scan-job upload failure
+          # (runner OOM, network glitch, killed container) would leave the
+          # glob empty -> total=0 -> gate "passes" with no scanning. The
+          # EXPECTED list MUST stay in lockstep with the gate.needs declaration.
+          EXPECTED=(sarif-fs sarif-config sarif-secrets)
+          missing=0
+          for dir in "${EXPECTED[@]}"; do
+            if ! ls "artifacts/$dir"/*.sarif >/dev/null 2>&1; then
+              echo "::error::Expected SARIF artifact missing: artifacts/$dir/"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::Gate fail-closed: $missing expected SARIF artifact(s) missing — a scan job did not upload. Re-run the workflow or investigate the failed scan job."
+            exit 1
+          fi
+
+          total=0
+          shopt -s globstar nullglob
+          for sarif in artifacts/**/*.sarif; do
+            count=$(jq '[.runs[]?.results[]? | select(.level == "error")] | length' "$sarif" 2>/dev/null || echo 0)
+            [ -z "$count" ] && count=0
+            echo "$sarif: $count HIGH/CRITICAL"
+            total=$((total + count))
+          done
+          echo "Total HIGH/CRITICAL findings: $total"
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if HIGH or CRITICAL findings remain
+        run: |
+          if [ "${{ steps.tally.outputs.total }}" -gt 0 ]; then
+            echo "::error::Gate failed: ${{ steps.tally.outputs.total }} HIGH or CRITICAL finding(s) detected. Review the SARIF artifacts; either fix the underlying issue, or add the CVE/rule ID to .trivyignore with justification + date."
+            exit 1
+          fi
+          echo "Gate passed: no HIGH/CRITICAL findings."

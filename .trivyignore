@@ -1,0 +1,19 @@
+# Trivy false-positive allowlist
+#
+# Each entry is a CVE ID (one per line) or a Trivy rule ID that Trivy will
+# skip during scans. Add an inline comment explaining WHY the entry is
+# suppressed and the date it was suppressed. Re-evaluate suppressions during
+# quarterly security reviews.
+#
+# Examples:
+#   CVE-2024-12345  # 2026-05-04: false positive, fixed in vendored patch (PR #999)
+#   DS-0002         # 2026-05-06: stdio-only dev container, intentional root
+#
+# Canonical template: HerculeanOlympus config/security-scan/.trivyignore.template
+# Standard:           HerculeanOlympus STANDARDS.md § 11 Security Scanning
+
+# DS-0002 affects Dockerfile.static and Dockerfile.test only. The repo has no
+# production runtime Dockerfile — `Dockerfile.static` builds static assets for
+# CDN/edge hosting; `Dockerfile.test` runs Playwright tests in CI. Neither
+# serves user traffic at runtime.
+DS-0002  # 2026-05-11: build/test Dockerfiles intentionally root; no production runtime Dockerfile in repo
