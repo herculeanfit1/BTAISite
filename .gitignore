@@ -60,3 +60,4 @@ api/staging/
 .env.backup
 *.log
 .envrc
+_diag/
