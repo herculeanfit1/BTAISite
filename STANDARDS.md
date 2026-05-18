@@ -1,297 +1,186 @@
-# Herculean Ecosystem Standards
+# Herculean Ecosystem Standards — Non-Agent (External Repos)
 
-Version 1.2 — Last updated 2026-04-01
+Version 1.0 — Last updated 2026-05-07
 
-This document defines the engineering standards enforced across all Herculean agent repositories. It covers both **Python** and **Node.js** codebases. Compliance is verified by HerculeanOlympus via `checks/standards-compliance.js`.
+This document defines the security and hygiene baseline for repos in Terence's GitHub footprint that are **not** part of the Herculean ecosystem. These standards exist so HerculeanHydra (the ecosystem gatekeeper) can bring all of `~/dev/` to a defensible posture, not only the agent repos.
 
-For repos with no runtime code (infrastructure, config, knowledge bases), see `STANDARDS-NONCODE.md`.
+For Herculean agent repos, see `STANDARDS.md` (Node), `config/standards/STANDARDS-python.md`, or `config/standards/STANDARDS-NONCODE.md`.
 
----
-
-## 1. Runtime Conventions
-
-### Python
-
-- **Python >= 3.11** required
-- **Virtual environments** — all repos use `.venv/` (gitignored)
-- **Dependency management** — use `pip` with `requirements.txt` or `uv` with `pyproject.toml`
-- **No global installs** — never `pip install` outside a virtualenv for project use
-
-### Node.js
-
-- **Node.js >= 18** required (`"engines": { "node": ">=18.0.0" }` in `package.json`)
-- **ES modules** — all repos use `"type": "module"` in `package.json`
-- **Native fetch** — use Node 18+ built-in `fetch`; do not add `node-fetch` or `axios` unless justified
+Compliance verification is operator-driven during initial rollout; automated checks via `checks/standards-compliance.js` follow once the rollout settles.
 
 ---
 
-## 2. Secrets Management
+## 1. Scope
 
-Applies to **all** repos regardless of language.
+Applies to repos that:
 
-- **1Password** is the single source of truth for secrets
-- **`.env.1p.template`** — committed file with `op://` references (safe to track)
-- **`.env.example`** — committed file with placeholder values for developers without 1Password access
-- **`.env`** — gitignored, never committed; generated at runtime or by `op run`
-- **Runtime injection**: `op run --env-file=.env.1p.template -- <command>`
-- `OP_SERVICE_ACCOUNT_TOKEN` must be in the shell environment, never in `.env`
-- Vault naming convention: `BTAI-CC-{AgentName}` (Title Case)
+- Are owned by `herculeanfit1` (or other Terence-controlled accounts)
+- Are **not** one of the active Herculean agent repos
+- Have a `.git/` and a `github.com` remote
 
-### Node.js additional
-
-- **`.envrc`** — gitignored `direnv` file containing `dotenv`; auto-loads `.env` when entering the directory
-- All `npm run` scripts must use `op run` wrapping — never `node --env-file=.env`
+Examples (as of 2026-05-07): AIStudyPlans, BTAI-AgencySwarm, BTAISite, DudeDash, Dude-cc, engram, FlowState, LaunchBrief, NameBridge, SchedulEd, synod, Agora.
 
 ---
 
-## 3. Linting
+## 2. What this standard does NOT require
 
-### Python — Ruff
+These items are Herculean-ecosystem-specific and not enforced for non-agent repos:
 
-All Python repos must include linting configuration in `pyproject.toml`:
+- `STANDARDS.md` at repo root
+- `CLAUDE.md` at repo root
+- Ganoe TOC pattern + `rules/` directory
+- 1Password vault naming `BTAI-CC-{AgentName}`
+- `standards-check.yml` workflow (Herculean drift detection)
 
-```toml
-[tool.ruff]
-target-version = "py311"
-line-length = 100
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "W", "UP"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-```
-
-Run via `ruff check .` and `ruff format .`.
-
-### Node.js — Biome
-
-All Node.js repos must include a `biome.json` configuration:
-
-```json
-{
-  "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noConsole": { "level": "off", "options": { "allow": ["log"] } }
-      }
-    }
-  },
-  "files": {
-    "includes": ["**", "!**/*.json", "!**/state/data"]
-  }
-}
-```
-
-Run via `npx @biomejs/biome@2.4.6` or as a `devDependency`.
-
-**Exception:** Next.js projects may use **ESLint** with `eslint-config-next` instead of Biome, since Next.js provides deep built-in ESLint integration. These projects must still have a pre-commit hook running their linter.
+If a non-agent repo voluntarily includes any of these, that is fine — but they are not gating.
 
 ---
 
-## 4. Pre-Commit Hooks
+## 3. Security Scanning
 
-All repos must include a `.pre-commit-config.yaml`. Install hooks via `pre-commit install` after cloning.
+**REQUIRED.** Every non-agent private repo must run the canonical Variant B Trivy workflow.
 
-### Python
+| Item | Value |
+|---|---|
+| Workflow file | `.github/workflows/security-scan.yml` |
+| Source | HerculeanOlympus `config/security-scan/variant-b.yml` |
+| Allowlist | `.trivyignore` at repo root (header-only template) |
+| Severity policy | HIGH + CRITICAL gate; MEDIUM informational; LOW + unfixed suppressed |
+| Self-hosted runner | `runs-on: [self-hosted, herculean, linux]` |
+| GHAS posture | `continue-on-error: true` on `upload-sarif` (private repos without GHAS) |
 
-```yaml
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.1
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+Variant A (adds `scan-images`) is allowed if the repo has `docker-compose*.yml` or `stacks/*.yml` referencing images. Default is B.
 
-  - repo: local
-    hooks:
-      - id: no-dot-env
-        name: Block .env commits
-        entry: >
-          bash -c 'for f in "$@"; do case "$f" in .env|.env.local|.env.bak|.env.backup) echo "BLOCKED: $f"; exit 1;; esac; done' --
-        language: system
-        files: '\.env'
-```
-
-### Node.js (Biome)
-
-```yaml
-repos:
-  - repo: https://github.com/biomejs/pre-commit
-    rev: "v2.4.6"
-    hooks:
-      - id: biome-check
-        additional_dependencies: ["@biomejs/biome@2.4.6"]
-
-  - repo: local
-    hooks:
-      - id: no-dot-env
-        name: Block .env commits
-        entry: >
-          bash -c 'for f in "$@"; do case "$f" in .env|.env.local|.env.bak|.env.backup) echo "BLOCKED: $f"; exit 1;; esac; done' --
-        language: system
-        files: '\.env'
-```
-
-### Node.js (ESLint — Next.js projects)
-
-```yaml
-repos:
-  - repo: local
-    hooks:
-      - id: eslint
-        name: ESLint
-        entry: npx next lint --max-warnings 0
-        language: system
-        types: [file]
-        files: '\.(js|jsx|ts|tsx)$'
-
-      - id: no-dot-env
-        name: Block .env commits
-        entry: >
-          bash -c 'for f in "$@"; do case "$f" in .env|.env.local|.env.bak|.env.backup) echo "BLOCKED: $f"; exit 1;; esac; done' --
-        language: system
-        files: '\.env'
-```
+Suppressions in `.trivyignore` must include an inline `# YYYY-MM-DD: <reason>` comment and are reviewed quarterly.
 
 ---
 
-## 5. Repo Structure Requirements
+## 4. Dependency updates
 
-Every agent repo must contain at minimum:
+**REQUIRED.** `.github/dependabot.yml` derived from HerculeanOlympus `config/dependabot.yml.template`. Uncomment ecosystems applicable to the repo:
 
-| File | Python | Node.js | Purpose |
-|---|---|---|---|
-| `CLAUDE.md` | required | required | Agent identity, commands, architecture |
-| `STANDARDS.md` | required | required | This file (exact copy from canonical source) |
-| `pyproject.toml` | required | — | With `[tool.ruff]` config |
-| `package.json` | — | required | With `"type": "module"` and `"engines"` |
-| `biome.json` | — | required* | Linter/formatter config |
-| `.gitignore` | required | required | See section 7 |
-| `.env.1p.template` | required | required | 1Password secret references |
-| `.env.example` | required | required | Placeholder values |
+- `github-actions` always
+- `pip` if Python
+- `npm` if Node
+- `docker` if Dockerfile present
 
-*Next.js projects using ESLint may omit `biome.json` if they have an ESLint config.
+Cadence: weekly Monday 14:00 UTC. **Renovate is not used.**
 
 ---
 
-## 6. CLAUDE.md Requirements
+## 5. .gitignore minimums
 
-Every `CLAUDE.md` must:
-
-- Define the agent's identity and purpose
-- List all available commands
-- Document architecture and project structure
-- Reference `STANDARDS.md` (required for drift detection)
-
----
-
-## 7. .gitignore Minimums
-
-### Shared (all repos)
+**REQUIRED.** Every `.gitignore` must include at minimum:
 
 ```
 .env
 .env.local
 .env.bak
 .env.backup
-.mcp.json
 .DS_Store
 *.log
+_diag/
 ```
 
-### Python additional
+Plus language-specific:
 
-```
-.venv/
-__pycache__/
-*.pyc
-```
+- Python: `.venv/`, `__pycache__/`, `*.pyc`
+- Node: `node_modules/`, build output dirs (`.next/`, `dist/`, `build/` as applicable)
 
-### Node.js additional
+---
 
-```
-node_modules/
-.envrc
+## 6. Branch Protection
+
+**REQUIRED on default branch.**
+
+- Force pushes blocked
+- `enforce_admins.enabled: true`
+- `Gate on HIGH / CRITICAL` (Trivy gate) **may** be required at operator discretion (recommended once the workflow has run cleanly for ~1 week)
+- Standards Compliance check **not** required (Herculean-only)
+
+Configure via:
+
+```bash
+gh api -X PUT repos/{owner}/{name}/branches/main/protection \
+  -F required_status_checks=null \
+  -F enforce_admins=true \
+  -F required_pull_request_reviews=null \
+  -F restrictions=null \
+  -F allow_force_pushes=false
 ```
 
 ---
 
-## 8. Dependency Policy
+## 7. Pre-commit hooks
 
-### Python
+**RECOMMENDED.** `.pre-commit-config.yaml` with at minimum the no-dot-env hook:
 
-- Minimize dependencies — prefer Python standard library
-- Pin exact versions in `requirements.txt` for reproducible installs
-- Use `pyproject.toml` for project metadata and tool config
-- Audit dependencies periodically
-- Never install packages globally for project use
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: no-dot-env
+        name: Block .env commits
+        entry: >
+          bash -c 'for f in "$@"; do case "$f" in .env|.env.local|.env.bak|.env.backup) echo "BLOCKED: $f"; exit 1;; esac; done' --
+        language: system
+        files: '\.env'
+```
 
-### Node.js
-
-- Minimize dependencies — prefer Node.js built-ins
-- Pin major versions in `package.json` (use `^` for minor/patch)
-- No `package-lock.json` in gitignore — it must be committed for reproducible builds
-- Audit dependencies periodically: `npm audit`
-- Never install packages globally for project use
+Install via `pre-commit install` after cloning. Not gating; included so the protection from the same hook in agent repos extends to non-agent ones too.
 
 ---
 
-## 9. Git Conventions
+## 8. Visibility
 
-Applies to **all** repos regardless of language.
+**REQUIRED.** Repos default to **private**. Public visibility requires explicit operator decision (open-source publication, demo, public marketing, etc.) and triggers re-evaluation of:
 
-- Default branch: `main`
-- Commit messages: imperative mood, concise subject line
-- No force-pushing to `main`
-- Pre-commit hooks must be installed and active
+- Self-hosted runner usage — **deregister before flipping public**, per [HerculeanHydra `docs/projects/security-runner-setup/`](https://github.com/herculeanfit1/HerculeanHydra/blob/main/docs/projects/security-runner-setup/README.md)
+- `continue-on-error: true` on `upload-sarif` — flip to `false` once the repo is public (GHAS-equivalent code-scanning becomes available)
+- Whether secrets in the codebase need rotation before publication
+
+When auditing visibility, treat "default expected" as private; flag any public repo that has not been explicitly confirmed.
+
+---
+
+## 9. Dockerfile `FROM` pinning
+
+**REQUIRED if Dockerfile present.** Every `FROM` line in every Dockerfile must pin to a manifest-list `@sha256:` digest:
+
+```bash
+docker buildx imagetools inspect <image>:<tag> --format '{{.Manifest.Digest}}'
+```
+
+Replace `FROM <image>:<tag>` with `FROM <image>:<tag>@sha256:<digest>`. Same as Tier 1 #4 of [HerculeanInfra `rules/security-baseline.md`](https://github.com/herculeanfit1/HerculeanInfra/blob/main/rules/security-baseline.md).
 
 ---
 
 ## 10. Compliance Verification
 
-HerculeanOlympus checks the following automatically:
+Operator-driven during initial rollout. Audit pattern: HerculeanHydra [`docs/projects/ecosystem-standards-sweeps/README.md`](https://github.com/herculeanfit1/HerculeanHydra/blob/main/docs/projects/ecosystem-standards-sweeps/README.md).
 
-### All repos
+Future automation: extend `checks/standards-compliance.js` with a `non-agent` registry type that runs § 3, § 4, § 5, § 6, § 8, § 9 checks against a list of declared non-agent repos.
 
 | Check | Severity |
 |---|---|
-| `STANDARDS.md` missing | warning |
-| `STANDARDS.md` hash drift from canonical | warning |
-| `CLAUDE.md` missing `STANDARDS.md` reference | warning |
-| Linter config missing | warning |
-| Pre-commit config missing | warning |
-| `.env` committed to git | critical |
-| Hardcoded secrets in docker-compose | critical |
-| `.env.1p.template` missing | warning |
-| `.env.1p.template` has no `op://` references | warning |
-| Raw secrets in `.env` files | critical |
+| `security-scan.yml` missing | warning |
+| `.trivyignore` missing | warning |
+| `.github/dependabot.yml` missing | warning |
 | `.gitignore` incomplete | warning |
+| Branch protection missing on default branch | critical |
+| Repo public without explicit allowlist | critical |
+| Hardcoded secrets in committed code | critical |
+| Unpinned `FROM` line in Dockerfile | warning |
 
-### Python-specific
+---
 
-| Check | Severity |
-|---|---|
-| `pyproject.toml` missing `[tool.ruff]` | warning |
+## References
 
-### Node.js-specific
-
-| Check | Severity |
-|---|---|
-| Build enforcement disabled (TypeScript) | critical |
-| Scripts missing `op run` wrapping | warning |
-| `package.json` missing `type: module` | warning |
-| `package.json` missing `engines.node` | warning |
-| Lockfile not committed | warning |
+- HerculeanOlympus `STANDARDS.md` (full ecosystem standard — Node)
+- HerculeanOlympus `config/standards/STANDARDS-python.md`
+- HerculeanOlympus `config/standards/STANDARDS-NONCODE.md`
+- HerculeanOlympus `config/security-scan/{variant-a,variant-b}.yml`
+- HerculeanOlympus `config/dependabot.yml.template`
+- HerculeanInfra `rules/security-baseline.md` (12-item baseline source)
+- HerculeanHydra `docs/projects/ecosystem-standards-sweeps/README.md` (rollout plan)
+- HerculeanHydra `docs/projects/security-runner-setup/README.md` (self-hosted runner spec)
