@@ -82,19 +82,19 @@ npm run validate:quick    # Quick validation
 `@/*` resolves to project root (`"./*"`). Specific mappings: `@/components/*` → `src/components/`, `@/lib/*` → `src/lib/`, `@/types/*` → `src/types/`. Configured in tsconfig.json.
 
 ### Contact Form / Email Pipeline
-The contact form is handled by the Azure Functions backend (`api/src/functions/contact.ts`): Zod validation -> honeypot bot detection (`_gotcha` field) -> per-IP rate limiting (5/hour) -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). Email templates in `api/src/lib/email-templates/`.
+The contact form is handled by the Azure Functions backend (`api/src/functions/contact.ts`): Zod validation -> honeypot bot detection -> per-IP rate limiting -> circuit breaker pattern -> Resend API for dual delivery (user confirmation + admin notification). The honeypot field name, rate-limit threshold, and circuit-breaker settings are kept in the private runbook. Email templates in `api/src/lib/email-templates/`.
 
 ### Service Layer & Data Flow
 
 ```
 Client (ContactSection.tsx)
-  → POST /api/contact (SWA proxies to func-btai-site-prod)
+  → POST /api/contact (SWA proxies to <function-app>)
     → Azure Functions handler (api/src/functions/contact.ts)
       → Zod schema validation
-      → Honeypot check (_gotcha field)
+      → Honeypot check
       → sendContactEmail() (api/src/lib/email.ts)
-        → checkRateLimit() — in-memory IP-based, 5 req/hour
-        → checkCircuitBreaker() — 5 failures opens, 5 min timeout
+        → checkRateLimit() — in-memory IP-based (limit in private runbook)
+        → checkCircuitBreaker() — thresholds in private runbook
         → Resend API (key from Key Vault) — dual delivery:
           1. User confirmation (reply-to: sales@bridgingtrust.ai)
           2. Admin notification (to: sales@, cc: terence@)
@@ -102,26 +102,26 @@ Client (ContactSection.tsx)
         → HubSpot CRM: create-or-update contact (13 custom properties)
         → HubSpot CRM: create note engagement with inquiry text
       → buildClassifyMessage() → Azure Storage Queue [non-blocking]
-        → Enqueue to btai-lead-classify for n8n/Ollama classification
+        → Enqueue to <queue-name> for n8n/Ollama classification
 ```
 
 ### Azure Functions Backend (`api/`)
-- **Runtime**: Azure Functions v4, Flex Consumption (`func-btai-site-prod`)
+- **Runtime**: Azure Functions v4, Flex Consumption (`<function-app>`)
 - **Build**: esbuild → `dist/index.js` (ESM, Node 22). Root `tsconfig.json` excludes `api/` — the API has its own tsconfig
 - **Functions**: contact, newsletter, status, cspReport, health
-- **Key Vault**: `kv-btai-site-prod` — `RESEND_API_KEY` and `HUBSPOT_TOKEN` via `@Microsoft.KeyVault()` references
-- **Storage Queue**: `btai-lead-classify` in `stbtaisiteprod` — identity-based auth via `AzureWebJobsStorage__queueServiceUri`
+- **Key Vault**: `<key-vault-name>` — secret names withheld from this public file (deployment detail — see the private runbook / 1Password vault); referenced via `@Microsoft.KeyVault()`
+- **Storage Queue**: `<queue-name>` in `<storage-account>` — identity-based auth via `AzureWebJobsStorage__queueServiceUri`
 - **Managed Identity**: System-assigned, grants Key Vault Secrets User + Storage Queue Data Message Sender
 - **SWA Link**: All `/api/*` requests proxy to Functions via linked backend
 
 ### Infrastructure as Code (`infra/`)
 - `main.bicep` — Functions, Storage, Key Vault, App Insights, SWA linked backend
 - `parameters.prod.json` — Production parameter values
-- Deploy: `az deployment group create --resource-group BTAI-RG1 --template-file infra/main.bicep --parameters infra/parameters.prod.json`
+- Deploy: `az deployment group create --resource-group <resource-group> --template-file infra/main.bicep --parameters infra/parameters.prod.json`
 
 ### Operational Scripts (`scripts/`)
-- `wire-functions-settings.sh [--seed-kv]` — Seed KV from 1Password, wire KV references to Functions
-- `escrow-kv-to-1p.sh` — Back up KV secrets to 1Password (`BTAI-CC-BTAI-Site`)
+- KV seed script — seed Key Vault from 1Password and wire KV references to Functions (script name / 1Password item withheld — see the private runbook)
+- KV escrow script — back up Key Vault secrets to 1Password (script name / vault item withheld — see the private runbook)
 
 **Key abstractions in `api/src/lib/`:**
 - **`email.ts`** — Resend client (lazy-init), rate limiting, circuit breaker, dual email delivery
@@ -203,10 +203,10 @@ RESEND_TEST_MODE=true
 
 ## Deployment
 
-- **Platform**: Azure Static Web Apps + linked Azure Functions backend (`func-btai-site-prod`)
+- **Platform**: Azure Static Web Apps + linked Azure Functions backend (`<function-app>`)
 - **SWA**: Oryx hybrid build, `cost-optimized-ci.yml`. Do NOT use `skip_app_build: true`. `.npmrc` has `engine-strict=false` for Oryx compatibility
 - **Functions**: Deployed via `func azure functionapp publish` or GitHub Actions `deploy-functions` job
-- **Secrets**: Key Vault (`kv-btai-site-prod`) via managed identity. NEVER plain-text in app settings
+- **Secrets**: Key Vault (`<key-vault-name>`) via managed identity. NEVER plain-text in app settings
 - **CI in cloud is deployment-only** — run `npm run validate` locally before pushing
 - **Images unoptimized**: Required for Azure Static Web Apps compatibility (`next.config.js`)
 - **Pages under `app/[locale]/`** — Must live under `app/[locale]/` for SWA's hybrid adapter via `generateStaticParams`
@@ -225,8 +225,8 @@ Home and key pages must meet: **LCP ≤ 2.5s**, **CLS ≤ 0.1**, **INP ≤ 200ms
 
 ## Recent Architecture Decisions (April 2026)
 
-- **HubSpot contact upsert + note engagement now live (P1b.1)** — `api/src/lib/hubspot.ts` creates/updates contacts with 13 custom properties under `btai_lead_intake` group, then attaches an HTML note with the inquiry text. Token from Key Vault (`HUBSPOT_TOKEN`)
-- **Azure Storage Queue `btai-lead-classify` + classify-queue.ts (P1b.2)** — after HubSpot upsert, a versioned JSON message (schema v1) is enqueued for downstream n8n/Ollama classification. Identity-based auth via `AzureWebJobsStorage` managed identity
+- **HubSpot contact upsert + note engagement now live (P1b.1)** — `api/src/lib/hubspot.ts` creates/updates contacts with 13 custom properties under `btai_lead_intake` group, then attaches an HTML note with the inquiry text. Token from Key Vault (secret name withheld — see the private runbook)
+- **Azure Storage Queue `<queue-name>` + classify-queue.ts (P1b.2)** — after HubSpot upsert, a versioned JSON message (schema v1) is enqueued for downstream n8n/Ollama classification. Identity-based auth via `AzureWebJobsStorage` managed identity
 - **Root tsconfig.json must exclude `api/`** — the `api/` directory is a separate TypeScript project with its own tsconfig and esbuild pipeline. If `api/` is not in the root `exclude` array, `next build` will try to type-check Azure Functions code and fail (missing `@azure/functions` types). See PR #16
 - **context.log binding trap** — never pass `context.log` as a bare callback to another module. The `this`-binding is lost and calls throw silently inside non-blocking try/catch. Use arrow-wrap: `(msg, meta) => context.log(msg, meta)`. See PR #13
 - **CI concurrency groups keyed on `${{ github.workflow }}`** — prevents cross-workflow cancellation where Standards Check and SWA Deployment used to share a group. See PR #14
