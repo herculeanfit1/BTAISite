@@ -74,7 +74,6 @@
     "security:audit:full": "npm audit --json | tee npm-audit.json && cat npm-audit.json",
     "security:setup": "node scripts/setup-security.js",
     "test:performance": "npx playwright test __tests__/lighthouse-optimizations.test.ts",
-    "test:middleware": "vitest run __tests__/middleware.test.ts",
     "test:middleware:coverage": "vitest run __tests__/middleware.test.ts --coverage",
     "test:config": "vitest run __tests__/next-config.test.ts",
     "test:performance:all": "npm run test:middleware && npm run test:config && npm run test:performance",
@@ -93,7 +92,8 @@
     "lock:freeze": "./scripts/dependency-lock.sh freeze",
     "lock:audit": "./scripts/dependency-lock.sh audit",
     "lock:report": "./scripts/dependency-lock.sh report",
-    "lock:validate": "./scripts/dependency-lock.sh validate"
+    "lock:validate": "./scripts/dependency-lock.sh validate",
+    "test:security-headers": "vitest run __tests__/security-headers.test.ts"
   },
   "dependencies": {
     "@microsoft/applicationinsights-web": "3.3.11",

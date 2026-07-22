@@ -51,12 +51,12 @@ else
     exit 1
 fi
 
-# Run middleware security tests (mandatory)
-log_info "Running middleware security tests..."
-if npm run test:middleware; then
-    log_success "Middleware security tests passed"
+# Run security header tests (mandatory)
+log_info "Running security header tests..."
+if npm run test:security-headers; then
+    log_success "Security header tests passed"
 else
-    log_error "Middleware security tests failed"
+    log_error "Security header tests failed"
     exit 1
 fi
 
