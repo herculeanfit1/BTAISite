@@ -77,45 +77,52 @@ else
 fi
 
 # Validate CSP configuration and headers (cursor rules: CSP compliance)
+#
+# Headers are declared in next.config.js headers(). They previously lived in
+# staticwebapp.config.json globalHeaders, which the Azure Static Web Apps
+# Next.js hybrid adapter silently ignores — production served no CSP at all
+# while this gate reported success, because it only ever grepped a file.
+# __tests__/security-headers.test.ts asserts the parsed config; this block is
+# the coarse guard.
 log_info "Validating CSP configuration..."
-if [ -f "staticwebapp.config.json" ]; then
-    if grep -q "Content-Security-Policy" staticwebapp.config.json; then
+if [ -f "next.config.js" ]; then
+    if grep -q "Content-Security-Policy" next.config.js; then
         log_success "CSP configuration found"
-        
-        # Check for unsafe directives
-        if grep -q "unsafe-inline\|unsafe-eval" staticwebapp.config.json; then
-            log_error "Unsafe CSP directives detected"
-            log_info "Remove 'unsafe-inline' and 'unsafe-eval' from CSP"
+
+        # 'unsafe-eval' is never acceptable.
+        if grep -q "unsafe-eval" next.config.js; then
+            log_error "Unsafe CSP directive 'unsafe-eval' detected"
             exit 1
         fi
-        
-        # Check for nonce support
-        if grep -q "nonce-" staticwebapp.config.json; then
-            log_success "CSP nonce support configured"
-        else
-            log_error "CSP nonce support missing"
-            log_info "Add 'nonce-{nonce}' to script-src and style-src directives"
+
+        # 'unsafe-inline' IS present on script-src and style-src by necessity:
+        # Next's inline bootstrap runs on prerendered routes with no working
+        # nonce path, and components use inline style attributes throughout.
+        # It must never reach default-src.
+        if grep -qE "default-src[^\";]*unsafe-inline" next.config.js; then
+            log_error "'unsafe-inline' must not appear in default-src"
             exit 1
         fi
-        
-        # Check for required security headers
-        REQUIRED_HEADERS=("X-Content-Type-Options" "X-Frame-Options" "Referrer-Policy" "Permissions-Policy")
-        for header in "${REQUIRED_HEADERS[@]}"; do
-            if grep -q "$header" staticwebapp.config.json; then
-                log_success "$header header configured"
+
+        # Required directives and companion headers.
+        REQUIRED=("default-src" "frame-ancestors" "object-src" "base-uri" "form-action" \
+                  "X-Content-Type-Options" "Referrer-Policy" "Permissions-Policy")
+        for item in "${REQUIRED[@]}"; do
+            if grep -q "$item" next.config.js; then
+                log_success "$item configured"
             else
-                log_error "$header header missing"
+                log_error "$item missing from next.config.js"
                 exit 1
             fi
         done
-        
+
     else
         log_error "CSP configuration missing"
-        log_info "Add Content-Security-Policy to staticwebapp.config.json"
+        log_info "Add Content-Security-Policy to next.config.js headers()"
         exit 1
     fi
 else
-    log_warning "staticwebapp.config.json not found"
+    log_warning "next.config.js not found"
 fi
 
 # Test CSP headers in development build (if available)
