@@ -75,10 +75,25 @@ export const PrivacyContent = () => {
                 <li className="mb-4">Share relevant information about our AI strategy, custom development, and deployment services</li>
                 <li className="mb-4">Improve our website functionality and user experience</li>
                 <li className="mb-4">Maintain security and prevent abuse (including rate limiting)</li>
+                <li className="mb-4">Route and prioritize inquiries through automated classification (described below)</li>
                 <li className="mb-4">Comply with legal obligations</li>
               </ul>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 We do not sell your personal information to third parties.
+              </p>
+            </div>
+
+            {/* Automated Classification of Inquiries */}
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Automated Classification of Inquiries</h2>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                When you submit our contact form, your submission is stored in our customer relationship management system, HubSpot, so that we can respond to you and keep a record of the conversation.
+              </p>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                Details of your submission &mdash; your name, email address, company, an excerpt of your message, and the IP address it was sent from &mdash; are also queued for automated classification. Classification is used only to route your inquiry to the right person and to prioritize our response.
+              </p>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                <span className="font-semibold text-gray-900 dark:text-gray-100">That classification is performed by an AI model running on Bridging Trust AI&rsquo;s own infrastructure.</span> Your submission is not sent to a third-party AI provider for this purpose, and we do not use it to train any model.
               </p>
             </div>
 
@@ -89,7 +104,7 @@ export const PrivacyContent = () => {
                 We may share your information in the following circumstances:
               </p>
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-gray-600 dark:text-gray-400">
-                <li className="mb-4">With service providers who perform services on our behalf (including our email delivery provider, Resend, for processing contact form submissions)</li>
+                <li className="mb-4">With service providers who perform services on our behalf (including our email delivery provider, Resend, for processing contact form submissions, and our customer relationship management provider, HubSpot, where those submissions are stored)</li>
                 <li className="mb-4">To comply with legal obligations, court orders, or government requests</li>
                 <li className="mb-4">To protect our rights, property, or safety, and the rights of others</li>
                 <li className="mb-4">In connection with a business transaction, such as a merger, acquisition, or sale of assets, in which case you would be notified of any change in ownership or control of your personal information</li>
@@ -159,6 +174,7 @@ export const PrivacyContent = () => {
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-gray-600 dark:text-gray-400">
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Google Analytics</span>: Website traffic analysis (anonymized data)</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Resend</span>: Email delivery for contact form submissions</li>
+                <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">HubSpot</span>: Customer relationship management &mdash; where contact form submissions are stored</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Azure Static Web Apps</span>: Website hosting (Microsoft)</li>
               </ul>
             </div>
