@@ -29,7 +29,7 @@ const TermsPage = () => {
             {/* Last Updated */}
             <div className="mb-12">
               <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-gray-100">Last Updated:</span> March 6, 2026
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Last Updated:</span> July 22, 2026
               </p>
             </div>
 
@@ -48,7 +48,7 @@ const TermsPage = () => {
             <div className="mb-12">
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Services</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Bridging Trust AI LLC provides AI governance advisory, data governance consulting, Microsoft AI enablement services, and related technology consulting as described on our website. Our services include but are not limited to AI governance framework design, data readiness assessments, Microsoft 365 and Copilot governance advisory, security and compliance alignment, and implementation support.
+                Bridging Trust AI LLC designs and builds custom AI systems and provides related strategy, implementation, and operational services as described on our website. Our services include but are not limited to AI opportunity assessment and solution design; custom development of AI agents, automations, and integrations; deployment and secure configuration; evaluation and monitoring; and documentation, handover, and team enablement.
               </p>
             </div>
 
