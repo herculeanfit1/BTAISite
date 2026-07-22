@@ -65,7 +65,7 @@ export const EngagementTermsContent = () => {
                 <span className="font-semibold text-gray-900 dark:text-gray-100">Foreground work product</span> &mdash; the source code, configurations, prompts, infrastructure definitions and documentation created specifically for your engagement &mdash; is assigned to you upon full payment. You may use, modify, extend and maintain it without further permission from us and without any continuing dependency on us.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-gray-100">Background intellectual property</span> &mdash; the tooling, scaffolding, libraries, internal frameworks, methodologies and general-purpose components that we bring to the engagement, or develop independently of it &mdash; remains ours. Where background intellectual property is incorporated into your deliverables, you receive a perpetual, irrevocable, worldwide licence to use it as part of those deliverables. We remain free to reuse it on other engagements.
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Background intellectual property</span> &mdash; the tooling, scaffolding, libraries, internal frameworks, methodologies and general-purpose components that we bring to the engagement, or develop independently of it &mdash; remains ours. Where background intellectual property is incorporated into your deliverables, you receive a perpetual, irrevocable, worldwide license to use it as part of those deliverables. We remain free to reuse it on other engagements.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Productized solutions that we license into your environment are governed separately by our{" "}
@@ -77,7 +77,7 @@ export const EngagementTermsContent = () => {
             <div className="mb-12">
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Third-Party and Open-Source Components</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Deliverables will normally include third-party and open-source components. Those components are not ours to assign; they remain subject to their own licences, which pass through to you with the deliverable.
+                Deliverables will normally include third-party and open-source components. Those components are not ours to assign; they remain subject to their own licenses, which pass through to you with the deliverable.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 AI systems also depend on third-party model providers and cloud services governed by their own terms. Which providers a solution depends on is identified during design, so that you can assess those terms before we build on them.
@@ -98,13 +98,13 @@ export const EngagementTermsContent = () => {
                   <span className="font-semibold text-gray-900 dark:text-gray-100">Output can be wrong.</span> AI systems can produce inaccurate, incomplete or fabricated results that read as confident and plausible. Where output informs a consequential decision, the system is designed to keep a person in the loop, and we will say so during design rather than after.
                 </li>
                 <li className="mb-4">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Model providers change things outside our control.</span> Providers deprecate models, alter behaviour, change pricing and adjust their own terms on their own schedule. This can affect a working system without any change on your side or ours.
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Model providers change things outside our control.</span> Providers deprecate models, alter behavior, change pricing and adjust their own terms on their own schedule. This can affect a working system without any change on your side or ours.
                 </li>
                 <li className="mb-4">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Behaviour drifts over time.</span> A system that performs well at handover may perform differently months later as models, data and usage change. Ongoing evaluation is how that is detected, and it is a distinct service from building the system.
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Behavior drifts over time.</span> A system that performs well at handover may perform differently months later as models, data and usage change. Ongoing evaluation is how that is detected, and it is a distinct service from building the system.
                 </li>
                 <li className="mb-4">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Modification changes behaviour.</span> Once work product is assigned to you and your team modifies it, its behaviour is no longer something we can speak to.
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Modification changes behavior.</span> Once work product is assigned to you and your team modifies it, its behavior is no longer something we can speak to.
                 </li>
               </ul>
             </div>

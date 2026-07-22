@@ -7,7 +7,7 @@ import Link from "next/link";
  * Rendered by both the locale and non-locale routes so the two can never
  * drift. Edit the legal text here and nowhere else.
  *
- * SCOPE: licence grant plus commitments Bridging Trust AI makes about
+ * SCOPE: license grant plus commitments Bridging Trust AI makes about
  * identities it operates inside a customer environment. Liability,
  * indemnification, warranty, acceptance, termination and governing law are
  * deliberately absent and live in the signed agreement. Do not add them here.
@@ -57,24 +57,24 @@ export const ProductTermsContent = () => {
                 This document is <span className="font-semibold text-gray-900 dark:text-gray-100">supplemental</span> and is not a complete agreement. Commercial terms &mdash; fees, term, acceptance, warranty, liability, indemnification and termination &mdash; are set out in the signed agreement covering the solution.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Publishing this page is not an offer, and viewing it does not grant a licence. A licence arises only on execution or express acceptance of the agreement covering the solution.
+                Publishing this page is not an offer, and viewing it does not grant a license. A license arises only on execution or express acceptance of the agreement covering the solution.
               </p>
             </div>
 
-            {/* Licence Grant */}
+            {/* License Grant */}
             <div className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Licence Grant and Ownership</h2>
+              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">License Grant and Ownership</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Productized solutions are <span className="font-semibold text-gray-900 dark:text-gray-100">licensed, not sold</span>. Bridging Trust AI LLC retains all right, title and interest in the solution, including its source code, configuration, data models and documentation, together with any improvements to it.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Subject to the agreement covering the solution, you receive a limited, non-exclusive, non-transferable, non-sublicensable licence to use the solution within the environment identified in that agreement, for your own internal business purposes, for its term.
+                Subject to the agreement covering the solution, you receive a limited, non-exclusive, non-transferable, non-sublicensable license to use the solution within the environment identified in that agreement, for your own internal business purposes, for its term.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                The licence does not extend to redistributing, reselling, sublicensing or hosting the solution for a third party; to creating derivative works from it; or to reverse engineering it except to the extent that restriction is unenforceable under applicable law.
+                The license does not extend to redistributing, reselling, sublicensing or hosting the solution for a third party; to creating derivative works from it; or to reverse engineering it except to the extent that restriction is unenforceable under applicable law.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Your own data, and the configuration values you supply, remain yours. Nothing in this licence gives us ownership of them.
+                Your own data, and the configuration values you supply, remain yours. Nothing in this license gives us ownership of them.
               </p>
             </div>
 
@@ -98,7 +98,7 @@ export const ProductTermsContent = () => {
                   <span className="font-semibold text-gray-900 dark:text-gray-100">Incident notification.</span> We will notify you promptly upon confirming a security incident affecting that identity or its credentials.
                 </li>
                 <li className="mb-4">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Decommission at termination.</span> When the licence ends, we follow a defined decommission process covering the application identity, its credentials, and the solution artifacts deployed into your environment. The specific steps and sequence are set out in that product&rsquo;s deployment documentation.
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Decommission at termination.</span> When the license ends, we follow a defined decommission process covering the application identity, its credentials, and the solution artifacts deployed into your environment. The specific steps and sequence are set out in that product&rsquo;s deployment documentation.
                 </li>
               </ul>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
@@ -120,7 +120,7 @@ export const ProductTermsContent = () => {
             <div className="mb-12">
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Third-Party and Open-Source Components</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Solutions include third-party and open-source components subject to their own licences, and may depend on third-party platform and model services governed by their own terms. Those dependencies are identified in the product&rsquo;s deployment documentation.
+                Solutions include third-party and open-source components subject to their own licenses, and may depend on third-party platform and model services governed by their own terms. Those dependencies are identified in the product&rsquo;s deployment documentation.
               </p>
             </div>
 
