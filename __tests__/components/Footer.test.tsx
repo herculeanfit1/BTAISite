@@ -114,8 +114,19 @@ describe('Footer', () => {
   it('has proper spacing between navigation links', () => {
     render(<Footer />);
 
+    // The row wraps: five legal links no longer fit on one line at narrow
+    // widths, so gap-14 became gap-x-10/gap-y-4 alongside flex-wrap.
     const linksContainer = screen.getByText('About').closest('.flex');
-    expect(linksContainer).toHaveClass('mb-16', 'flex', 'flex-row', 'items-center', 'justify-center', 'gap-14');
+    expect(linksContainer).toHaveClass(
+      'mb-16',
+      'flex',
+      'flex-row',
+      'flex-wrap',
+      'items-center',
+      'justify-center',
+      'gap-x-10',
+      'gap-y-4',
+    );
   });
 
   it('includes horizontal divider', () => {
