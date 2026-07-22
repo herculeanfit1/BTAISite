@@ -24,7 +24,7 @@ export const Footer = () => {
           </h3>
 
           {/* Simple navigation with consistent spacing */}
-          <div className="mb-16 flex flex-row items-center justify-center gap-14">
+          <div className="mb-16 flex flex-row flex-wrap items-center justify-center gap-x-10 gap-y-4">
             <a
               href="/#about"
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
@@ -42,6 +42,18 @@ export const Footer = () => {
               className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
             >
               Terms
+            </a>
+            <a
+              href="/engagement-terms"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+            >
+              Engagement Terms
+            </a>
+            <a
+              href="/product-terms"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+            >
+              Product Terms
             </a>
           </div>
 
