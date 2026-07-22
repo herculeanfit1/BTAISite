@@ -9,6 +9,21 @@
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     },
     {
+      "route": "/about",
+      "redirect": "/#about",
+      "statusCode": 301
+    },
+    {
+      "route": "/solutions",
+      "redirect": "/#solutions",
+      "statusCode": 301
+    },
+    {
+      "route": "/contact",
+      "redirect": "/#contact",
+      "statusCode": 301
+    },
+    {
       "route": "/",
       "headers": {
         "cache-control": "public, max-age=60, must-revalidate, s-maxage=60",

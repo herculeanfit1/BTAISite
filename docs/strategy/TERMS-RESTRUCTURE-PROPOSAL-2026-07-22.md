@@ -1,5 +1,15 @@
 # Making the Terms Self-Sufficient — a restructuring proposal
 
+> **SUPERSEDED (2026-07-22)** — consolidated into
+> [`COUNSEL-PACKET-2026-07-22.md`](./COUNSEL-PACKET-2026-07-22.md), which is the document
+> to give counsel. This file is retained for history only.
+>
+> **It contains two errors corrected in the packet**: the Limitation of Liability cap was
+> described as missing when it already exists (12 months of fees or $1,000, whichever is
+> greater), and the dependency-manifest recommendation relied on an SBOM that is ~14 months
+> stale. Do not act on this file directly.
+
+
 **Date**: 2026-07-22
 **Author**: Claude Opus 4.8 — **not a lawyer, and this is not legal advice.** This is an
 engineering-and-operations read of where the current document leaves you exposed, written so

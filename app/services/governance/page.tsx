@@ -2,9 +2,14 @@ import { Metadata } from "next";
 import { ServicePageLayout } from "@/app/components/ServicePageLayout";
 
 export const metadata: Metadata = {
-  title: "AI Governance & Readiness | Bridging Trust AI",
+  title: "AI Governance & Readiness",
   description:
     "AI governance frameworks, steering committee design, risk tiering, and adoption governance for Microsoft 365 environments. Move from AI experimentation to governed execution.",
+
+  // Retired service page — superseded by the repositioned homepage.
+  // Kept reachable for existing inbound links, but excluded from search
+  // indexes so it does not advertise services no longer offered.
+  robots: { index: false, follow: false },
 };
 
 export default function GovernancePage() {
@@ -43,7 +48,7 @@ export default function GovernancePage() {
           bullets: [
             "AI use case risk tiering methodology",
             "Evidence checklists and approval workflows",
-            "Control mapping to SOC 2, NIST AI RMF, ISO 27001, and emerging frameworks",
+            "Control mapping to established security and AI risk frameworks",
             "Regulatory horizon scanning (EU AI Act, state-level AI legislation)",
           ],
         },

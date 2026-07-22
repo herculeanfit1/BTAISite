@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 // Define supported locales
 const supportedLocales = ["en", "es", "fr"];
 
@@ -5,6 +7,13 @@ const supportedLocales = ["en", "es", "fr"];
 export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
+
+/**
+ * Only pre-rendered locales are valid. Without this, the dynamic [locale]
+ * segment matches ANY single path segment, so /banana, /about and /solutions
+ * all rendered the full homepage with a 200 — unbounded duplicate content.
+ */
+export const dynamicParams = false;
 
 /**
  * Locale layout — pass-through only.
@@ -19,9 +28,10 @@ export default async function LocaleLayout(props: {
 }) {
   const params = await props.params;
 
-  // locale available for future i18n integration
-  if (process.env.NODE_ENV === "development") {
-    console.warn(`[locale layout] locale=${params.locale}`);
+  // Anything outside the supported set is not a locale — 404 rather than
+  // silently serving the homepage at an arbitrary URL.
+  if (!supportedLocales.includes(params.locale)) {
+    notFound();
   }
 
   return <>{props.children}</>;

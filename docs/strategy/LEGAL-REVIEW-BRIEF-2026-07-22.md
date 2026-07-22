@@ -1,5 +1,15 @@
 # Legal Review Brief — Terms of Service under the build-led repositioning
 
+> **SUPERSEDED (2026-07-22)** — consolidated into
+> [`COUNSEL-PACKET-2026-07-22.md`](./COUNSEL-PACKET-2026-07-22.md), which is the document
+> to give counsel. This file is retained for history only.
+>
+> **It contains two errors corrected in the packet**: the Limitation of Liability cap was
+> described as missing when it already exists (12 months of fees or $1,000, whichever is
+> greater), and the dependency-manifest recommendation relied on an SBOM that is ~14 months
+> stale. Do not act on this file directly.
+
+
 **Date**: 2026-07-22
 **Author**: Claude Opus 4.8 (drafted for operator review; **not legal advice**)
 **Trigger**: The site repositioned from AI governance / Microsoft enablement advisory to a
