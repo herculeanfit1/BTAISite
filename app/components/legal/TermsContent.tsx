@@ -15,10 +15,11 @@ export const TermsContent = () => {
       <div className="w-full pt-24 pb-12 px-6 text-center bg-[#3A5F77] dark:bg-[#2A4A5C]">
         <div className="w-full max-w-[1280px] mx-auto px-6">
           <h1 className="text-4xl font-bold mb-4 leading-tight text-white">
-            Terms of Service
+            Website Terms of Use
           </h1>
           <p className="text-lg max-w-3xl mx-auto mb-6 text-white/90">
-            Please read these terms carefully before using our services.
+            These terms govern your use of this website. Client engagements are
+            governed by separate written agreements.
           </p>
         </div>
       </div>
@@ -38,18 +39,28 @@ export const TermsContent = () => {
             <div className="mb-12">
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Introduction</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the Bridging Trust AI LLC website and services.
+                These Website Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of the Bridging Trust AI LLC website.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 By accessing or using our website, you agree to be bound by these Terms.
+              </p>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                These Terms do <span className="font-semibold text-gray-900 dark:text-gray-100">not</span> govern client engagements. Work performed for clients is governed by a separate written agreement. See our{" "}
+                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>{" "}
+                for custom development work and our{" "}
+                <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link>{" "}
+                for solutions deployed into a customer environment.
               </p>
             </div>
 
             {/* Services */}
             <div className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Services</h2>
+              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">About Our Services</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Bridging Trust AI LLC designs and builds custom AI systems and provides related strategy, implementation, and operational services as described on our website. Our services include but are not limited to AI opportunity assessment and solution design; custom development of AI agents, automations, and integrations; deployment and secure configuration; evaluation and monitoring; and documentation, handover, and team enablement.
+                Bridging Trust AI LLC designs and builds custom AI systems and provides related strategy, implementation, and operational services. This website describes those services for informational purposes only.
+              </p>
+              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
+                Nothing on this website constitutes an offer, a quotation, or a commitment to provide services, and no engagement is created by using this website or submitting the contact form.
               </p>
             </div>
 
@@ -79,26 +90,13 @@ export const TermsContent = () => {
                 All content and materials on the site, including text, graphics, logos, and software, are the property of Bridging Trust AI LLC or our licensors and are protected by applicable intellectual property laws.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Materials provided during the provision of our services are licensed to you for the duration of our engagement, unless otherwise specified in a separate agreement. You may not distribute, modify, transmit, reuse, download, repost, copy, or use such materials, whether in whole or in part, for commercial purposes or for personal gain, without express advance written permission from us.
-              </p>
-            </div>
-
-            {/* Deliverables and Work Product */}
-            <div className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Deliverables and Work Product</h2>
-              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Unless otherwise specified in a separate Statement of Work or engagement agreement, deliverables created during consulting engagements (including governance frameworks, assessment reports, policy templates, and implementation documentation) are licensed to the client for internal use upon full payment. Bridging Trust AI LLC retains the right to reuse methodologies, frameworks, and anonymized patterns across engagements.
-              </p>
-            </div>
-
-            {/* Payments and Billing */}
-            <div className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Payments and Billing</h2>
-              <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                Fees for our services will be outlined in a separate agreement or proposal. Unless otherwise specified, all fees are quoted in U.S. dollars and are non-refundable.
+                You may not distribute, modify, transmit, reuse, download, repost, or copy the content of this website, whether in whole or in part, for commercial purposes without our express advance written permission.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                You agree to provide current, complete, and accurate purchase and account information for all purchases made through our website. You further agree to promptly update account and payment information, including email address, payment method, and payment card expiration date, so that we can complete your transactions and contact you as needed.
+                This section applies to this website only. Ownership and licensing of work product created during a client engagement are governed by our{" "}
+                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>{" "}
+                and{" "}
+                <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link>, not by this section.
               </p>
             </div>
 
