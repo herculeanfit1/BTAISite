@@ -11,8 +11,12 @@ export const FeaturesSection = () => {
     <section id="solutions" className="w-full py-20 px-6 bg-gray-50 dark:bg-gray-950">
       <div className="w-full max-w-[1280px] mx-auto px-6">
         <h2 className="text-2xl font-bold mb-6 text-center leading-tight text-gray-900 dark:text-gray-100">
-          Three ways we help
+          What We Do
         </h2>
+        <p className="max-w-3xl mx-auto mb-12 text-center text-gray-600 dark:text-gray-400 leading-relaxed">
+          One engagement, start to finish — from figuring out what&apos;s worth building
+          to running it in production.
+        </p>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 max-w-[400px] lg:max-w-none mx-auto lg:mx-0 px-4 lg:px-0">
           {features.map((feature) => (
             <div
