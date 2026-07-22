@@ -67,7 +67,7 @@ export const AboutSection = ({ isDesktop }: AboutSectionProps) => {
               <div style={{ ...styles.founderCard, maxWidth: "100%" }}>
                 <div style={styles.profileImage}>
                   <Image
-                    src="/team/terence.kolstad.png"
+                    src="/team/terence.kolstad.jpeg"
                     alt="Terence Kolstad"
                     width={128}
                     height={128}
