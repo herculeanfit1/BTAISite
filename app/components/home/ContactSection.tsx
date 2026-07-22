@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { isValidEmail } from "@/src/lib/validation";
 
@@ -57,11 +57,36 @@ const INPUT_BASE =
   "w-full rounded-lg bg-white dark:bg-gray-800 px-4 py-3 text-base text-gray-900 dark:text-gray-100 outline-none transition-all duration-200 focus:border-[#5B90B0] focus:ring-1 focus:ring-[#5B90B0]";
 
 /**
+ * Reads the `?interest=` query param and preselects the matching option.
+ *
+ * This lives in its own component, rendered inside a <Suspense> boundary,
+ * because `useSearchParams()` opts the entire route out of static rendering
+ * unless it sits below a Suspense boundary. Keeping it isolated here lets the
+ * whole contact section — heading, copy, and form — prerender as static HTML.
+ * Renders nothing itself.
+ */
+const InterestFromQuery = ({
+  onResolve,
+}: {
+  onResolve: (value: string) => void;
+}) => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const param = searchParams?.get("interest");
+    if (param && INTEREST_OPTIONS.some((o) => o.value === param)) {
+      onResolve(param);
+    }
+  }, [searchParams, onResolve]);
+
+  return null;
+};
+
+/**
  * Contact Section Component
  * Displays the contact form with inline validation and Resend email integration
  */
 export const ContactSection = () => {
-  const searchParams = useSearchParams();
   const [interest, setInterest] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
@@ -79,13 +104,6 @@ export const ContactSection = () => {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    const param = searchParams?.get("interest");
-    if (param && INTEREST_OPTIONS.some((o) => o.value === param)) {
-      setInterest(param);
-    }
-  }, [searchParams]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -187,6 +205,11 @@ export const ContactSection = () => {
 
   return (
     <section id="contact" className="w-full bg-gray-50 dark:bg-gray-800 py-20 px-6">
+      {/* Query-param reader — isolated so it can't opt the route out of static rendering */}
+      <Suspense fallback={null}>
+        <InterestFromQuery onResolve={setInterest} />
+      </Suspense>
+
       <div className="mx-auto w-full max-w-7xl px-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-16 text-center">
