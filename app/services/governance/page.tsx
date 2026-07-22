@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "AI Governance & Readiness | Bridging Trust AI",
   description:
     "AI governance frameworks, steering committee design, risk tiering, and adoption governance for Microsoft 365 environments. Move from AI experimentation to governed execution.",
+
+  // Retired service page — superseded by the repositioned homepage.
+  // Kept reachable for existing inbound links, but excluded from search
+  // indexes so it does not advertise services no longer offered.
+  robots: { index: false, follow: false },
 };
 
 export default function GovernancePage() {

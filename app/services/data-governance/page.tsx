@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "Data Governance & Security for AI | Bridging Trust AI",
   description:
     "Data classification readiness, Microsoft Purview strategy, tenant exposure review, and DLP alignment for AI workloads. Get your data house in order before deploying Copilot.",
+
+  // Retired service page — superseded by the repositioned homepage.
+  // Kept reachable for existing inbound links, but excluded from search
+  // indexes so it does not advertise services no longer offered.
+  robots: { index: false, follow: false },
 };
 
 export default function DataGovernancePage() {

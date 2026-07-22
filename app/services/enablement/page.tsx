@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "Microsoft AI Enablement & Implementation | Bridging Trust AI",
   description:
     "Microsoft Copilot readiness, Copilot Studio governance, Power Platform controls, Entra and Intune hardening, and secure AI rollout patterns for Microsoft 365 environments.",
+
+  // Retired service page — superseded by the repositioned homepage.
+  // Kept reachable for existing inbound links, but excluded from search
+  // indexes so it does not advertise services no longer offered.
+  robots: { index: false, follow: false },
 };
 
 export default function EnablementPage() {
