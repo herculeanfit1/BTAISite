@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { HomePageContent } from "../components/HomePageContent";
 
 export const metadata: Metadata = {
-  title: "Bridging Trust AI — Better AI Starts With Better Relationships",
+  title: "Bridging Trust AI | Custom AI Solutions, Built to Ship",
   description:
-    "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
+    "We design and build custom AI systems — agents, automations, and integrations that run in production. Strategy through implementation, secure and governed by default.",
 };
 
 interface PageProps {
