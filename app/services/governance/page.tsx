@@ -43,7 +43,7 @@ export default function GovernancePage() {
           bullets: [
             "AI use case risk tiering methodology",
             "Evidence checklists and approval workflows",
-            "Control mapping to SOC 2, NIST AI RMF, ISO 27001, and emerging frameworks",
+            "Control mapping to established security and AI risk frameworks",
             "Regulatory horizon scanning (EU AI Act, state-level AI legislation)",
           ],
         },
