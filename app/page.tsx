@@ -3,6 +3,7 @@ import { LevelingSection } from "./components/home/LevelingSection";
 import { FeaturesSection } from "./components/home/FeaturesSection";
 import { MethodologySection } from "./components/home/MethodologySection";
 import { ProcessSection } from "./components/home/ProcessSection";
+import { AudienceSection } from "./components/home/AudienceSection";
 import { AboutSection } from "./components/home/AboutSection";
 import { ContactSection } from "./components/home/ContactSection";
 
@@ -14,6 +15,7 @@ export default function HomePage() {
       <FeaturesSection />
       <MethodologySection />
       <ProcessSection />
+      <AudienceSection />
       <AboutSection />
       <ContactSection />
     </div>

@@ -3,6 +3,7 @@ import { LevelingSection } from "./home/LevelingSection";
 import { FeaturesSection } from "./home/FeaturesSection";
 import { MethodologySection } from "./home/MethodologySection";
 import { ProcessSection } from "./home/ProcessSection";
+import { AudienceSection } from "./home/AudienceSection";
 import { AboutSection } from "./home/AboutSection";
 import { ContactSection } from "./home/ContactSection";
 
@@ -20,6 +21,7 @@ export const HomePageContent = () => {
       <FeaturesSection />
       <MethodologySection />
       <ProcessSection />
+      <AudienceSection />
       <AboutSection />
       <ContactSection />
     </div>
