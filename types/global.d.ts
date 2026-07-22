@@ -64,4 +64,8 @@ interface MapIterator<T> {
 // Fix for IS_REACT_ACT_ENVIRONMENT in window object
 interface Window {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
+  // Google Analytics global, defined at runtime by the gtag.js snippet.
+  // Declared here rather than inside an analytics module so the type does not
+  // depend on any particular component existing.
+  gtag?: (...args: unknown[]) => void;
 } 
