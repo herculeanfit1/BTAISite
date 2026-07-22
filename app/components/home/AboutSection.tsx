@@ -48,7 +48,7 @@ export const AboutSection = () => {
               <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700">
                 <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-600 mx-auto mb-6 overflow-hidden flex justify-center items-center">
                   <Image
-                    src="/team/terence.kolstad.png"
+                    src="/team/terence.kolstad.jpeg"
                     alt="Terence Kolstad"
                     width={128}
                     height={128}
