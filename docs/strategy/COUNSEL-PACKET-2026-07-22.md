@@ -190,6 +190,7 @@ everything in this packet, this is the clause most likely to stop a deal.
 | **Client dependencies** | Builds fail when access, data, environments or decisions do not arrive. No relief mechanism exists |
 | **Insurance** | See §6 |
 | **Publicity** | BTAI cannot publish case studies without it — and case studies are the largest credibility gap on a build-led site |
+| **Audit logging and explainability** | See §5.5 — a public capability claim with no contractual backing |
 
 ### 5.3 Warranty disclaimer is scoped to advisory output
 
@@ -213,6 +214,27 @@ warranty disclaimer.
 Mutual and surviving, which is good. It does not explicitly reach **client production data,
 credentials, or system access**, which a build engagement necessarily touches. Confirm scope
 and add a duration.
+
+### 5.5 "Auditable by design" — a public claim with nothing behind it
+
+The homepage states:
+
+> **Auditable by design** — Every AI decision path is logged and explainable. When someone
+> asks why the system did what it did, there's an answer.
+
+No clause in any document — published or withheld — addresses audit logging, what is logged,
+where logs live, how long they are retained, who may access them, or what "explainable"
+commits BTAI to. Of the four public promises checked, this is the only one that remains
+**ungoverned** after the interim publish.
+
+It was not published as a commitment because doing so would create an obligation whose
+operational shape is undefined: a customer could reasonably read it as a retention and
+production-of-records duty. Counsel should decide whether to (a) give it operative language
+with defined scope and retention, (b) scope it to a per-product statement in deployment
+documentation like the identity commitments, or (c) soften the homepage claim to match what
+is actually contracted.
+
+This is the one item where the marketing copy currently runs ahead of the contract.
 
 ---
 
