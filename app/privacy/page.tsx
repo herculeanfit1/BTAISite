@@ -31,7 +31,7 @@ const PrivacyPage = () => {
             {/* Last Updated */}
             <div className="mb-12">
               <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-                <span className="font-semibold text-gray-900 dark:text-gray-100">Last Updated:</span> March 6, 2026
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Last Updated:</span> July 22, 2026
               </p>
             </div>
 
@@ -59,7 +59,7 @@ const PrivacyPage = () => {
               </p>
               <h3 className="text-2xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">Information from service engagements</h3>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                During consulting engagements, clients may provide us with access to organizational data, configurations, documentation, or other materials necessary to deliver our services. The handling of such data is governed by the specific engagement agreement in place.
+                During client engagements, clients may provide us with access to organizational data, systems, source code repositories, cloud environments, configurations, documentation, or other materials necessary to deliver our services. The handling of such data is governed by the specific engagement agreement in place.
               </p>
             </div>
 
@@ -71,8 +71,8 @@ const PrivacyPage = () => {
               </p>
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-gray-600 dark:text-gray-400">
                 <li className="mb-4">Respond to your inquiries and provide support</li>
-                <li className="mb-4">Deliver our consulting and advisory services</li>
-                <li className="mb-4">Share relevant information about our AI governance, data governance, and Microsoft AI enablement services</li>
+                <li className="mb-4">Deliver our advisory, development, and operational services</li>
+                <li className="mb-4">Share relevant information about our AI strategy, custom development, and deployment services</li>
                 <li className="mb-4">Improve our website functionality and user experience</li>
                 <li className="mb-4">Maintain security and prevent abuse (including rate limiting)</li>
                 <li className="mb-4">Comply with legal obligations</li>

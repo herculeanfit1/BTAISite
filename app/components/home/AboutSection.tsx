@@ -17,9 +17,12 @@ export const AboutSection = () => {
           {/* Body */}
           <div className="mb-12 text-gray-600 dark:text-gray-400 leading-relaxed">
             <p className="mb-5">
-              Bridging Trust AI was founded by practitioners, not theorists. Our team brings
-              25+ years of enterprise IT leadership, hands-on AI agent development, and deep
-              expertise in Microsoft 365 security and governance.
+              Bridging Trust AI was founded on a simple frustration: the organizations that
+              would benefit most from AI are the ones least served by it. Enterprise vendors
+              build for enterprise budgets, and off-the-shelf tools assume your business
+              works like everyone else&apos;s. We build custom AI systems for organizations
+              that don&apos;t fit the template — with the security and engineering discipline
+              usually reserved for much larger companies.
             </p>
             <p className="mb-5">
               We run our own AI agent systems in production. We&apos;ve built agent-to-agent
@@ -29,14 +32,9 @@ export const AboutSection = () => {
               open-source ecosystem.
             </p>
             <p className="mb-5">
-              When we advise your organization, we&apos;re not reading from a playbook we
+              When we build for your organization, we&apos;re not reading from a playbook we
               downloaded last week. We&apos;re drawing on thousands of hours of hands-on
-              experience with the same technology we&apos;re helping you deploy.
-            </p>
-            <p className="font-semibold text-gray-800 dark:text-gray-200">
-              We believe AI works better when the relationship is right. That belief
-              isn&apos;t abstract — it&apos;s the foundation of everything we build, and it
-              produces measurably better outcomes for our clients.
+              experience with the same technology we&apos;re deploying for you.
             </p>
           </div>
 
@@ -64,14 +62,14 @@ export const AboutSection = () => {
                   Co-Founder
                 </p>
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
-                  Technology strategist and infrastructure architect with ~20 years
-                  of experience designing, building, and securing cloud and
-                  on-premises environments. Specializing in agentic AI systems,
-                  Docker orchestration, and secure agent deployment — with multiple
-                  n8n AI environments deployed with 200k+ executions. His enterprise
-                  expertise also spans Microsoft 365, Azure, Entra ID, Purview, and
-                  Microsoft Copilot, helping organizations move from AI strategy to
-                  governed execution.
+                  Hands-on AI and cloud engineer — Azure architecture, full-stack
+                  development, automation and CI/CD pipelines, and agentic AI systems
+                  built on Docker orchestration and secure agent deployment, including
+                  multiple n8n AI environments running 200k+ executions. Behind that,
+                  ~20 years designing and securing Microsoft cloud and on-premises
+                  environments across Microsoft 365, Azure, and Entra ID. That
+                  governance and compliance depth is why the systems he builds pass
+                  security review the first time.
                 </p>
               </div>
 
@@ -95,7 +93,7 @@ export const AboutSection = () => {
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
                   Director of Technical Support, K&amp;E Consulting. 25-year systems
                   administrator specializing in enterprise infrastructure, Microsoft 365
-                  governance, and AI adoption strategy. Pioneer in AI agent relationship
+                  environments, and AI adoption. Pioneer in AI agent relationship
                   methodology and the operational bridge between enterprise IT and frontier
                   AI capabilities.
                 </p>

@@ -1,30 +1,37 @@
 "use client";
 
 /**
- * MethodologySection Component
+ * MethodologySection Component — the "How We Build" trust band.
  *
- * Displays the Bridging Trust AI methodology — the key differentiator.
- * Uses a darker background to set it apart visually.
+ * Carries the security, data-boundary, auditability and handover commitments
+ * that used to sit at the service-pillar level. Uses a darker background to
+ * set it apart visually.
  */
 
 const PRINCIPLES = [
   {
     number: "1",
-    title: "Meet the Intelligence Where It Is",
+    title: "Secure by default",
     description:
-      "AI isn\u2019t a tool to command. It\u2019s an intelligence to collaborate with. When your team learns the difference, everything changes \u2014 from the quality of outputs to the speed of adoption to the confidence in results.",
+      "Least-privilege access, scoped credentials, and no standing permissions. Security decisions get made in the architecture, not bolted on before launch.",
   },
   {
     number: "2",
-    title: "Trust Is Infrastructure, Not a Checkbox",
+    title: "Your data stays where it should",
     description:
-      "Compliance frameworks check boxes. We build the actual trust infrastructure: between humans and AI systems, between AI systems and each other, between your organization and the rapidly evolving AI landscape. This is what makes AI sustainable, not just deployable.",
+      "We design around your data boundaries — including fully self-hosted models when nothing can leave your environment. You decide what the system sees.",
   },
   {
     number: "3",
-    title: "Measure What Matters",
+    title: "Auditable by design",
     description:
-      "We don\u2019t just implement and walk away. Our engagements include measurable baselines and improvement tracking so you can see \u2014 in real numbers \u2014 what the right approach produces versus the default one.",
+      "Every AI decision path is logged and explainable. When someone asks why the system did what it did, there’s an answer.",
+  },
+  {
+    number: "4",
+    title: "Built to be handed over",
+    description:
+      "Documented, tested, and owned by your team at the end. No black boxes and no dependency on us to keep it running.",
   },
 ] as const;
 
@@ -33,29 +40,16 @@ export const MethodologySection = () => {
     <section id="methodology" className="w-full py-20 px-6 bg-gray-900 dark:bg-gray-950">
       <div className="w-full max-w-[1280px] mx-auto px-6">
         <h2 className="text-2xl font-bold mb-6 text-center leading-tight text-white">
-          Our approach is different. Measurably.
+          How We Build
         </h2>
         <div className="max-w-3xl mx-auto mb-12">
-          <p className="mb-5 text-gray-300 leading-relaxed">
-            Most AI consultants configure tools. We change how your team relates to the
-            technology — and the results speak for themselves.
-          </p>
-          <p className="mb-5 text-gray-300 leading-relaxed">
-            Our methodology is built on a simple insight that most of the industry has missed:{" "}
-            <strong className="text-white">
-              AI produces fundamentally better output when the interaction is right.
-            </strong>{" "}
-            Not marginally better. Measurably, demonstrably better.
-          </p>
-          <p className="text-gray-300 leading-relaxed">
-            We&apos;ve spent thousands of hours studying how frontier models actually process
-            information — what makes them perform at their best, where they break down, and why
-            most people never get past surface-level results. That depth translates directly
-            into better outcomes for your organization.
+          <p className="text-gray-300 leading-relaxed text-center">
+            The parts most AI shops skip &mdash; and the reason our work survives a
+            security review.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {PRINCIPLES.map((principle) => (
             <div
               key={principle.number}

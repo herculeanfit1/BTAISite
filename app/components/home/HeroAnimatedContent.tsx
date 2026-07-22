@@ -1,32 +1,32 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  LazyMotion,
-  domAnimation,
-  m,
-  AnimatePresence,
-  MotionConfig,
-} from "motion/react";
+import { LazyMotion, domAnimation, m, MotionConfig } from "motion/react";
 
 const HEADLINE_WORDS = [
-  "Better",
+  "Most",
   "AI",
-  "starts",
-  "with",
-  "better",
-  "relationships.",
+  "pilots",
+  "never",
+  "reach",
+  "production.",
+  "We",
+  "build",
+  "the",
+  "ones",
+  "that",
+  "do.",
 ];
 
-const SHIMMER_WORD = "relationships.";
+const SHIMMER_WORD = "production.";
 
-const ROTATING_PHRASES = [
-  "between your team and AI.",
-  "between AI systems and your data.",
-  "between your organization and the future.",
-];
+const SUBHEADLINE_LEAD =
+  "Bridging Trust AI designs and builds custom AI systems — agents, automations, and integrations that run in production, not in a demo.";
 
-const ARIA_LABEL = `Better AI starts with better relationships — ${ROTATING_PHRASES.join(" ")}`;
+const SUBHEADLINE_TAIL =
+  "We start with strategy, we finish with working software, and everything we ship is secure and governed by default.";
+
+const ARIA_LABEL = `Most AI pilots never reach production. We build the ones that do. ${SUBHEADLINE_LEAD} ${SUBHEADLINE_TAIL}`;
 
 const wordVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -43,21 +43,12 @@ const containerVariants = {
 };
 
 export function HeroAnimatedContent() {
-  const [phraseIndex, setPhraseIndex] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mq.matches);
   }, []);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    const interval = setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % ROTATING_PHRASES.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [reducedMotion]);
 
   const handleCtaClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -102,30 +93,16 @@ export function HeroAnimatedContent() {
             ))}
           </m.h1>
 
-          {/* Subheadline with word rotation */}
+          {/* Subheadline */}
           <div
             className="min-h-20 md:min-h-16 flex flex-col items-center justify-center mb-10 gap-2"
             aria-label={ARIA_LABEL}
           >
             <span className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed">
-              Most companies deploy AI tools. We teach organizations how to build the trust infrastructure
+              {SUBHEADLINE_LEAD}
             </span>
-            <span className="relative inline-block w-full sm:w-[400px] md:w-[440px] h-8 text-center overflow-hidden">
-              <AnimatePresence mode="wait">
-                <m.span
-                  key={phraseIndex}
-                  className="absolute inset-x-0 text-lg md:text-xl font-medium text-[#7ECEC1] whitespace-nowrap"
-                  initial={reducedMotion ? false : { y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={reducedMotion ? undefined : { y: -20, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
-                >
-                  {ROTATING_PHRASES[phraseIndex]}
-                </m.span>
-              </AnimatePresence>
-            </span>
-            <span className="text-base sm:text-lg md:text-xl text-gray-300">
-              that makes AI actually work.
+            <span className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed">
+              {SUBHEADLINE_TAIL}
             </span>
           </div>
 
@@ -140,7 +117,7 @@ export function HeroAnimatedContent() {
               onClick={handleCtaClick}
               className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] dark:bg-[#7ECEC1] text-white dark:text-gray-900 transition-all duration-300 hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] dark:hover:text-white hover:shadow-[0_0_24px_rgba(91,144,176,0.4)]"
             >
-              Start the Conversation &rarr;
+              Book an AI Opportunity Assessment &rarr;
             </a>
           </m.div>
 
@@ -152,13 +129,13 @@ export function HeroAnimatedContent() {
             transition={{ delay: 0.8, duration: 0.6 }}
           >
             <p className="text-sm text-gray-400 opacity-70 mb-4">
-              Built for organizations ready to lead
+              Strategy through implementation
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               {[
-                "AI Governance",
-                "Team Enablement",
-                "Agent Architecture",
+                "AI Agents",
+                "Automation",
+                "Integration",
               ].map((badge) => (
                 <span
                   key={badge}

@@ -23,7 +23,7 @@ export interface FeatureData {
 export const features: FeatureData[] = [
   {
     id: 1,
-    label: "Govern",
+    label: "Strategy",
     icon: (
       <svg
         width="24"
@@ -41,21 +41,20 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "AI Governance & Data Readiness",
+    title: "AI Strategy & Solution Design",
     description:
-      "Before your organization can trust AI, your data has to be trustworthy. We assess your Microsoft 365 environment, implement data classification and governance with Purview, and build the compliance foundation that makes AI deployment defensible.",
+      "We start by finding where AI actually pays off in your business, then design something buildable. You get a clear recommendation and an architecture, not a deck full of possibilities.",
     bullets: [
-      "Microsoft Copilot readiness assessment",
-      "Data governance and classification",
-      "AI acceptable use policy development",
-      "Compliance alignment (HIPAA, SOC 2, financial services)",
-      "Shadow AI detection and remediation",
+      "Workflow discovery and use-case scoring by value and feasibility",
+      "Build-vs-buy analysis and honest \u201Cdon\u2019t build this\u201D recommendations",
+      "Solution architecture and data flow design",
+      "Delivery roadmap with sequencing and effort estimates",
     ],
-    cta: "For organizations that need to get their house in order before \u2014 or alongside \u2014 AI adoption.",
+    cta: "For organizations that know AI should help somewhere, but need to know where first.",
   },
   {
     id: 2,
-    label: "Relate",
+    label: "Build",
     icon: (
       <svg
         width="24"
@@ -73,21 +72,20 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "AI Interaction Training & Workshops",
+    title: "Custom AI Development",
     description:
-      "Your team\u2019s relationship with AI determines your ROI. We run hands-on workshops that transform how your people work with AI \u2014 from tentative prompt-and-pray to confident, strategic collaboration that produces real business value.",
+      "We build the system. Agents, automations, and integrations designed around your workflows and your existing stack \u2014 not a generic product you have to bend your business around.",
     bullets: [
-      "Executive AI orientation sessions",
-      "Team-specific workflow integration workshops",
-      "Model interaction methodology training",
-      "AI readiness assessment (where does your team actually stand?)",
-      "Ongoing advisory retainer for evolving AI landscape",
+      "AI agents and assistants built on your data and processes",
+      "Workflow and document automation, including retrieval and RAG pipelines",
+      "LLM integration into existing applications and line-of-business systems",
+      "Azure and Microsoft-ecosystem builds, plus self-hosted and local-model options when data can\u2019t leave your environment",
     ],
-    cta: "For organizations where the technology is deployed but the adoption isn\u2019t happening \u2014 or isn\u2019t producing the results you expected.",
+    cta: "For organizations that know what they want built and need a team that can actually ship it.",
   },
   {
     id: 3,
-    label: "Build",
+    label: "Operate",
     icon: (
       <svg
         width="24"
@@ -105,16 +103,15 @@ export const features: FeatureData[] = [
         />
       </svg>
     ),
-    title: "Agent Architecture & AI Infrastructure",
+    title: "Deployment & Ongoing Operations",
     description:
-      "The next wave of AI isn\u2019t chat interfaces. It\u2019s autonomous agents that work alongside your team, communicate with each other, and operate on your behalf. We design and implement the agent infrastructure that makes this possible and secure.",
+      "Shipping is the beginning, not the end. We deploy securely, prove it works, and make sure your team can run it after we\u2019re gone.",
     bullets: [
-      "Autonomous agent architecture design",
-      "Agent-to-agent communication (Google A2A protocol)",
-      "Agent trust and identity verification",
-      "Memory system design for persistent AI assistants",
-      "Custom agent deployment on enterprise infrastructure",
+      "Secure deployment, identity, and least-privilege access design",
+      "Evaluation, monitoring, and quality measurement in production",
+      "Cost management and model routing strategy",
+      "Documentation, handover, and team enablement",
     ],
-    cta: "For organizations ready to move beyond chatbots into agentic AI \u2014 and need a partner who understands both the technology and the trust requirements.",
+    cta: "For organizations that have something running and need it to stay reliable, affordable, and owned in-house.",
   },
 ];

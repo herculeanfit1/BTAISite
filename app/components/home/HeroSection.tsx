@@ -36,16 +36,16 @@ export const HeroSection = () => {
             className="font-extrabold leading-[1.05] mx-auto w-full mt-0 mb-6 sm:mb-8 text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-[#F5F0EB]"
             style={{ textWrap: "balance", maxWidth: 900 }}
           >
-            Better AI starts with better relationships.
+            Most AI pilots never reach production. We build the ones that do.
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-10">
-            Most companies deploy AI tools. We teach organizations how to build the trust infrastructure that makes AI actually work.
+            Bridging Trust AI designs and builds custom AI systems — agents, automations, and integrations that run in production, not in a demo. We start with strategy, we finish with working software, and everything we ship is secure and governed by default.
           </p>
           <a
             href="#contact"
             className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] text-white"
           >
-            Start the Conversation &rarr;
+            Book an AI Opportunity Assessment &rarr;
           </a>
         </div>
       </noscript>

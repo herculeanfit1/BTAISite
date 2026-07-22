@@ -6,18 +6,21 @@ import { TelemetryProvider } from "./components/TelemetryProvider";
 import { CookieConsent } from "./components/CookieConsent";
 
 export const metadata = {
-  title: "Bridging Trust AI — Better AI Starts With Better Relationships",
+  title: {
+    default: "Bridging Trust AI | Custom AI Solutions, Built to Ship",
+    template: "%s | Bridging Trust AI",
+  },
   description:
-    "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
+    "We design and build custom AI systems — agents, automations, and integrations that run in production. Strategy through implementation, secure and governed by default.",
   keywords:
-    "AI consulting, AI trust, AI governance, agent architecture, Microsoft Copilot readiness, AI team training, AI enablement, AI adoption strategy, AI agent communication, responsible AI, AI workshops, AI relationship methodology",
+    "custom AI development, AI agents, AI automation, AI consulting, Azure AI, AI implementation, AI integration, workflow automation, secure AI deployment",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "https://bridgingtrust.ai"
   ),
   openGraph: {
-    title: "Bridging Trust AI — Better AI Starts With Better Relationships",
+    title: "Bridging Trust AI | Custom AI Solutions, Built to Ship",
     description:
-      "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
+      "We design and build custom AI systems — agents, automations, and integrations that run in production. Strategy through implementation, secure and governed by default.",
     url: "https://bridgingtrust.ai",
     siteName: "Bridging Trust AI",
     images: [
@@ -33,9 +36,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bridging Trust AI — Better AI Starts With Better Relationships",
+    title: "Bridging Trust AI | Custom AI Solutions, Built to Ship",
     description:
-      "We help organizations build the trust infrastructure that makes AI actually work. AI governance, team enablement, and agent architecture for companies ready to lead in the age of AI.",
+      "We design and build custom AI systems — agents, automations, and integrations that run in production. Strategy through implementation, secure and governed by default.",
     images: ["/og-image.jpg"],
   },
   robots: {

@@ -1,7 +1,9 @@
 import { HeroSection } from "./components/home/HeroSection";
 import { LevelingSection } from "./components/home/LevelingSection";
 import { FeaturesSection } from "./components/home/FeaturesSection";
-import { GlobeOverlaySection } from "./components/home/GlobeOverlaySection";
+import { MethodologySection } from "./components/home/MethodologySection";
+import { ProcessSection } from "./components/home/ProcessSection";
+import { AudienceSection } from "./components/home/AudienceSection";
 import { AboutSection } from "./components/home/AboutSection";
 import { ContactSection } from "./components/home/ContactSection";
 
@@ -11,7 +13,9 @@ export default function HomePage() {
       <HeroSection />
       <LevelingSection />
       <FeaturesSection />
-      <GlobeOverlaySection />
+      <MethodologySection />
+      <ProcessSection />
+      <AudienceSection />
       <AboutSection />
       <ContactSection />
     </div>
