@@ -4,11 +4,31 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { isValidEmail } from "@/src/lib/validation";
 
+/**
+ * Interest options shown in the contact form.
+ *
+ * NOTE ON `value`: the Azure Functions backend validates `interest` against a
+ * Zod enum that currently accepts only "governance-assessment",
+ * "data-readiness", "copilot-readiness", "general" and "". Any other value
+ * fails validation and the submission is rejected with a 400 — the lead is
+ * lost. The three previous options ("governance", "training",
+ * "agent-architecture") were not in that enum, so selecting any of them broke
+ * the form.
+ *
+ * The labels below are the current service pillars; the values are the
+ * backend's existing accepted values, so every option now submits
+ * successfully. The value->pillar pairing is positional, not semantic — the
+ * HubSpot inquiry_topic each maps to (ai_governance_readiness,
+ * data_governance_ai, microsoft_ai_enablement) still reflects the retired
+ * taxonomy. Remapping end-to-end — form -> Zod enum ->
+ * INTEREST_TO_INQUIRY_TOPIC -> n8n classifier — is tracked as separate work
+ * and must land before the topic field is trusted for routing or reporting.
+ */
 const INTEREST_OPTIONS = [
   { value: "", label: "Select an option (optional)" },
-  { value: "governance", label: "AI Governance & Data Readiness" },
-  { value: "training", label: "AI Interaction Training & Workshops" },
-  { value: "agent-architecture", label: "Agent Architecture & AI Infrastructure" },
+  { value: "governance-assessment", label: "AI Strategy & Solution Design" },
+  { value: "data-readiness", label: "Custom AI Development" },
+  { value: "copilot-readiness", label: "Deployment & Ongoing Operations" },
   { value: "general", label: "General Inquiry" },
 ] as const;
 
@@ -217,10 +237,9 @@ export const ContactSection = () => {
               Start the conversation
             </h2>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-              Every organization&apos;s AI journey is different. Whether you need
-              governance foundations, team enablement, or full agent architecture —
-              the first step is the same: an honest conversation about where you are
-              and where you want to go.
+              Tell us the workflow you&apos;re trying to fix and we&apos;ll tell you
+              honestly whether AI is the right tool for it. No obligation, and no pitch
+              if the answer is no.
             </p>
           </div>
 
