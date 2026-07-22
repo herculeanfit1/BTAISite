@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { PrivacyContent } from "../components/legal/PrivacyContent";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Bridging Trust AI",
+  title: "Privacy Policy",
   description:
     "Learn about how Bridging Trust AI handles your data and protects your privacy.",
 };

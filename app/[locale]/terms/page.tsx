@@ -2,9 +2,9 @@ import { Metadata } from "next";
 import { TermsContent } from "../../components/legal/TermsContent";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Bridging Trust AI",
+  title: "Website Terms of Use",
   description:
-    "The terms and conditions governing your use of Bridging Trust AI services.",
+    "The terms governing your use of the Bridging Trust AI website. Client engagements are governed by separate written agreements.",
 };
 
 export default function TermsPage() {

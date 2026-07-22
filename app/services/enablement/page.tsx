@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { ServicePageLayout } from "@/app/components/ServicePageLayout";
 
 export const metadata: Metadata = {
-  title: "Microsoft AI Enablement & Implementation | Bridging Trust AI",
+  title: "Microsoft AI Enablement & Implementation",
   description:
     "Microsoft Copilot readiness, Copilot Studio governance, Power Platform controls, Entra and Intune hardening, and secure AI rollout patterns for Microsoft 365 environments.",
 

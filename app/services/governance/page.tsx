@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { ServicePageLayout } from "@/app/components/ServicePageLayout";
 
 export const metadata: Metadata = {
-  title: "AI Governance & Readiness | Bridging Trust AI",
+  title: "AI Governance & Readiness",
   description:
     "AI governance frameworks, steering committee design, risk tiering, and adoption governance for Microsoft 365 environments. Move from AI experimentation to governed execution.",
 
