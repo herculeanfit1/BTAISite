@@ -13,6 +13,37 @@ stale within the hour.
 
 ## 0. Contact form outage — fixed, but the failure can recur on any deploy
 
+> **LIVE STATE as of 2026-07-23 ~4:24 PM CDT — READ THIS FIRST.**
+> The Static Web App's backend is **deliberately UNLINKED**. That means: the marketing
+> site (all pages) is **up**, and the contact form (`/api/*`) is **down**. This is a chosen
+> safe resting state, not a bug.
+>
+> **Why unlinked instead of both-working:** a healthy linked backend serves both the pages
+> and `/api/*` together — that was the normal state all day. But re-establishing that link
+> requires an `az staticwebapp backends unlink && link`, and on 2026-07-23 that operation
+> was run more than a dozen times in a few hours (self-heal attempts, redeploys, manual
+> fixes). The Static Web Apps edge routing was churned into an unstable state where each
+> re-link kept landing in a **hijack** — the backend capturing the *whole* site (`/` served
+> the Azure Functions placeholder, sub-pages 404) instead of only `/api/*`. Repeated
+> "fixing" made it worse. The site was unlinked to give users the real pages back, and the
+> backend left alone to let the edge settle.
+>
+> **The one remaining step — do this during a CALM window** (no deploy in the last ~15 min,
+> no recent backend operations):
+> ```
+> az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1
+> az staticwebapp backends link   --name bridgingtrust-website --resource-group BTAI-RG1 \
+>   --backend-resource-id "/subscriptions/9d3c1bcc-ef6b-4b23-bd30-c63f7b98b4dd/resourceGroups/BTAI-RG1/providers/Microsoft.Web/sites/func-btai-site-prod" \
+>   --backend-region eastus2
+> ```
+> Then verify the **custom domain** (not the `*.azurestaticapps.net` origin — they route
+> differently): `https://bridgingtrust.ai/` must show the real title (not "Your Azure
+> Function App is up and running"), `https://bridgingtrust.ai/terms` must be `200`, and
+> `https://bridgingtrust.ai/api/health` must return `{"status":"ok"}`. If `/` shows the
+> placeholder, it hijacked — `unlink` again, wait longer, retry once. This operation
+> succeeded cleanly many times earlier in the day when the edge was calm; the churn was the
+> problem, not the command.
+
 **Recorded here because it is the third instance of the same root cause, and the pattern
 matters more than the fix.**
 
