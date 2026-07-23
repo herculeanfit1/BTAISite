@@ -63,38 +63,6 @@ const nextConfig = {
   // Enable React strict mode for better development experience and to catch potential issues
   reactStrictMode: true,
 
-  /**
-   * Collapse the locale-prefixed URLs onto their canonical equivalents.
-   *
-   * app/[locale] was scaffolding for an internationalisation that never
-   * happened: next-intl is installed but never imported, and /en, /es and /fr
-   * all render identical English. That is duplicate content on three URLs per
-   * page, none of which is linked from anywhere in the site or listed in
-   * public/sitemap.xml.
-   *
-   * Two rules cover the whole set rather than fifteen literal entries, and
-   * they keep covering it if a page is added under [locale] later.
-   *
-   * 301, not `permanent: true`, because Next emits 308 for `permanent` and the
-   * redirects already live in staticwebapp.config.json (/about, /solutions,
-   * /contact) are 301. One status code for every redirect on the site.
-   *
-   * The [locale] scaffolding stays in place and still builds. If this
-   * mechanism turns out not to fire on the Azure Static Web Apps hybrid
-   * adapter, those pages keep serving exactly as they do today rather than
-   * 404ing -- the failure mode is "no change", not "pages disappear".
-   */
-  async redirects() {
-    return [
-      { source: "/:locale(en|es|fr)", destination: "/", statusCode: 301 },
-      {
-        source: "/:locale(en|es|fr)/:path*",
-        destination: "/:path*",
-        statusCode: 301,
-      },
-    ];
-  },
-
   // Security response headers for every route. See CONTENT_SECURITY_POLICY above.
   async headers() {
     return [
