@@ -5,12 +5,13 @@ repository. Each item states what "done" means, so none of them stay open by amb
 
 Context: a six-PR sequence landed on `main` today — static-prerender fix, repositioning,
 shared legal source, legal restructure, dead-code cleanup, and security headers — plus a
-founder-photo update. `main` is at `b5bcde3`. All are deployed and verified in production
-(see §Verification at the end).
+founder-photo update. All are deployed and verified in production (see §Verification at the
+end). No commit SHA is pinned here on purpose — an earlier revision named one and it was
+stale within the hour.
 
 ---
 
-## 0. RESOLVED 2026-07-22 — contact form was down for ~1 month
+## 0. Contact form outage — fixed, but the failure can recur on any deploy
 
 **Recorded here because it is the third instance of the same root cause, and the pattern
 matters more than the fix.**
@@ -41,6 +42,55 @@ az staticwebapp backends link   --name bridgingtrust-website --resource-group BT
 Verified: `/api/health` returns `{"status":"ok"}` through the apex, and a real form
 submission returns `{"success":true}` with HTTP 200.
 
+### The fix did not survive the next deploy
+
+Immediately after that verification, the next push to `main` broke `/api/*` again. The
+sequence is unambiguous:
+
+| Time (UTC) | Local | Event |
+|---|---|---|
+| 01:48:16 | 8:48 PM | Backend re-linked, `provisioningState: Succeeded` |
+| ~01:50 | ~8:50 PM | `/api/health` → `200 {"status":"ok"}`; real submission → `{"success":true}` |
+| 01:54 → 01:58 | 8:54 → 8:58 PM | Deploy of `7428ac0` runs and succeeds |
+| 01:58:28 | 8:58 PM | SWA `default` build updated |
+| 01:58 → 02:16 | 8:58 → 9:16 PM | `/api/*` returns the Next.js 404 page; **does not self-heal in 18 min** |
+| 02:16:35 | 9:16 PM | Re-linked again → `/api/health` healthy on the **first** probe |
+
+The commit that triggered that deploy (`7428ac0`) changed **one documentation file**.
+`staticwebapp.config.json` and `next.config.js` are byte-identical across it. So the
+deployment itself dropped the routing — no configuration change was involved.
+
+Two properties of this failure make it especially dangerous:
+
+- **Azure reports everything as healthy.** The linked-backend record survives the deploy
+  with `provisioningState: Succeeded` and the correct `backendResourceId`. Both the
+  app-level and build-level ARM paths read clean. Only the live route is broken.
+- **The deploy stays green.** Nothing in the pipeline tested the API.
+
+Scope of the claim, stated honestly: this is **one clean observation**, not a proven
+every-deploy law. Before tonight the link pointed at a dead subscription, so no historical
+evidence exists either way. The smoke check added in `cost-optimized-ci.yml` will settle it
+on the next merge — if the deploy is green, the reset is intermittent; if it goes red, it is
+systematic.
+
+**Until it is settled, treat `/api/*` as unverified after every production deploy.**
+
+Two remediations are possible, and the second is the operator's call:
+
+1. **Detect** (done). The `Post-deployment verification` step in `deploy-main-to-azure` was
+   previously two `echo` statements that asserted nothing. It now polls `/api/health` for
+   four minutes and then POSTs a deliberately invalid payload to `/api/contact`, requiring a
+   JSON `400`. The invalid payload is rejected by Zod before any email is sent or any CRM
+   record is written, so the lead path is exercised without creating a lead. On failure it
+   prints the SWA-origin status — which distinguishes a Cloudflare problem from an origin
+   problem — and the exact re-link command.
+2. **Self-heal** (not done — needs a decision). CI cannot re-link today: the deploy job
+   authenticates to Static Web Apps with a deployment token, not an ARM identity, and the
+   OIDC principal `BTAI-Site-GitHubDeploy` holds `Website Contributor` scoped **only** to
+   `func-btai-site-prod`. Automating the re-link means granting CI write access to the
+   Static Web App resource itself. That is a real expansion of what a compromised workflow
+   could do, so it is being surfaced rather than silently taken.
+
 **Three stale references to the evacuated subscription have now surfaced, in three
 different systems:**
 
@@ -58,8 +108,8 @@ secrets across all repos, n8n credentials, and hardcoded subscription IDs in scr
 **Verification lesson:** the Phase D production sweep run earlier the same day checked
 routes, headers, redirects, titles, photos and sitemap — and passed every one — while the
 site's single most important interactive feature was dead. **Page checks are not feature
-checks.** Any future verification of this site must POST to `/api/contact` and assert
-`success: true`, not merely confirm that pages render.
+checks.** That lesson is no longer advice — it is enforced by the post-deployment step
+described above, which fails the build rather than trusting anyone to remember.
 
 ---
 
@@ -243,6 +293,9 @@ All checks run against `https://bridgingtrust.ai` after the final deploy.
 
 | Check | Result |
 |---|---|
+| `/api/health` | 200 `{"status":"ok"}` |
+| `POST /api/contact`, valid payload | 200 `{"success":true}` |
+| `POST /api/contact`, invalid payload | 400 `application/json`, Zod field errors |
 | `/`, `/terms`, `/privacy`, `/engagement-terms`, `/product-terms` | 200 |
 | All `en` / `es` / `fr` variants of the above | 200 |
 | `/banana`, `/xyzzy`, `/nope` | 404 |

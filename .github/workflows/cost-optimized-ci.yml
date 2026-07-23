@@ -58,10 +58,72 @@ jobs:
         env:
           NODE_VERSION: "20.19.1"
 
+      # Deploying successfully is not the same as working. On 2026-07-22 a
+      # deploy left every page healthy while /api/* returned the Next.js 404
+      # page, because a Static Web Apps deployment can drop the linked-backend
+      # routing to func-btai-site-prod. The ARM record still read
+      # "provisioningState: Succeeded" throughout, so nothing in Azure looked
+      # wrong. The contact form -- the site's only lead path -- was dead and
+      # the deploy was green.
+      #
+      # This step exists so that failure is loud. It checks the API, not the
+      # pages, because the pages were never the thing that broke.
       - name: Post-deployment verification
         run: |
-          echo "Deployment completed"
-          echo "Site available at Azure Static Web Apps URL"
+          set -uo pipefail
+          SITE="https://bridgingtrust.ai"
+          ORIGIN="https://wonderful-bush-0e888f30f.6.azurestaticapps.net"
+
+          echo "::group::Waiting for /api/health"
+          ok=""
+          for i in $(seq 1 12); do
+            body="$(curl -sS --max-time 20 "$SITE/api/health" 2>/dev/null || true)"
+            if printf '%s' "$body" | grep -q '"status"'; then
+              echo "attempt $i: healthy -- $body"
+              ok=1
+              break
+            fi
+            echo "attempt $i: not ready yet"
+            sleep 20
+          done
+          echo "::endgroup::"
+
+          if [ -z "$ok" ]; then
+            echo "::error::/api/* is not reachable four minutes after deploy."
+            echo "Most likely cause: this deploy dropped the Static Web App's linked backend."
+            echo "Origin check (distinguishes Cloudflare from the SWA itself):"
+            curl -sS -o /dev/null -w '  %{http_code} from SWA origin\n' --max-time 20 "$ORIGIN/api/health" || true
+            echo ""
+            echo "Remediation -- re-link the backend, then re-run this job:"
+            echo "  az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1"
+            echo "  az staticwebapp backends link --name bridgingtrust-website --resource-group BTAI-RG1 \\"
+            echo "    --backend-resource-id /subscriptions/<sub>/resourceGroups/BTAI-RG1/providers/Microsoft.Web/sites/func-btai-site-prod \\"
+            echo "    --backend-region eastus2"
+            exit 1
+          fi
+
+          # Exercise the lead path itself. An intentionally invalid payload is
+          # rejected by Zod before any email is sent or any CRM record is
+          # written, so this proves the handler runs without creating a lead.
+          echo "::group::Verifying /api/contact reaches its handler"
+          probe="$(curl -sS -o /dev/null --max-time 25 -w '%{http_code} %{content_type}' \
+              -X POST "$SITE/api/contact" \
+              -H 'Content-Type: application/json' \
+              -d '{"email":"not-an-email","message":""}' || echo 'curl-failed -')"
+          status="${probe%% *}"
+          ctype="${probe#* }"
+          echo "status=$status content-type=$ctype"
+          echo "::endgroup::"
+
+          case "$status:$ctype" in
+            400:application/json*)
+              echo "Contact endpoint is live and validating." ;;
+            *)
+              echo "::error::POST /api/contact returned '$status $ctype'; expected a JSON 400."
+              echo "An HTML response means the request fell through to the static site"
+              echo "instead of reaching the Function App."
+              exit 1 ;;
+          esac
 
   # =============================================================================
   # FUNCTIONS BACKEND DEPLOYMENT (main branch only)
