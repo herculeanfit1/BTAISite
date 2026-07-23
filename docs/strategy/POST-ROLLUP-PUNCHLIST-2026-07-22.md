@@ -184,29 +184,38 @@ re-link inside the verification window or to automate that re-link.
    Granting it expands what a compromised workflow could reach, so it is surfaced rather
    than silently taken.
 
-### Decision taken 2026-07-23: option 3, scoped self-heal
+### Decision 2026-07-23: tried scoped self-heal, reverted to detection-only
 
-The operator chose self-heal. It is implemented and open as a pull request, waiting on one
-role assignment that only the operator can make.
+The operator first chose self-heal (option 3). It was built, the RBAC was granted, and it
+ran on production twice. **It never completed cleanly, and it caused two outages that
+detection-only never did**, so it was reverted the same day. Detection-only is now the
+standing state: the pipeline detects a dropped backend and prints the fix; a human runs the
+~30-second re-link.
 
-The pipeline re-links after each deploy, but the naive form of that step is **more
-dangerous than the bug**. Re-linking 28 seconds after a deploy finished corrupted the
-routing so the backend captured `/` instead of `/api/*`: every page served the Azure
-Functions placeholder, and unlinking did **not** recover it — the site then returned empty
-`200`s until a forced redeploy. Twenty-one minutes of full outage, self-inflicted, while
-fixing a partial one.
+What went wrong, kept as the record of why the simpler option won:
 
-Re-links at 4, 6, 17 and 18 minutes were all clean, so the step waits for `builds/default`
-to report `Ready` and to have been untouched for five minutes, refuses to touch the backend
-if that never happens, and verifies the **homepage** as well as the API — unlinking itself
-immediately if the homepage comes back as the placeholder.
+1. **Racing the deploy corrupts everything.** A re-link 28 seconds after a deploy finished
+   made the backend capture `/` instead of `/api/*` — every page served the Azure Functions
+   placeholder for 21 minutes, and unlinking did **not** recover it; only a forced redeploy
+   did. This drove the five-minute settle gate that the step later carried.
+2. **The re-link failed under least-privilege.** Even with the settle gate working, the
+   scoped deploy principal hit `AuthorizationFailed` on
+   `staticSites/builds/linkedBackends/write` and left `/api/*` down. The failure persisted
+   **30 minutes** after the role was updated, so it was not simple propagation lag — likely
+   the `az` CLI passing the whole backend resource ID as the linked-backend name, producing
+   a nested scope the resource-scoped assignment did not match.
 
-Recovery timing also varies more than expected: ~15 seconds on a quiet platform, ~4.5
-minutes when a re-link races a deploy's own propagation. The verification poll was widened
-accordingly.
+Each failed automated attempt left the backend unlinked right after a deploy, which is the
+empty-`200` state — strictly worse than the partial `/api` outage it was trying to fix. A
+manual `unlink && link` worked every single time all day and never took the site down.
 
-**Until that role assignment is made, every merge to `main` takes the contact form down
-until someone re-links by hand.** That is the operating reality, not a caveat.
+The custom role `SWA Linked Backend Operator` and its assignment are left in place — inert
+while unused, and available if a more robust self-heal is ever built off the production
+site. Removing them is an operator choice.
+
+**Standing reality: a deploy still drops the backend, so after every merge to `main` a human
+re-links once.** The detection step makes that loud and prints the command; it is no longer
+silent, which was the whole point.
 
 **Three stale references to the evacuated subscription have now surfaced, in three
 different systems:**
