@@ -37,7 +37,12 @@ jobs:
   deploy-main-to-azure:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Budget: ~5 min deploy + 5 min settle wait + up to 10 min re-link
+    # verification + the post-deployment checks. The old 15 minutes was less
+    # than that sum, so on 2026-07-23 the job was cancelled mid-settle and the
+    # backend was left unlinked -- the timeout, not the step, decided the
+    # outcome.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -58,6 +63,115 @@ jobs:
         env:
           NODE_VERSION: "20.19.1"
 
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # A Static Web Apps deployment regenerates the build's routing table from
+      # the uploaded artifact. Bring-your-own-backend requires api_location to
+      # be empty, so the regenerated table declares no API and the linked
+      # backend stops routing -- verified on four consecutive deploys
+      # 2026-07-22. The ARM record is untouched and keeps reading "Succeeded",
+      # so nothing in Azure reveals the break. Re-applying the link is what
+      # pushes the /api/* mapping back into the running build.
+      #
+      # SETTLE_SECONDS is the load-bearing part. Re-linking 28 seconds after a
+      # deploy finished corrupted the routing so badly that the backend
+      # captured "/" instead of "/api/*" and the entire site served the Azure
+      # Functions placeholder page for 21 minutes. Re-links at 4, 6, 17 and 18
+      # minutes were all clean. Do not lower this without new evidence.
+      - name: Re-link Function App backend
+        env:
+          SWA_NAME: bridgingtrust-website
+          SWA_RG: BTAI-RG1
+          FUNC_NAME: func-btai-site-prod
+          BACKEND_REGION: eastus2
+          SETTLE_SECONDS: "300"
+          SITE: "https://bridgingtrust.ai"
+          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -uo pipefail
+          BASE="https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${SWA_RG}/providers/Microsoft.Web"
+          BUILD_URL="${BASE}/staticSites/${SWA_NAME}/builds/default?api-version=2023-01-01"
+          BACKEND_ID="${BASE}/sites/${FUNC_NAME}"
+
+          echo "::group::Waiting for the build to be Ready and settled"
+          settled=""
+          for _ in $(seq 1 45); do
+            json="$(az rest --method get --url "$BUILD_URL" -o json 2>/tmp/swa-build-err.txt || true)"
+            age="$(printf '%s' "$json" | python3 .github/scripts/swa_build_age.py 2>/dev/null || echo -1)"
+
+            # A permanently-unreadable build looks identical to a build that is
+            # simply still settling: both report -1. On the first occurrence,
+            # print what az actually said. Without this the step burned its
+            # entire timeout printing "age=-1s" and gave no hint that the cause
+            # was a missing Microsoft.Web/staticSites/builds/Read permission.
+            if [ "${age:--1}" -lt 0 ] 2>/dev/null && [ -z "${diag_shown:-}" ]; then
+              diag_shown=1
+              echo "  build query returned nothing usable -- az reported:"
+              sed 's/^/    /' /tmp/swa-build-err.txt 2>/dev/null | head -5
+              echo "    (a 403 here means the deploy principal is missing"
+              echo "     Microsoft.Web/staticSites/builds/Read on the static site)"
+            fi
+            if [ "${age:--1}" -ge "$SETTLE_SECONDS" ] 2>/dev/null; then
+              echo "build Ready and untouched for ${age}s"
+              settled=1
+              break
+            fi
+            echo "not settled yet (age=${age}s, need ${SETTLE_SECONDS}s)"
+            sleep 20
+          done
+          echo "::endgroup::"
+
+          if [ -z "$settled" ]; then
+            echo "::error::Build never reported Ready+settled. Refusing to touch the backend."
+            echo "Re-linking against an unsettled build is what caused the 2026-07-22 site outage."
+            exit 1
+          fi
+
+          echo "::group::Re-linking"
+          az staticwebapp backends unlink --name "$SWA_NAME" --resource-group "$SWA_RG" >/dev/null 2>&1 || true
+          az staticwebapp backends link --name "$SWA_NAME" --resource-group "$SWA_RG" \
+            --backend-resource-id "$BACKEND_ID" --backend-region "$BACKEND_REGION" >/dev/null || {
+              echo "::error::az staticwebapp backends link failed."; exit 1; }
+          echo "linked"
+          echo "::endgroup::"
+
+          # Verify BOTH that the API answers and that the site was not hijacked.
+          # A corrupted link routes every path to the Function App, which is
+          # far worse than the API being down, so it is checked every round and
+          # rolled back immediately.
+          echo "::group::Verifying site and API"
+          ok=""
+          for i in $(seq 1 30); do
+            home="$(curl -sS --max-time 20 "$SITE/" 2>/dev/null || true)"
+            api="$(curl -sS --max-time 20 "$SITE/api/health" 2>/dev/null || true)"
+            case "$home" in
+              *"Azure Function App is up and running"*)
+                echo "::error::Backend hijacked the whole site. Rolling back."
+                az staticwebapp backends unlink --name "$SWA_NAME" --resource-group "$SWA_RG" >/dev/null 2>&1 || true
+                echo "Unlinked. The site will recover; /api/* stays down until a human re-links."
+                exit 1 ;;
+            esac
+            case "$api" in
+              *'"status"'*)
+                case "$home" in
+                  *"Bridging Trust AI"*) echo "attempt $i: site and API both healthy"; ok=1; break ;;
+                esac ;;
+            esac
+            echo "attempt $i: not ready yet"
+            sleep 20
+          done
+          echo "::endgroup::"
+
+          if [ -z "$ok" ]; then
+            echo "::error::Re-link did not restore /api/* within ten minutes."
+            exit 1
+          fi
+
       # Deploying successfully is not the same as working. On 2026-07-22 a
       # deploy left every page healthy while /api/* returned the Next.js 404
       # page, because a Static Web Apps deployment can drop the linked-backend
@@ -76,7 +190,7 @@ jobs:
 
           echo "::group::Waiting for /api/health"
           ok=""
-          for i in $(seq 1 12); do
+          for i in $(seq 1 18); do
             body="$(curl -sS --max-time 20 "$SITE/api/health" 2>/dev/null || true)"
             if printf '%s' "$body" | grep -q '"status"'; then
               echo "attempt $i: healthy -- $body"
