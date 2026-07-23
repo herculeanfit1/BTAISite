@@ -367,7 +367,12 @@ jobs:
         run: |
           set -uo pipefail
 
-          gh label create deploy-failure \
+          # --repo is required on every gh call here: this job has no checkout
+          # step, so there is no git remote for gh to infer the repository
+          # from. Omitting it made `gh label create` fail silently, which then
+          # made `gh issue create --label` fail with "'deploy-failure' not
+          # found" and lost the notification entirely.
+          gh label create deploy-failure --repo "$REPO" \
             --color B60205 \
             --description "A push to main failed to deploy" >/dev/null 2>&1 || true
 
@@ -396,8 +401,15 @@ jobs:
             gh issue comment "$existing" --repo "$REPO" --body "$body"
             echo "Commented on existing issue #${existing}"
           else
+            # Fall back to an unlabelled issue rather than losing the alert.
+            # The label is only there to make the next run find this issue and
+            # comment instead of filing a duplicate; it is not worth dropping a
+            # production-deploy failure over.
             gh issue create --repo "$REPO" \
               --title "Production deploy failing on main" \
               --label deploy-failure \
+              --body "$body" \
+            || gh issue create --repo "$REPO" \
+              --title "Production deploy failing on main" \
               --body "$body"
           fi
