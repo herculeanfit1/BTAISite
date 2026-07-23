@@ -10,6 +10,59 @@ founder-photo update. `main` is at `b5bcde3`. All are deployed and verified in p
 
 ---
 
+## 0. RESOLVED 2026-07-22 — contact form was down for ~1 month
+
+**Recorded here because it is the third instance of the same root cause, and the pattern
+matters more than the fix.**
+
+Symptom: submitting the contact form returned "There was a problem connecting to our
+servers." Cause: the Static Web App's **linked backend** pointed at
+`/subscriptions/cd461b28-.../sites/func-btai-site-prod` — the pre-evacuation subscription.
+That resource ID no longer resolves (`ResourceNotFound`), so SWA could not proxy `/api/*`
+to the Function App. Requests fell through to the static site and returned the Next.js 404
+page. The browser's `fetch` received HTML where it expected JSON, threw, and hit the
+network-level catch.
+
+The Function App itself was healthy throughout — hitting
+`func-btai-site-prod.azurewebsites.net/api/health` directly returned `200 {"status":"ok"}`.
+
+Broken since roughly **2026-06-23**, when the subscription evacuation moved the resources.
+The linked backend was created 2026-04-18 against the old subscription and never cut over.
+
+Fix (no code change, no deploy):
+
+```
+az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1
+az staticwebapp backends link   --name bridgingtrust-website --resource-group BTAI-RG1 \
+  --backend-resource-id "/subscriptions/9d3c1bcc-.../sites/func-btai-site-prod" \
+  --backend-region eastus2
+```
+
+Verified: `/api/health` returns `{"status":"ok"}` through the apex, and a real form
+submission returns `{"success":true}` with HTTP 200.
+
+**Three stale references to the evacuated subscription have now surfaced, in three
+different systems:**
+
+| # | Artifact | Effect | Found |
+|---|---|---|---|
+| 1 | `AZURE_SUBSCRIPTION_ID` GitHub secret | Functions deploy failed silently for 7 weeks | 2026-07-22 |
+| 2 | SWA linked-backend `backendResourceId` | Contact form down ~1 month | 2026-07-22 |
+| 3 | n8n IP-updater, `scripts/azure` (per evacuation tracker) | still listed as outstanding | 2026-06-24 |
+
+**Action: audit every remaining reference to `cd461b28` across all systems.** The evacuation
+tracker's "external-ref cutover" item is not finished, and each undiscovered instance is a
+silently broken capability. Sweep infrastructure repos, Azure resource configs, GitHub
+secrets across all repos, n8n credentials, and hardcoded subscription IDs in scripts.
+
+**Verification lesson:** the Phase D production sweep run earlier the same day checked
+routes, headers, redirects, titles, photos and sitemap — and passed every one — while the
+site's single most important interactive feature was dead. **Page checks are not feature
+checks.** Any future verification of this site must POST to `/api/contact` and assert
+`success: true`, not merely confirm that pages render.
+
+---
+
 ## 1. Alert on `deploy-functions` failure — near-term, not someday
 
 **The single most important item here.**
