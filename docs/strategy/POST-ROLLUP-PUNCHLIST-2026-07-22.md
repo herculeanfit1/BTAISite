@@ -184,8 +184,38 @@ re-link inside the verification window or to automate that re-link.
    Granting it expands what a compromised workflow could reach, so it is surfaced rather
    than silently taken.
 
-**Until a decision lands, every merge to `main` takes the contact form down until someone
-re-links by hand.** That is the operating reality, not a caveat.
+### Decision 2026-07-23: tried scoped self-heal, reverted to detection-only
+
+The operator first chose self-heal (option 3). It was built, the RBAC was granted, and it
+ran on production twice. **It never completed cleanly, and it caused two outages that
+detection-only never did**, so it was reverted the same day. Detection-only is now the
+standing state: the pipeline detects a dropped backend and prints the fix; a human runs the
+~30-second re-link.
+
+What went wrong, kept as the record of why the simpler option won:
+
+1. **Racing the deploy corrupts everything.** A re-link 28 seconds after a deploy finished
+   made the backend capture `/` instead of `/api/*` — every page served the Azure Functions
+   placeholder for 21 minutes, and unlinking did **not** recover it; only a forced redeploy
+   did. This drove the five-minute settle gate that the step later carried.
+2. **The re-link failed under least-privilege.** Even with the settle gate working, the
+   scoped deploy principal hit `AuthorizationFailed` on
+   `staticSites/builds/linkedBackends/write` and left `/api/*` down. The failure persisted
+   **30 minutes** after the role was updated, so it was not simple propagation lag — likely
+   the `az` CLI passing the whole backend resource ID as the linked-backend name, producing
+   a nested scope the resource-scoped assignment did not match.
+
+Each failed automated attempt left the backend unlinked right after a deploy, which is the
+empty-`200` state — strictly worse than the partial `/api` outage it was trying to fix. A
+manual `unlink && link` worked every single time all day and never took the site down.
+
+The custom role `SWA Linked Backend Operator` and its assignment are left in place — inert
+while unused, and available if a more robust self-heal is ever built off the production
+site. Removing them is an operator choice.
+
+**Standing reality: a deploy still drops the backend, so after every merge to `main` a human
+re-links once.** The detection step makes that loud and prints the command; it is no longer
+silent, which was the whole point.
 
 **Three stale references to the evacuated subscription have now surfaced, in three
 different systems:**
@@ -390,6 +420,32 @@ aliases no longer point into it.
   return 200 and serve English content. `next-intl` is installed but never imported. This is
   pre-existing and was explicitly out of scope; it is now more visible because the locale
   segment is validated and the legal pages exist in locale variants.
+
+  **Attempted and reverted 2026-07-23.** Collapsing these onto canonical paths with
+  `redirects()` in `next.config.js` was tried and rolled back within fifteen minutes. Two
+  findings, both worth keeping:
+
+  1. **`redirects()` is not honoured by the Static Web Apps hybrid adapter.** The locale
+     paths returned 404, never 301. This is the third Next.js/config mechanism the adapter
+     ignores, after `staticwebapp.config.json` `globalHeaders` and `middleware.ts`.
+  2. **Declaring it broke the adapter's whole route map.** Every Next-rendered page except
+     the homepage began returning 404 — including `/services/*`, which the change never
+     touched, and the four footer-linked legal pages. Verified against the SWA origin, so
+     not caching.
+
+  The prediction in that PR — that keeping the `[locale]` scaffolding made the failure mode
+  "no change, not pages disappear" — was wrong in the worst direction. It was based on
+  `redirects()` working correctly against a local `next start`, which is a different runtime
+  from the adapter. **Local Next behaviour is not evidence about this deployment.** That is
+  the same trap as `globalHeaders`, and it has now been fallen into twice.
+
+  Remaining option is explicit `routes[]` entries in `staticwebapp.config.json` — the
+  mechanism already producing real 301s for `/about`, `/solutions` and `/contact`. Fifteen
+  literal entries, no clever patterns. Not yet attempted.
+
+  Unrelated loose end now closed: `/fr` had been returning 404 while `/en` and `/es`
+  returned 200. After the revert redeploy all three return 200, so that was a stale build
+  artifact rather than a routing defect.
 - **`/contact` is no longer in the sitemap** — it is a 301, and sitemaps should list
   destinations. The sitemap now carries five canonical URLs, not six.
 - **Coverage floors.** The suite went 126 → 105 + 5 new = 110 across two cleanup PRs, purely
