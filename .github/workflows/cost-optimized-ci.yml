@@ -37,7 +37,12 @@ jobs:
   deploy-main-to-azure:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Budget: ~5 min deploy + 5 min settle wait + up to 10 min re-link
+    # verification + the post-deployment checks. The old 15 minutes was less
+    # than that sum, so on 2026-07-23 the job was cancelled mid-settle and the
+    # backend was left unlinked -- the timeout, not the step, decided the
+    # outcome.
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -96,8 +101,21 @@ jobs:
           echo "::group::Waiting for the build to be Ready and settled"
           settled=""
           for _ in $(seq 1 45); do
-            json="$(az rest --method get --url "$BUILD_URL" -o json 2>/dev/null || echo '{}')"
+            json="$(az rest --method get --url "$BUILD_URL" -o json 2>/tmp/swa-build-err.txt || true)"
             age="$(printf '%s' "$json" | python3 .github/scripts/swa_build_age.py 2>/dev/null || echo -1)"
+
+            # A permanently-unreadable build looks identical to a build that is
+            # simply still settling: both report -1. On the first occurrence,
+            # print what az actually said. Without this the step burned its
+            # entire timeout printing "age=-1s" and gave no hint that the cause
+            # was a missing Microsoft.Web/staticSites/builds/Read permission.
+            if [ "${age:--1}" -lt 0 ] 2>/dev/null && [ -z "${diag_shown:-}" ]; then
+              diag_shown=1
+              echo "  build query returned nothing usable -- az reported:"
+              sed 's/^/    /' /tmp/swa-build-err.txt 2>/dev/null | head -5
+              echo "    (a 403 here means the deploy principal is missing"
+              echo "     Microsoft.Web/staticSites/builds/Read on the static site)"
+            fi
             if [ "${age:--1}" -ge "$SETTLE_SECONDS" ] 2>/dev/null; then
               echo "build Ready and untouched for ${age}s"
               settled=1
