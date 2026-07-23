@@ -209,34 +209,49 @@ described above, which fails the build rather than trusting anyone to remember.
 
 ---
 
-## 1. Alert on `deploy-functions` failure — near-term, not someday
+## 1. Nobody watches red runs — corrected 2026-07-23
 
-**The single most important item here.**
+**An earlier revision of this item said `deploy-functions` "failed silently on every `main`
+run from 2026-06-17 to 2026-07-22. Seven weeks," and that it "does not fail the site
+deploy." Both claims were wrong.** They were inferred from the subscription-evacuation date
+rather than read off the run history. The run history says:
 
-The Azure Functions deploy — which serves the contact form, the revenue front door — failed
-silently on **every** `main` run from **2026-06-17 to 2026-07-22**. Seven weeks.
+| Run date | Workflow result | `deploy-functions` |
+|---|---|---|
+| 2026-05-11 | success | success |
+| 2026-05-18 | success | success |
+| **2026-06-17** | success | **success** |
+| 2026-07-03 | **failure** | **failure** |
+| 2026-07-06 | **failure** | **failure** |
+| 2026-07-07 | **failure** | **failure** |
+| 2026-07-22 onward | success | success |
 
-Root cause: the `AZURE_SUBSCRIPTION_ID` GitHub secret still pointed at the pre-evacuation
-subscription. The OIDC principal (`BTAI-Site-GitHubDeploy`) had migrated correctly and held
-Website Contributor on `func-btai-site-prod` in the new subscription the whole time; only the
-secret was stale. Rotating it to `9d3c1bcc-…` fixed it immediately, and it has been green on
-five consecutive runs since.
+So the corrected picture:
 
-**Why it went unnoticed is the real problem.** `deploy-functions` failing does not fail the
-site deploy, and nothing watches it. The previously-deployed Functions build kept serving, so
-the contact form never broke — but no API change could have shipped in that window, and
-nobody would have known.
+- **It already fails the run.** There is no `continue-on-error` on the job or any of its
+  steps, and the three failing runs are recorded as `conclusion: failure` at the workflow
+  level. Nothing needs to be "unsuppressed."
+- **It was not seven weeks.** It failed on exactly three runs across four days. It succeeded
+  on 2026-06-17, and there were no `main` deploys at all between 2026-07-07 and 2026-07-22 —
+  which is what created the illusion of a long silent window.
+- **It was never silent.** Those runs were red on the Actions tab the whole time.
 
-This is the same failure shape as the HubSpot non-blocking-catch pattern already documented
-in the strategic review: **a non-blocking failure masking a broken capability.**
+The stale `AZURE_SUBSCRIPTION_ID` diagnosis stands: the secret pointed at the pre-evacuation
+subscription while the OIDC principal had migrated correctly. Rotating it fixed the job
+immediately and it has been green on every run since.
 
-Options, roughly in order of effort:
-- Add a failure-notification step to the `deploy-functions` job (cheapest).
-- Make `deploy-functions` a required check so a failure is visible on the PR.
-- Azure Monitor alert on Function App deployment failures.
+**The real gap is therefore alerting and ownership, not workflow configuration.** Three red
+production-deploy runs sat unlooked-at for two weeks. Making an already-blocking job "more
+blocking" would change nothing.
 
-**Done when:** a deliberately failed `deploy-functions` run produces a notification the
-operator actually receives.
+Remaining options, given that:
+- A `notify-failure` job that opens a GitHub Issue when a deploy run fails, so a failure
+  lands somewhere with an owner rather than only on a tab nobody opens.
+- Confirm GitHub's own Actions failure notifications are enabled for the operator account.
+- `deploy-functions` cannot become a required PR check — it only runs on push to `main`.
+
+**Done when:** a failed production deploy reaches the operator somewhere other than the
+Actions tab.
 
 ---
 
