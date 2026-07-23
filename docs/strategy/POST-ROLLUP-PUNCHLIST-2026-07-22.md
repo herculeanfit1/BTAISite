@@ -184,8 +184,29 @@ re-link inside the verification window or to automate that re-link.
    Granting it expands what a compromised workflow could reach, so it is surfaced rather
    than silently taken.
 
-**Until a decision lands, every merge to `main` takes the contact form down until someone
-re-links by hand.** That is the operating reality, not a caveat.
+### Decision taken 2026-07-23: option 3, scoped self-heal
+
+The operator chose self-heal. It is implemented and open as a pull request, waiting on one
+role assignment that only the operator can make.
+
+The pipeline re-links after each deploy, but the naive form of that step is **more
+dangerous than the bug**. Re-linking 28 seconds after a deploy finished corrupted the
+routing so the backend captured `/` instead of `/api/*`: every page served the Azure
+Functions placeholder, and unlinking did **not** recover it — the site then returned empty
+`200`s until a forced redeploy. Twenty-one minutes of full outage, self-inflicted, while
+fixing a partial one.
+
+Re-links at 4, 6, 17 and 18 minutes were all clean, so the step waits for `builds/default`
+to report `Ready` and to have been untouched for five minutes, refuses to touch the backend
+if that never happens, and verifies the **homepage** as well as the API — unlinking itself
+immediately if the homepage comes back as the placeholder.
+
+Recovery timing also varies more than expected: ~15 seconds on a quiet platform, ~4.5
+minutes when a re-link races a deploy's own propagation. The verification poll was widened
+accordingly.
+
+**Until that role assignment is made, every merge to `main` takes the contact form down
+until someone re-links by hand.** That is the operating reality, not a caveat.
 
 **Three stale references to the evacuated subscription have now surfaced, in three
 different systems:**
@@ -390,6 +411,32 @@ aliases no longer point into it.
   return 200 and serve English content. `next-intl` is installed but never imported. This is
   pre-existing and was explicitly out of scope; it is now more visible because the locale
   segment is validated and the legal pages exist in locale variants.
+
+  **Attempted and reverted 2026-07-23.** Collapsing these onto canonical paths with
+  `redirects()` in `next.config.js` was tried and rolled back within fifteen minutes. Two
+  findings, both worth keeping:
+
+  1. **`redirects()` is not honoured by the Static Web Apps hybrid adapter.** The locale
+     paths returned 404, never 301. This is the third Next.js/config mechanism the adapter
+     ignores, after `staticwebapp.config.json` `globalHeaders` and `middleware.ts`.
+  2. **Declaring it broke the adapter's whole route map.** Every Next-rendered page except
+     the homepage began returning 404 — including `/services/*`, which the change never
+     touched, and the four footer-linked legal pages. Verified against the SWA origin, so
+     not caching.
+
+  The prediction in that PR — that keeping the `[locale]` scaffolding made the failure mode
+  "no change, not pages disappear" — was wrong in the worst direction. It was based on
+  `redirects()` working correctly against a local `next start`, which is a different runtime
+  from the adapter. **Local Next behaviour is not evidence about this deployment.** That is
+  the same trap as `globalHeaders`, and it has now been fallen into twice.
+
+  Remaining option is explicit `routes[]` entries in `staticwebapp.config.json` — the
+  mechanism already producing real 301s for `/about`, `/solutions` and `/contact`. Fifteen
+  literal entries, no clever patterns. Not yet attempted.
+
+  Unrelated loose end now closed: `/fr` had been returning 404 while `/en` and `/es`
+  returned 200. After the revert redeploy all three return 200, so that was a stale build
+  artifact rather than a routing defect.
 - **`/contact` is no longer in the sitemap** — it is a 301, and sitemaps should list
   destinations. The sitemap now carries five canonical URLs, not six.
 - **Coverage floors.** The suite went 126 → 105 + 5 new = 110 across two cleanup PRs, purely
