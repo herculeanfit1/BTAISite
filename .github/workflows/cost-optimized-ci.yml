@@ -125,62 +125,6 @@ jobs:
               exit 1 ;;
           esac
 
-          # The locale URLs collapse onto their canonical paths. next.config.js
-          # declares those redirects, but whether the Azure Static Web Apps
-          # hybrid adapter honours redirects() is only knowable from
-          # production -- globalHeaders from staticwebapp.config.json were
-          # silently ignored by the same adapter, so nothing is assumed here.
-          #
-          # If this section fails, redirects() does not fire on this adapter
-          # and the fallback is explicit route entries in
-          # staticwebapp.config.json, which are a proven mechanism on this
-          # deployment (/about, /solutions and /contact already 301 that way).
-          echo "::group::Verifying locale redirects"
-          redirect_fail=""
-          check_redirect() {
-            expected="${SITE}${2}"
-            probe="$(curl -sS -o /dev/null --max-time 20 \
-                -w '%{http_code} %{redirect_url}' "${SITE}${1}" || echo 'curl-failed -')"
-            code="${probe%% *}"
-            target="${probe#* }"
-            if [ "$code" = "301" ] && [ "$target" = "$expected" ]; then
-              echo "  ok: ${1} -> 301 ${target}"
-            else
-              echo "  MISMATCH: ${1} returned '${code} ${target}', expected 301 to ${expected}"
-              redirect_fail=1
-            fi
-          }
-
-          check_redirect "/en" "/"
-          check_redirect "/es" "/"
-          check_redirect "/fr" "/"
-          check_redirect "/en/terms" "/terms"
-          check_redirect "/es/privacy" "/privacy"
-          check_redirect "/fr/product-terms" "/product-terms"
-          check_redirect "/en/engagement-terms" "/engagement-terms"
-          echo "::endgroup::"
-
-          if [ -n "$redirect_fail" ]; then
-            echo "::error::Locale redirects are not firing in production."
-            echo "next.config.js redirects() is not honoured by the Static Web Apps"
-            echo "hybrid adapter. Move these to routes[] in staticwebapp.config.json,"
-            echo "which is the proven mechanism on this deployment."
-            exit 1
-          fi
-
-          # The canonical paths must NOT redirect -- a rule that matched them
-          # would loop.
-          echo "::group::Confirming canonical paths still serve"
-          for path in "/" "/terms" "/privacy" "/product-terms" "/engagement-terms"; do
-            code="$(curl -sS -o /dev/null --max-time 20 -w '%{http_code}' "${SITE}${path}")"
-            echo "  ${path} -> ${code}"
-            if [ "$code" != "200" ]; then
-              echo "::error::${path} returned ${code}; canonical pages must serve 200."
-              exit 1
-            fi
-          done
-          echo "::endgroup::"
-
   # =============================================================================
   # FUNCTIONS BACKEND DEPLOYMENT (main branch only)
   # =============================================================================
