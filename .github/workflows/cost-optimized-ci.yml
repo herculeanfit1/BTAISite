@@ -214,3 +214,76 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE }}
           action: "close"
           app_location: "/"
+
+  # =============================================================================
+  # FAILURE NOTIFICATION (main branch only)
+  # =============================================================================
+  # Production deploy failures were never suppressed -- deploy-functions has no
+  # continue-on-error, and the runs on 2026-07-03, 07-06 and 07-07 are all
+  # recorded as failures. The problem was that a failure only ever appeared on
+  # the Actions tab, so all three sat unlooked-at for two weeks while no API
+  # change could ship.
+  #
+  # This job gives a failed production deploy an owner. It reuses one open
+  # issue rather than filing a new one per run, so a repeatedly broken deploy
+  # is a single conversation instead of a pile of duplicates.
+  notify-failure:
+    if: >-
+      always()
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && (needs.deploy-main-to-azure.result == 'failure'
+          || needs.deploy-functions.result == 'failure')
+    needs: [deploy-main-to-azure, deploy-functions]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Open or update the deploy-failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          SITE_RESULT: ${{ needs.deploy-main-to-azure.result }}
+          FUNC_RESULT: ${{ needs.deploy-functions.result }}
+        run: |
+          set -uo pipefail
+
+          gh label create deploy-failure \
+            --color B60205 \
+            --description "A push to main failed to deploy" >/dev/null 2>&1 || true
+
+          body="$(printf '%s\n' \
+            "A production deploy from \`main\` failed." \
+            "" \
+            "| Job | Result |" \
+            "|---|---|" \
+            "| \`deploy-main-to-azure\` | \`${SITE_RESULT}\` |" \
+            "| \`deploy-functions\` | \`${FUNC_RESULT}\` |" \
+            "" \
+            "- Commit: \`${SHA}\`" \
+            "- Run: ${RUN_URL}" \
+            "" \
+            "If \`deploy-main-to-azure\` failed at *Post-deployment verification*, the site" \
+            "deployed but \`/api/*\` did not come back -- the failing log prints the re-link" \
+            "command. If it failed at *Re-link Function App backend*, check that the deploy" \
+            "principal still holds its role on the Static Web App." \
+            "" \
+            "Close this issue once the deploy is green again.")"
+
+          existing="$(gh issue list --repo "$REPO" --state open \
+            --label deploy-failure --limit 1 --json number --jq '.[0].number // empty')"
+
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPO" --body "$body"
+            echo "Commented on existing issue #${existing}"
+          else
+            gh issue create --repo "$REPO" \
+              --title "Production deploy failing on main" \
+              --label deploy-failure \
+              --body "$body"
+          fi
