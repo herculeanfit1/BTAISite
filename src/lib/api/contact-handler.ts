@@ -45,6 +45,31 @@ export interface ContactHandlerResult {
 // request ceiling, instead of letting the platform kill us with an opaque 5xx.
 const HANDLER_BUDGET_MS = 25_000;
 
+/**
+ * True when this is a non-production (preview) environment, where real
+ * email/HubSpot/queue side effects must be skipped. Preview environments inherit
+ * the production app settings — including the real Resend/HubSpot/queue
+ * credentials (the Key Vault firewall blocks SWA KV references, so secrets are
+ * plain settings that propagate) — so a real submission there would send real
+ * email and write real records.
+ *
+ * Two independent signals, either sufficient:
+ *  - PREVIEW_BUILD: baked into the build by the deploy-pr-to-azure job and inlined
+ *    via next.config `env`. Deterministic and unspoofable at runtime; the
+ *    production build (deploy-main-to-azure) never sets it.
+ *  - x-forwarded-host: the managed backend's own `host` header is an internal
+ *    *.azurewebsites.net host, but x-forwarded-host carries the real public host
+ *    (`<app>-<pr>.<region>.azurestaticapps.net` for previews).
+ *
+ * Fail-safe for production: the production build has no PREVIEW_BUILD, and its
+ * public host is the apex / www / origin, none of which match the preview pattern.
+ */
+function isNonProduction(headers: Headers): boolean {
+  if (process.env.PREVIEW_BUILD === "true") return true;
+  const fwd = (headers.get("x-forwarded-host") || "").toLowerCase();
+  return fwd.endsWith(".azurestaticapps.net") && /-\d+\./.test(fwd);
+}
+
 function serviceUnavailable(corsOrigin: string): ContactHandlerResult {
   return {
     status: 503,
@@ -105,6 +130,21 @@ export async function handleContact(
       };
     }
     apiLog.info(`[contact ${cid}] validated`, { email: parsed.data.email });
+
+    // Preview environments inherit production secrets, so skip all real side
+    // effects there. Validation + honeypot still run (the form stays testable in
+    // previews), but no real email/HubSpot/queue writes occur.
+    if (isNonProduction(input.headers)) {
+      apiLog.info(`[contact ${cid}] preview environment — skipping real email/HubSpot/queue`);
+      return {
+        status: 200,
+        body: {
+          success: true,
+          message: "Thank you for your message! We'll get back to you soon.",
+        },
+        corsOrigin,
+      };
+    }
 
     const formData: ContactFormData = {
       ...parsed.data,
