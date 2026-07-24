@@ -13,43 +13,31 @@ stale within the hour.
 
 ## 0. Contact form outage — fixed, but the failure can recur on any deploy
 
-> **RESOLVED 2026-07-24 — READ THIS FIRST.** The contact form is being restored via
-> **Next.js route handlers** (`app/api/*/route.ts`); the linked backend is **retired**.
-> `/api/*` is now served natively by the SWA managed hybrid backend — there is no linked
-> backend and never will be, so a deploy can no longer drop the routing. **Do NOT re-link
-> the Function App** (Microsoft documents it as unsupported for hybrid Next.js; the Portal
-> won't offer it) — the `az staticwebapp backends unlink && link` playbook below is
-> **obsolete**, kept only as historical record. Full resolution and the closed
-> linked-backend saga: `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
+> **CLOSED 2026-07-24 — READ THIS FIRST.** The contact form is **fully restored** via
+> **Next.js route handlers** (`app/api/*/route.ts`), merged to `main` and verified in
+> production end to end: `/api/health` → `200 {"status":"ok"}`, a valid `POST /api/contact`
+> → `{"success":true}`, an invalid payload → JSON `400`. The linked backend is **retired**:
+> `/api/*` is served natively by the SWA managed hybrid backend, inside the *same* deploy
+> artifact as the pages, so a deploy can no longer drop the routing — **the failure mode
+> this entire section documents cannot recur.** A preview-safety gate (`PREVIEW_BUILD` build
+> flag + `x-forwarded-host` pattern) makes PR previews short-circuit real email/HubSpot/queue
+> side effects after validation, so preview submissions no longer write real records
+> (verified: a valid preview submission returned `200` while the classify queue stayed flat).
+> The Function App's always-ready instance is set to **0**, so it costs nothing while it
+> awaits operator deletion after the soak (Phase 5). **Do NOT re-link the Function App** —
+> unsupported for hybrid Next.js; every `az staticwebapp backends` command anywhere below is
+> **obsolete** and must not be run, kept only as historical post-mortem. Full resolution and
+> the closed linked-backend saga: `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
 >
-> _(Prior resting state, now superseded — kept for history:)_ The backend was deliberately
-> UNLINKED (pages up, `/api/*` down) as a safe state after the 2026-07-23 self-heal churn.
+> **One genuinely-open thread from this section:** the audit of remaining `cd461b28`
+> (pre-evacuation subscription) references across all systems — tracked in HerculeanInfra's
+> `azure-sub-evacuation` project, not here.
 >
-> **Why unlinked instead of both-working:** a healthy linked backend serves both the pages
-> and `/api/*` together — that was the normal state all day. But re-establishing that link
-> requires an `az staticwebapp backends unlink && link`, and on 2026-07-23 that operation
-> was run more than a dozen times in a few hours (self-heal attempts, redeploys, manual
-> fixes). The Static Web Apps edge routing was churned into an unstable state where each
-> re-link kept landing in a **hijack** — the backend capturing the *whole* site (`/` served
-> the Azure Functions placeholder, sub-pages 404) instead of only `/api/*`. Repeated
-> "fixing" made it worse. The site was unlinked to give users the real pages back, and the
-> backend left alone to let the edge settle.
->
-> **The one remaining step — do this during a CALM window** (no deploy in the last ~15 min,
-> no recent backend operations):
-> ```
-> az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1
-> az staticwebapp backends link   --name bridgingtrust-website --resource-group BTAI-RG1 \
->   --backend-resource-id "/subscriptions/9d3c1bcc-ef6b-4b23-bd30-c63f7b98b4dd/resourceGroups/BTAI-RG1/providers/Microsoft.Web/sites/func-btai-site-prod" \
->   --backend-region eastus2
-> ```
-> Then verify the **custom domain** (not the `*.azurestaticapps.net` origin — they route
-> differently): `https://bridgingtrust.ai/` must show the real title (not "Your Azure
-> Function App is up and running"), `https://bridgingtrust.ai/terms` must be `200`, and
-> `https://bridgingtrust.ai/api/health` must return `{"status":"ok"}`. If `/` shows the
-> placeholder, it hijacked — `unlink` again, wait longer, retry once. This operation
-> succeeded cleanly many times earlier in the day when the edge was calm; the churn was the
-> problem, not the command.
+> _(Everything below this banner is the historical post-mortem of the linked-backend failure
+> and its abandoned fixes — kept as the record of why the route-handler port was the right
+> call. None of it is actionable: there is no backend to link, unlink, or re-link, and the
+> "unlink && link" commands that appear below described a resting state that no longer
+> exists.)_
 
 ### Plan to get BOTH pages and the contact form up — executed 2026-07-24 (route-handler port)
 
@@ -372,14 +360,17 @@ immediately and it has been green on every run since.
 production-deploy runs sat unlooked-at for two weeks. Making an already-blocking job "more
 blocking" would change nothing.
 
-Remaining options, given that:
-- A `notify-failure` job that opens a GitHub Issue when a deploy run fails, so a failure
-  lands somewhere with an owner rather than only on a tab nobody opens.
-- Confirm GitHub's own Actions failure notifications are enabled for the operator account.
-- `deploy-functions` cannot become a required PR check — it only runs on push to `main`.
+**Resolved (code) 2026-07-24:** the `notify-failure` job is implemented and on `main`. On a
+failed `deploy-main-to-azure` it opens — or comments on a single reused — GitHub Issue labelled
+`deploy-failure`, so a red production deploy now lands somewhere with an owner instead of only
+on a tab nobody opens. It watches `deploy-main-to-azure` (the `deploy-functions` job was retired
+with the API consolidation, so the "cannot be a required PR check" caveat is moot).
 
-**Done when:** a failed production deploy reaches the operator somewhere other than the
-Actions tab.
+**Remaining — operator, not code:** confirm GitHub's own Actions failure notifications are
+enabled for the operator account, as a second, out-of-band channel.
+
+**Done when:** a failed production deploy reaches the operator somewhere other than the Actions
+tab — **met** by the `notify-failure` job; the account-notification toggle is belt-and-braces.
 
 ---
 
@@ -444,7 +435,14 @@ discrepancy was theoretical, and the file no longer asserts it.
 than one. If a longer max-age or `preload` is wanted, that is now a platform/Cloudflare
 decision.
 
+**Confirmed deliberate 2026-07-24:** live `https://bridgingtrust.ai` returns exactly **one**
+`strict-transport-security: max-age=31536000; includeSubDomains` header (verified by direct
+response-header inspection), and `next.config.js` intentionally omits HSTS so no second,
+differing header is emitted. The posture is deliberate and correct; a longer max-age or
+`preload` remains an optional platform/Cloudflare choice, not a defect. **Closed.**
+
 **Done when:** the current value is confirmed deliberate, or changed at the platform layer.
+✅ Confirmed deliberate.
 
 ---
 
@@ -562,11 +560,21 @@ That record is fake data in the CRM and should be removed. It is listed here rat
 done automatically because deleting CRM records is not something this tooling should do on
 its own.
 
-Every subsequent probe used a deliberately invalid payload that Zod rejects before any
-email or CRM write, so **only that one submission needs cleaning up** — later 400s created
-nothing.
+Every subsequent probe on 2026-07-22 used a deliberately invalid payload that Zod rejects
+before any email or CRM write, so those later 400s created nothing.
 
-**Done when:** the contact is deleted from HubSpot and the notification emails are cleared.
+**Additional cleanup from the 2026-07-24 preview-safety work.** While proving the preview gate,
+one valid submission reached a PR preview **before** the gate was in place, and it did create a
+real record: `preview-safety-test@bridgingtrust.ai`. The classify queue incremented `0 → 1`
+exactly once at that moment, which confirms a HubSpot contact was upserted and the
+confirmation/admin emails were sent (the enqueue only fires after a successful HubSpot upsert).
+That contact and its emails should be removed too. The **final** verification submission
+(`preview-gate-check2@bridgingtrust.ai`) ran **after** the gate was live and created nothing —
+the queue stayed flat `0 → 0` — so it needs no cleanup.
+
+**Done when:** both real test contacts — Terence's ~8:50 PM CDT 2026-07-22 submission and
+`preview-safety-test@bridgingtrust.ai` — are deleted from HubSpot and their notification emails
+cleared.
 
 ---
 
