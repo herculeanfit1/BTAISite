@@ -13,6 +13,97 @@ stale within the hour.
 
 ## 0. Contact form outage — fixed, but the failure can recur on any deploy
 
+> **LIVE STATE as of 2026-07-23 ~4:24 PM CDT — READ THIS FIRST.**
+> The Static Web App's backend is **deliberately UNLINKED**. That means: the marketing
+> site (all pages) is **up**, and the contact form (`/api/*`) is **down**. This is a chosen
+> safe resting state, not a bug.
+>
+> **Why unlinked instead of both-working:** a healthy linked backend serves both the pages
+> and `/api/*` together — that was the normal state all day. But re-establishing that link
+> requires an `az staticwebapp backends unlink && link`, and on 2026-07-23 that operation
+> was run more than a dozen times in a few hours (self-heal attempts, redeploys, manual
+> fixes). The Static Web Apps edge routing was churned into an unstable state where each
+> re-link kept landing in a **hijack** — the backend capturing the *whole* site (`/` served
+> the Azure Functions placeholder, sub-pages 404) instead of only `/api/*`. Repeated
+> "fixing" made it worse. The site was unlinked to give users the real pages back, and the
+> backend left alone to let the edge settle.
+>
+> **The one remaining step — do this during a CALM window** (no deploy in the last ~15 min,
+> no recent backend operations):
+> ```
+> az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1
+> az staticwebapp backends link   --name bridgingtrust-website --resource-group BTAI-RG1 \
+>   --backend-resource-id "/subscriptions/9d3c1bcc-ef6b-4b23-bd30-c63f7b98b4dd/resourceGroups/BTAI-RG1/providers/Microsoft.Web/sites/func-btai-site-prod" \
+>   --backend-region eastus2
+> ```
+> Then verify the **custom domain** (not the `*.azurestaticapps.net` origin — they route
+> differently): `https://bridgingtrust.ai/` must show the real title (not "Your Azure
+> Function App is up and running"), `https://bridgingtrust.ai/terms` must be `200`, and
+> `https://bridgingtrust.ai/api/health` must return `{"status":"ok"}`. If `/` shows the
+> placeholder, it hijacked — `unlink` again, wait longer, retry once. This operation
+> succeeded cleanly many times earlier in the day when the edge was calm; the churn was the
+> problem, not the command.
+
+### Plan to get BOTH pages and the contact form up — not yet executed
+
+**The reframing that matters:** a stable both-working state is not hypothetical — it existed
+for two months. The original linked backend was created 2026-04-18 and **survived at least
+four production deploys** (2026-04-20, 05-11, 05-18, 06-17) with the contact form working
+the whole time. It only broke on 06-23, when the subscription evacuation changed the
+Function App's resource ID out from under it — a stale-pointer problem, not a
+link-mechanism problem.
+
+That directly contradicts what every link created on 2026-07-23 did: dropped by the very
+next deploy, and prone to the hijack. **So the real question is not "how do we re-link" but
+"why is a link created today fragile when the original was stable for months."** Candidate
+explanations, none yet confirmed:
+
+- **Azure changed deploy behaviour.** `Azure/static-web-apps-deploy@v1` runs a floating
+  `mcr.microsoft.com/appsvc/staticappsclient:stable` image; Microsoft could have changed how
+  a deploy treats a linked backend sometime between 06-17 and today. The last *successful*
+  deploy before today was 06-17 (07-03/06/07 all failed on the stale `AZURE_SUBSCRIPTION_ID`),
+  so there is no deploy between 06-17 and today to narrow the window.
+- **Creation method.** The original link's creation method is unknown; if it was made in the
+  Azure Portal, a Portal-created link may differ from a CLI-created one. The CLI was seen
+  passing the whole backend resource ID as the linked-backend *name*
+  (`.../linkedBackends/https:/management.azure.com/.../sites`), which is at least cosmetically
+  wrong.
+- **The churn.** Today's fragility may partly be the dozen-plus rapid operations, not an
+  intrinsic property of new links. The first deploy drop (#36) happened before much churn,
+  which argues against churn being the *whole* story.
+
+**The plan is therefore diagnostic, not just "retry." Run it in a genuinely calm window —
+best the next morning, after the edge has settled overnight with zero operations.**
+
+1. **Confirm calm.** No deploy or backend operation for several hours. Site unlinked, pages
+   up (current state).
+2. **Create ONE link — prefer the Azure Portal** (the Static Web App → Settings → APIs →
+   Production → Link → the Function App in sub `9d3c1bcc`, RG `BTAI-RG1`). This most closely
+   reproduces the original stable link and sidesteps the CLI's malformed-name behaviour. CLI
+   is the fallback (a single `link`; no preceding `unlink` needed while already unlinked).
+3. **Verify healthy on the custom domain** and confirm it stays healthy for ~10 minutes:
+   `/` real title, `/terms` 200, `/api/health` JSON, a real `POST /api/contact` returning
+   the success shape. If it hijacks, `unlink`, wait, and record it — that means link
+   *creation* is the fault.
+4. **Test deploy survival — the decisive experiment.** With a confirmed-healthy link,
+   trigger ONE deploy and watch `/api` on the custom domain:
+   - **Survives** → both-up is stable exactly as it was April–June. Leave it linked, never
+     touch it, and detection (the post-deploy step) stays as the safety net. Done.
+   - **Drops** → deploys reliably reset new links. Then both-up requires re-linking after
+     each (infrequent) deploy — the current detection-only + manual model — and the only way
+     to avoid that is the fallback below.
+5. **Record the outcome** here and in the CI comments so the standing model is written down.
+
+**Fallback if a clean link still won't survive deploys:** keep detection-only (pages always
+up; a human re-links `/api` in ~30 s after each deploy, during calm). The last-resort
+alternative is to stop using a linked backend entirely and call the Function App directly
+via a rewrite — which re-exposes the Function App to the public internet (a security
+trade-off previously declined) but removes the linked-backend fragility altogether.
+
+**Honest status:** which branch of step 4 we land on is genuinely unknown. The encouraging
+fact is that a stable both-up configuration demonstrably existed for two months, so this is
+about reproducing a known-good state, not inventing one.
+
 **Recorded here because it is the third instance of the same root cause, and the pattern
 matters more than the fix.**
 
