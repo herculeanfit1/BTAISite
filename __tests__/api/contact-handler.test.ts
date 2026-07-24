@@ -55,6 +55,7 @@ type Body = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  delete process.env.PREVIEW_BUILD;
   mockSend.mockResolvedValue({ success: true, message: "ok" });
   mockUpsert.mockResolvedValue({
     success: true,
@@ -141,12 +142,9 @@ describe("handleContact", () => {
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
   });
 
-  it("skips all real side effects in a preview environment (host-based)", async () => {
-    const r = await handleContact(
-      input("POST", validBody, {
-        host: "wonderful-bush-0e888f30f-55.eastus2.6.azurestaticapps.net",
-      }),
-    );
+  it("skips all real side effects when PREVIEW_BUILD=true (build flag)", async () => {
+    process.env.PREVIEW_BUILD = "true";
+    const r = await handleContact(input("POST", validBody));
     expect(r.status).toBe(200);
     expect(r.body).toEqual({
       success: true,
@@ -157,21 +155,28 @@ describe("handleContact", () => {
     expect(mockEnqueue).not.toHaveBeenCalled();
   });
 
-  it("still validates in a preview (invalid payload → 400, no side effects)", async () => {
+  it("skips real side effects on a preview x-forwarded-host (backup signal)", async () => {
     const r = await handleContact(
-      input(
-        "POST",
-        { email: "bad", message: "" },
-        { host: "wonderful-bush-0e888f30f-55.eastus2.6.azurestaticapps.net" },
-      ),
+      input("POST", validBody, {
+        "x-forwarded-host":
+          "wonderful-bush-0e888f30f-55.eastus2.6.azurestaticapps.net",
+      }),
     );
+    expect(r.status).toBe(200);
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockEnqueue).not.toHaveBeenCalled();
+  });
+
+  it("still validates in a preview (invalid payload → 400, no side effects)", async () => {
+    process.env.PREVIEW_BUILD = "true";
+    const r = await handleContact(input("POST", { email: "bad", message: "" }));
     expect(r.status).toBe(400);
     expect(mockSend).not.toHaveBeenCalled();
   });
 
-  it("sends normally on the production apex host", async () => {
+  it("sends normally in production (no PREVIEW_BUILD, apex x-forwarded-host)", async () => {
     const r = await handleContact(
-      input("POST", validBody, { host: "bridgingtrust.ai" }),
+      input("POST", validBody, { "x-forwarded-host": "bridgingtrust.ai" }),
     );
     expect(r.status).toBe(200);
     expect(mockSend).toHaveBeenCalledTimes(1);

@@ -46,17 +46,28 @@ export interface ContactHandlerResult {
 const HANDLER_BUDGET_MS = 25_000;
 
 /**
- * True for SWA preview environments (host `<app>-<pr>.<region>.azurestaticapps.net`).
- * Previews inherit the production app settings — including the real
- * Resend/HubSpot/queue credentials (the Key Vault firewall blocks SWA KV
- * references, so secrets are plain settings that propagate) — so a real
- * submission there would send real email and write real records. Fail-safe for
- * production: the apex, www, and the SWA origin never match, so production always
- * sends; only an unexpected preview host would fall through, never production.
+ * True when this is a non-production (preview) environment, where real
+ * email/HubSpot/queue side effects must be skipped. Preview environments inherit
+ * the production app settings — including the real Resend/HubSpot/queue
+ * credentials (the Key Vault firewall blocks SWA KV references, so secrets are
+ * plain settings that propagate) — so a real submission there would send real
+ * email and write real records.
+ *
+ * Two independent signals, either sufficient:
+ *  - PREVIEW_BUILD: baked into the build by the deploy-pr-to-azure job and inlined
+ *    via next.config `env`. Deterministic and unspoofable at runtime; the
+ *    production build (deploy-main-to-azure) never sets it.
+ *  - x-forwarded-host: the managed backend's own `host` header is an internal
+ *    *.azurewebsites.net host, but x-forwarded-host carries the real public host
+ *    (`<app>-<pr>.<region>.azurestaticapps.net` for previews).
+ *
+ * Fail-safe for production: the production build has no PREVIEW_BUILD, and its
+ * public host is the apex / www / origin, none of which match the preview pattern.
  */
-function isPreviewHost(headers: Headers): boolean {
-  const host = (headers.get("host") || "").toLowerCase();
-  return host.endsWith(".azurestaticapps.net") && /-\d+\./.test(host);
+function isNonProduction(headers: Headers): boolean {
+  if (process.env.PREVIEW_BUILD === "true") return true;
+  const fwd = (headers.get("x-forwarded-host") || "").toLowerCase();
+  return fwd.endsWith(".azurestaticapps.net") && /-\d+\./.test(fwd);
 }
 
 function serviceUnavailable(corsOrigin: string): ContactHandlerResult {
@@ -123,7 +134,7 @@ export async function handleContact(
     // Preview environments inherit production secrets, so skip all real side
     // effects there. Validation + honeypot still run (the form stays testable in
     // previews), but no real email/HubSpot/queue writes occur.
-    if (isPreviewHost(input.headers)) {
+    if (isNonProduction(input.headers)) {
       apiLog.info(`[contact ${cid}] preview environment — skipping real email/HubSpot/queue`);
       return {
         status: 200,
