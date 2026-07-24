@@ -9,7 +9,12 @@
     "          and silently had no effect; the site served zero security headers as a",
     "          result. They have been removed rather than left as a decoy.",
     "Response headers (CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)",
-    "are now served from next.config.js headers(). Edit them there, not here."
+    "are now served from next.config.js headers(). Edit them there, not here.",
+    "LOCALE REDIRECTS: /en /es /fr and their five sub-pages 301 to the canonical",
+    "English path. next-intl is installed but never wired up, so every locale served",
+    "identical English at 200 (duplicate content). These use routes[].redirect — the",
+    "same mechanism proven to work above — NOT next.config.js redirects(), which the",
+    "hybrid adapter ignores and which broke the entire route map when tried 2026-07-23."
   ],
   "platform": {
     "apiRuntime": "node:20"
@@ -33,7 +38,22 @@
       "route": "/contact",
       "redirect": "/#contact",
       "statusCode": 301
-    }
+    },
+    { "route": "/en", "redirect": "/", "statusCode": 301 },
+    { "route": "/en/terms", "redirect": "/terms", "statusCode": 301 },
+    { "route": "/en/privacy", "redirect": "/privacy", "statusCode": 301 },
+    { "route": "/en/engagement-terms", "redirect": "/engagement-terms", "statusCode": 301 },
+    { "route": "/en/product-terms", "redirect": "/product-terms", "statusCode": 301 },
+    { "route": "/es", "redirect": "/", "statusCode": 301 },
+    { "route": "/es/terms", "redirect": "/terms", "statusCode": 301 },
+    { "route": "/es/privacy", "redirect": "/privacy", "statusCode": 301 },
+    { "route": "/es/engagement-terms", "redirect": "/engagement-terms", "statusCode": 301 },
+    { "route": "/es/product-terms", "redirect": "/product-terms", "statusCode": 301 },
+    { "route": "/fr", "redirect": "/", "statusCode": 301 },
+    { "route": "/fr/terms", "redirect": "/terms", "statusCode": 301 },
+    { "route": "/fr/privacy", "redirect": "/privacy", "statusCode": 301 },
+    { "route": "/fr/engagement-terms", "redirect": "/engagement-terms", "statusCode": 301 },
+    { "route": "/fr/product-terms", "redirect": "/product-terms", "statusCode": 301 }
   ],
   "mimeTypes": {
     ".json": "application/json",
