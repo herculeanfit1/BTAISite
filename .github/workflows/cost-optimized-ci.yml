@@ -75,13 +75,25 @@ jobs:
           SITE="https://bridgingtrust.ai"
           ORIGIN="https://wonderful-bush-0e888f30f.6.azurestaticapps.net"
 
-          echo "::group::Waiting for /api/health"
-          ok=""
-          for i in $(seq 1 18); do
-            body="$(curl -sS --max-time 20 "$SITE/api/health" 2>/dev/null || true)"
-            if printf '%s' "$body" | grep -q '"status"'; then
-              echo "attempt $i: healthy -- $body"
-              ok=1
+          # Verify /api/* after the deploy, accepting EITHER the SWA origin OR the
+          # custom domain (apex) as healthy. Post-deploy the apex
+          # (bridgingtrust.ai via Cloudflare) lags the origin by several minutes
+          # while routing propagates, so polling the apex alone produced a false
+          # failure on every deploy. Both hit the same Next.js managed backend
+          # (there is no linked backend as of 2026-07-24), so origin-healthy is a
+          # sound signal that the deploy worked; the apex catches up shortly and
+          # is reported below as a non-blocking check.
+          health_url=""
+          echo "::group::Waiting for /api/health (origin or apex)"
+          for i in $(seq 1 24); do
+            for u in "$ORIGIN" "$SITE"; do
+              if printf '%s' "$(curl -sS --max-time 15 "$u/api/health" 2>/dev/null || true)" | grep -q '"status"'; then
+                health_url="$u"
+                break
+              fi
+            done
+            if [ -n "$health_url" ]; then
+              echo "attempt $i: healthy via $health_url"
               break
             fi
             echo "attempt $i: not ready yet"
@@ -89,23 +101,22 @@ jobs:
           done
           echo "::endgroup::"
 
-          if [ -z "$ok" ]; then
-            echo "::error::/api/* is not reachable four minutes after deploy."
+          if [ -z "$health_url" ]; then
+            echo "::error::/api/* is not reachable on the SWA origin or the apex after deploy."
             echo "/api/* is served by the Next.js app itself (no linked backend), so this"
             echo "means the app or its deploy is broken -- check this run's build and deploy"
             echo "logs and the Static Web App's application settings. Do NOT re-link a"
             echo "Function App; that mechanism is retired and unsupported for hybrid Next.js."
-            echo "Origin check (distinguishes Cloudflare from the SWA itself):"
-            curl -sS -o /dev/null -w '  %{http_code} from SWA origin\n' --max-time 20 "$ORIGIN/api/health" || true
             exit 1
           fi
 
-          # Exercise the lead path itself. An intentionally invalid payload is
-          # rejected by Zod before any email is sent or any CRM record is
-          # written, so this proves the handler runs without creating a lead.
-          echo "::group::Verifying /api/contact reaches its handler"
+          # Exercise the lead path against whichever host reported healthy. An
+          # intentionally invalid payload is rejected by Zod before any email is
+          # sent or any CRM record is written, so this proves the handler runs
+          # without creating a lead.
+          echo "::group::Verifying /api/contact reaches its handler via $health_url"
           probe="$(curl -sS -o /dev/null --max-time 25 -w '%{http_code} %{content_type}' \
-              -X POST "$SITE/api/contact" \
+              -X POST "$health_url/api/contact" \
               -H 'Content-Type: application/json' \
               -d '{"email":"not-an-email","message":""}' || echo 'curl-failed -')"
           status="${probe%% *}"
@@ -122,6 +133,14 @@ jobs:
               echo "instead of reaching the /api/contact route handler."
               exit 1 ;;
           esac
+
+          # Non-blocking: report the apex (what users hit) even if the gate
+          # passed via the origin -- the apex usually settles within minutes.
+          if printf '%s' "$(curl -sS --max-time 15 "$SITE/api/health" 2>/dev/null || true)" | grep -q '"status"'; then
+            echo "apex /api/health healthy."
+          else
+            echo "::warning::apex /api/health not yet propagated (origin healthy); usually settles within minutes."
+          fi
 
   # =============================================================================
   # PR DEPLOYMENT JOB (deployment only)
