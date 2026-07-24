@@ -13,10 +13,17 @@ stale within the hour.
 
 ## 0. Contact form outage — fixed, but the failure can recur on any deploy
 
-> **LIVE STATE as of 2026-07-23 ~4:24 PM CDT — READ THIS FIRST.**
-> The Static Web App's backend is **deliberately UNLINKED**. That means: the marketing
-> site (all pages) is **up**, and the contact form (`/api/*`) is **down**. This is a chosen
-> safe resting state, not a bug.
+> **RESOLVED 2026-07-24 — READ THIS FIRST.** The contact form is being restored via
+> **Next.js route handlers** (`app/api/*/route.ts`); the linked backend is **retired**.
+> `/api/*` is now served natively by the SWA managed hybrid backend — there is no linked
+> backend and never will be, so a deploy can no longer drop the routing. **Do NOT re-link
+> the Function App** (Microsoft documents it as unsupported for hybrid Next.js; the Portal
+> won't offer it) — the `az staticwebapp backends unlink && link` playbook below is
+> **obsolete**, kept only as historical record. Full resolution and the closed
+> linked-backend saga: `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
+>
+> _(Prior resting state, now superseded — kept for history:)_ The backend was deliberately
+> UNLINKED (pages up, `/api/*` down) as a safe state after the 2026-07-23 self-heal churn.
 >
 > **Why unlinked instead of both-working:** a healthy linked backend serves both the pages
 > and `/api/*` together — that was the normal state all day. But re-establishing that link
@@ -44,7 +51,7 @@ stale within the hour.
 > succeeded cleanly many times earlier in the day when the edge was calm; the churn was the
 > problem, not the command.
 
-### Plan to get BOTH pages and the contact form up — not yet executed
+### Plan to get BOTH pages and the contact form up — executed 2026-07-24 (route-handler port)
 
 **The reframing that matters:** a stable both-working state is not hypothetical — it existed
 for two months. The original linked backend was created 2026-04-18 and **survived at least
