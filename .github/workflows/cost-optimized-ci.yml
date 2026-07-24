@@ -37,10 +37,7 @@ jobs:
   deploy-main-to-azure:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # ~5 min deploy + up to ~7 min post-deploy verification (the API poll).
-    # The automated re-link that once needed a 30-minute budget was removed --
-    # see the Post-deployment verification step for why this pipeline detects
-    # the linked-backend drop but no longer repairs it.
+    # ~5 min deploy + up to ~4 min post-deploy verification (the API poll).
     timeout-minutes: 15
 
     steps:
@@ -62,38 +59,41 @@ jobs:
         env:
           NODE_VERSION: "20.19.1"
 
-      # Deploying successfully is not the same as working. On 2026-07-22 a
-      # deploy left every page healthy while /api/* returned the Next.js 404
-      # page, because a Static Web Apps deployment can drop the linked-backend
-      # routing to func-btai-site-prod. The ARM record still read
-      # "provisioningState: Succeeded" throughout, so nothing in Azure looked
-      # wrong. The contact form -- the site's only lead path -- was dead and
-      # the deploy was green.
+      # Deploying successfully is not the same as working. This step checks the
+      # API, not the pages, because the pages were never the thing that broke.
       #
-      # This step exists so that failure is loud. It checks the API, not the
-      # pages, because the pages were never the thing that broke.
-      #
-      # It DETECTS the dropped backend; it does not repair it. An automated
-      # re-link step lived here briefly (#40) and was removed 2026-07-23: a
-      # re-link that raced a deploy corrupted routing so the backend captured
-      # "/" and served the Azure placeholder for 21 minutes, and a later run
-      # left /api down after an RBAC failure. Re-linking by hand is a ~30-second
-      # operation and never caused an outage; automating it repeatedly did. The
-      # remediation command is printed below; a human runs it and re-runs this
-      # job.
+      # As of 2026-07-24, /api/* is served by the Next.js app itself as App Router
+      # route handlers (app/api/*/route.ts) -- there is NO linked backend. A deploy
+      # can no longer "drop" the routing, because the API ships inside the same
+      # artifact as the pages. So if this check fails, the app or its deploy is
+      # broken; it is NOT a dropped link, and re-linking a Function App is not the
+      # fix (Microsoft documents Function App linking as unsupported for hybrid
+      # Next.js). See docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md.
       - name: Post-deployment verification
         run: |
           set -uo pipefail
           SITE="https://bridgingtrust.ai"
           ORIGIN="https://wonderful-bush-0e888f30f.6.azurestaticapps.net"
 
-          echo "::group::Waiting for /api/health"
-          ok=""
-          for i in $(seq 1 18); do
-            body="$(curl -sS --max-time 20 "$SITE/api/health" 2>/dev/null || true)"
-            if printf '%s' "$body" | grep -q '"status"'; then
-              echo "attempt $i: healthy -- $body"
-              ok=1
+          # Verify /api/* after the deploy, accepting EITHER the SWA origin OR the
+          # custom domain (apex) as healthy. Post-deploy the apex
+          # (bridgingtrust.ai via Cloudflare) lags the origin by several minutes
+          # while routing propagates, so polling the apex alone produced a false
+          # failure on every deploy. Both hit the same Next.js managed backend
+          # (there is no linked backend as of 2026-07-24), so origin-healthy is a
+          # sound signal that the deploy worked; the apex catches up shortly and
+          # is reported below as a non-blocking check.
+          health_url=""
+          echo "::group::Waiting for /api/health (origin or apex)"
+          for i in $(seq 1 24); do
+            for u in "$ORIGIN" "$SITE"; do
+              if printf '%s' "$(curl -sS --max-time 15 "$u/api/health" 2>/dev/null || true)" | grep -q '"status"'; then
+                health_url="$u"
+                break
+              fi
+            done
+            if [ -n "$health_url" ]; then
+              echo "attempt $i: healthy via $health_url"
               break
             fi
             echo "attempt $i: not ready yet"
@@ -101,26 +101,22 @@ jobs:
           done
           echo "::endgroup::"
 
-          if [ -z "$ok" ]; then
-            echo "::error::/api/* is not reachable four minutes after deploy."
-            echo "Most likely cause: this deploy dropped the Static Web App's linked backend."
-            echo "Origin check (distinguishes Cloudflare from the SWA itself):"
-            curl -sS -o /dev/null -w '  %{http_code} from SWA origin\n' --max-time 20 "$ORIGIN/api/health" || true
-            echo ""
-            echo "Remediation -- re-link the backend, then re-run this job:"
-            echo "  az staticwebapp backends unlink --name bridgingtrust-website --resource-group BTAI-RG1"
-            echo "  az staticwebapp backends link --name bridgingtrust-website --resource-group BTAI-RG1 \\"
-            echo "    --backend-resource-id /subscriptions/<sub>/resourceGroups/BTAI-RG1/providers/Microsoft.Web/sites/func-btai-site-prod \\"
-            echo "    --backend-region eastus2"
+          if [ -z "$health_url" ]; then
+            echo "::error::/api/* is not reachable on the SWA origin or the apex after deploy."
+            echo "/api/* is served by the Next.js app itself (no linked backend), so this"
+            echo "means the app or its deploy is broken -- check this run's build and deploy"
+            echo "logs and the Static Web App's application settings. Do NOT re-link a"
+            echo "Function App; that mechanism is retired and unsupported for hybrid Next.js."
             exit 1
           fi
 
-          # Exercise the lead path itself. An intentionally invalid payload is
-          # rejected by Zod before any email is sent or any CRM record is
-          # written, so this proves the handler runs without creating a lead.
-          echo "::group::Verifying /api/contact reaches its handler"
+          # Exercise the lead path against whichever host reported healthy. An
+          # intentionally invalid payload is rejected by Zod before any email is
+          # sent or any CRM record is written, so this proves the handler runs
+          # without creating a lead.
+          echo "::group::Verifying /api/contact reaches its handler via $health_url"
           probe="$(curl -sS -o /dev/null --max-time 25 -w '%{http_code} %{content_type}' \
-              -X POST "$SITE/api/contact" \
+              -X POST "$health_url/api/contact" \
               -H 'Content-Type: application/json' \
               -d '{"email":"not-an-email","message":""}' || echo 'curl-failed -')"
           status="${probe%% *}"
@@ -134,56 +130,17 @@ jobs:
             *)
               echo "::error::POST /api/contact returned '$status $ctype'; expected a JSON 400."
               echo "An HTML response means the request fell through to the static site"
-              echo "instead of reaching the Function App."
+              echo "instead of reaching the /api/contact route handler."
               exit 1 ;;
           esac
 
-  # =============================================================================
-  # FUNCTIONS BACKEND DEPLOYMENT (main branch only)
-  # =============================================================================
-  deploy-functions:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Build Functions app
-        working-directory: api
-        run: |
-          npm ci
-          npm run build
-
-      - name: Prepare deployment package
-        working-directory: api
-        run: |
-          mkdir -p staging/dist
-          cp dist/index.js staging/dist/
-          cp dist/index.js.map staging/dist/ 2>/dev/null || true
-          cp host.json staging/
-          cp package.json staging/
-          cp package-lock.json staging/
-          cd staging && npm ci --omit=dev
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
-        with:
-          app-name: func-btai-site-prod
-          package: api/staging
+          # Non-blocking: report the apex (what users hit) even if the gate
+          # passed via the origin -- the apex usually settles within minutes.
+          if printf '%s' "$(curl -sS --max-time 15 "$SITE/api/health" 2>/dev/null || true)" | grep -q '"status"'; then
+            echo "apex /api/health healthy."
+          else
+            echo "::warning::apex /api/health not yet propagated (origin healthy); usually settles within minutes."
+          fi
 
   # =============================================================================
   # PR DEPLOYMENT JOB (deployment only)
@@ -231,23 +188,18 @@ jobs:
   # =============================================================================
   # FAILURE NOTIFICATION (main branch only)
   # =============================================================================
-  # Production deploy failures were never suppressed -- deploy-functions has no
-  # continue-on-error, and the runs on 2026-07-03, 07-06 and 07-07 are all
-  # recorded as failures. The problem was that a failure only ever appeared on
-  # the Actions tab, so all three sat unlooked-at for two weeks while no API
-  # change could ship.
-  #
-  # This job gives a failed production deploy an owner. It reuses one open
-  # issue rather than filing a new one per run, so a repeatedly broken deploy
-  # is a single conversation instead of a pile of duplicates.
+  # A failed production deploy needs an owner. This job reuses one open issue
+  # rather than filing a new one per run, so a repeatedly broken deploy is a
+  # single conversation instead of a pile of duplicates. It now watches only the
+  # single deployment job -- the Functions backend deploy was retired with the
+  # API consolidation (2026-07-24).
   notify-failure:
     if: >-
       always()
       && github.event_name == 'push'
       && github.ref == 'refs/heads/main'
-      && (needs.deploy-main-to-azure.result == 'failure'
-          || needs.deploy-functions.result == 'failure')
-    needs: [deploy-main-to-azure, deploy-functions]
+      && needs.deploy-main-to-azure.result == 'failure'
+    needs: [deploy-main-to-azure]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -262,7 +214,6 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SHA: ${{ github.sha }}
           SITE_RESULT: ${{ needs.deploy-main-to-azure.result }}
-          FUNC_RESULT: ${{ needs.deploy-functions.result }}
         run: |
           set -uo pipefail
 
@@ -281,15 +232,15 @@ jobs:
             "| Job | Result |" \
             "|---|---|" \
             "| \`deploy-main-to-azure\` | \`${SITE_RESULT}\` |" \
-            "| \`deploy-functions\` | \`${FUNC_RESULT}\` |" \
             "" \
             "- Commit: \`${SHA}\`" \
             "- Run: ${RUN_URL}" \
             "" \
-            "If \`deploy-main-to-azure\` failed at *Post-deployment verification*, the" \
-            "deploy dropped the Static Web App's linked backend and \`/api/*\` is down." \
-            "Re-link it, then re-run the job -- the failing log prints the exact" \
-            "\`az staticwebapp backends unlink/link\` commands." \
+            "\`/api/*\` is served by the Next.js app itself (no linked backend), so a" \
+            "failure here means the app or its deploy broke -- check this run's build" \
+            "and deploy logs and the Static Web App application settings. Re-linking a" \
+            "Function App is NOT the fix and must not be attempted (retired 2026-07-24;" \
+            "unsupported for hybrid Next.js)." \
             "" \
             "Close this issue once the deploy is green again.")"
 
@@ -301,9 +252,6 @@ jobs:
             echo "Commented on existing issue #${existing}"
           else
             # Fall back to an unlabelled issue rather than losing the alert.
-            # The label is only there to make the next run find this issue and
-            # comment instead of filing a duplicate; it is not worth dropping a
-            # production-deploy failure over.
             gh issue create --repo "$REPO" \
               --title "Production deploy failing on main" \
               --label deploy-failure \
