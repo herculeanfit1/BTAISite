@@ -45,6 +45,20 @@ export interface ContactHandlerResult {
 // request ceiling, instead of letting the platform kill us with an opaque 5xx.
 const HANDLER_BUDGET_MS = 25_000;
 
+/**
+ * True for SWA preview environments (host `<app>-<pr>.<region>.azurestaticapps.net`).
+ * Previews inherit the production app settings — including the real
+ * Resend/HubSpot/queue credentials (the Key Vault firewall blocks SWA KV
+ * references, so secrets are plain settings that propagate) — so a real
+ * submission there would send real email and write real records. Fail-safe for
+ * production: the apex, www, and the SWA origin never match, so production always
+ * sends; only an unexpected preview host would fall through, never production.
+ */
+function isPreviewHost(headers: Headers): boolean {
+  const host = (headers.get("host") || "").toLowerCase();
+  return host.endsWith(".azurestaticapps.net") && /-\d+\./.test(host);
+}
+
 function serviceUnavailable(corsOrigin: string): ContactHandlerResult {
   return {
     status: 503,
@@ -105,6 +119,21 @@ export async function handleContact(
       };
     }
     apiLog.info(`[contact ${cid}] validated`, { email: parsed.data.email });
+
+    // Preview environments inherit production secrets, so skip all real side
+    // effects there. Validation + honeypot still run (the form stays testable in
+    // previews), but no real email/HubSpot/queue writes occur.
+    if (isPreviewHost(input.headers)) {
+      apiLog.info(`[contact ${cid}] preview environment — skipping real email/HubSpot/queue`);
+      return {
+        status: 200,
+        body: {
+          success: true,
+          message: "Thank you for your message! We'll get back to you soon.",
+        },
+        corsOrigin,
+      };
+    }
 
     const formData: ContactFormData = {
       ...parsed.data,

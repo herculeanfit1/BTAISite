@@ -140,4 +140,41 @@ describe("handleContact", () => {
     expect(r.status).toBe(200);
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
   });
+
+  it("skips all real side effects in a preview environment (host-based)", async () => {
+    const r = await handleContact(
+      input("POST", validBody, {
+        host: "wonderful-bush-0e888f30f-55.eastus2.6.azurestaticapps.net",
+      }),
+    );
+    expect(r.status).toBe(200);
+    expect(r.body).toEqual({
+      success: true,
+      message: "Thank you for your message! We'll get back to you soon.",
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockEnqueue).not.toHaveBeenCalled();
+  });
+
+  it("still validates in a preview (invalid payload → 400, no side effects)", async () => {
+    const r = await handleContact(
+      input(
+        "POST",
+        { email: "bad", message: "" },
+        { host: "wonderful-bush-0e888f30f-55.eastus2.6.azurestaticapps.net" },
+      ),
+    );
+    expect(r.status).toBe(400);
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("sends normally on the production apex host", async () => {
+    const r = await handleContact(
+      input("POST", validBody, { host: "bridgingtrust.ai" }),
+    );
+    expect(r.status).toBe(200);
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+  });
 });
