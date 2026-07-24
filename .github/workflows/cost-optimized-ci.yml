@@ -168,6 +168,8 @@ jobs:
           output_location: ""
         env:
           NODE_VERSION: "20.19.1"
+          # Marks this as a preview build so /api/contact skips real side effects.
+          PREVIEW_BUILD: "true"
 
   # =============================================================================
   # CLEANUP JOB (for PRs)

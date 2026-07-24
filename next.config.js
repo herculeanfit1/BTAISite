@@ -145,6 +145,10 @@ const nextConfig = {
 
   env: {
     NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES: process.env.NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES || 'false',
+    // Baked in at build time. Set to "true" by the deploy-pr-to-azure job so the
+    // preview build can skip real email/HubSpot/queue side effects regardless of
+    // runtime host headers (which do not reliably carry the preview hostname).
+    PREVIEW_BUILD: process.env.PREVIEW_BUILD || '',
   },
 };
 
