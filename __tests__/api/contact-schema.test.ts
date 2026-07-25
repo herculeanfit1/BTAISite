@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { contactFormSchema } from "@/src/lib/api/contact-schema";
-import { INTEREST_TO_INQUIRY_TOPIC } from "@/src/lib/api/hubspot";
+import {
+  INTEREST_TO_INQUIRY_TOPIC,
+  RETIRED_INQUIRY_TOPICS,
+} from "@/src/lib/api/hubspot";
 
 const base = {
   firstName: "A",
@@ -78,6 +81,32 @@ describe("contactFormSchema", () => {
     expect(
       contactFormSchema.safeParse({ ...base, interest: "training" }).success,
     ).toBe(false);
+  });
+
+  it("never maps any interest to a retired inquiry_topic", () => {
+    // The retired options were archived in HubSpot on 2026-07-25. Archiving sets
+    // hidden: true rather than removing the option, so a write to one still
+    // SUCCEEDS — it just quietly repopulates the dead taxonomy with no error to
+    // alert on. Nothing fails loudly if this regresses, so the test is the guard.
+    for (const [slug, topic] of Object.entries(INTEREST_TO_INQUIRY_TOPIC)) {
+      expect(
+        RETIRED_INQUIRY_TOPICS,
+        `"${slug}" maps to retired topic "${topic}"`,
+      ).not.toContain(topic);
+    }
+  });
+
+  it("maps retired slugs to the same topic as their current equivalent", () => {
+    const equivalents: Array<[string, string]> = [
+      ["governance-assessment", "strategy-design"],
+      ["data-readiness", "custom-development"],
+      ["copilot-readiness", "deployment-operations"],
+    ];
+    for (const [retired, current] of equivalents) {
+      expect(INTEREST_TO_INQUIRY_TOPIC[retired]).toBe(
+        INTEREST_TO_INQUIRY_TOPIC[current],
+      );
+    }
   });
 
   it("allows an empty honeypot field", () => {
