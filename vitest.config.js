@@ -42,7 +42,6 @@ export default defineConfig({
         "scripts/**",
         "e2e/**",
         "public/**",
-        "src/uitests/**",
         "performance/**",
         "smoke/**",
         "app/**/*.{js,jsx,ts,tsx}",
