@@ -131,3 +131,199 @@ consumer, so there is no window where a submission can 400 or mis-route.
 
 _Cross-reference: punch-list §7 (`docs/strategy/POST-ROLLUP-PUNCHLIST-2026-07-22.md`). The n8n
 classifier and HubSpot property live in the HerculeanInfra repo._
+
+---
+
+## Execution status & handoff — 2026-07-24 (IN PROGRESS)
+
+Slugs **approved** by TK: `strategy-design` / `custom-development` / `deployment-operations` (+ `general` unchanged).
+
+### Classifier reality (reviewed live via n8n direct-IP access)
+The taxonomy is enforced by a **live LLM classifier**, not just the form enum:
+- Workflow **`btai.lead-intake.schedule.v1`** (id `WgaVq7QEek9OfOk7`), active, on `herc-n8n` (stack 72).
+- Access: **`http://10.0.0.10:5678`** + header `X-N8N-API-KEY` (the "n8n External API" key). The `n8n.bridgingtrust.ai` URL is Cloudflare-Access-gated → 302. Guide: HerculeanInfra `docs/N8N_UNRAID_API_ACCESS_GUIDE.md`.
+- Pipeline: schedule (5 min) → dequeue `btai-lead-classify` → Build LLM Prompt → **Classify & Draft (Bolt llama-server, `nemotron-3-super-120b`)** → Process LLM Result → Update HubSpot Contact → ack → gate/note/task.
+  - ⚠️ An earlier revision of this line claimed this node called Ollama `llama3.1:8b` and needed migrating. **That was wrong** — see the correction in the transparency report below.
+- The LLM **overwrites** the form's `inquiry_topic` seed with its own classification into 6 buckets. The 3 topic buckets live in **exactly 2 nodes**: `Build LLM Prompt` (descriptions) + `Process LLM Result` (`validTopics` allow-list). Operational buckets kept: `partnership_vendor_pitch`, `general_inquiry`, `spam_or_junk`.
+
+### New bucket descriptions (approved)
+- `ai_strategy_design`: AI strategy, roadmap, solution/architecture design, use-case scoping, Responsible-AI & governance strategy
+- `custom_ai_development`: Custom AI builds — bespoke agents, integrations, RAG, data pipelines, model/app development
+- `deployment_operations`: Deploying & operating AI — Copilot/M365 rollout, Entra/tenant controls, monitoring, managed ongoing ops
+
+### Execution split & ORDER (additive-first — critical)
+1. **HubSpot (TK)** — add the 3 new options to the `inquiry_topic` property (keep the 6 existing). **Must be first**: the classifier writes `inquiry_topic` to HubSpot, so missing options = rejected write = lead-intake jams.
+2. **n8n (n8nbuilder CC — TK kicks off)** — Part A: swap the 3 old topic buckets → 3 new in the 2 nodes above, then **STOP** for TK's go. ~~Part B: migrate `Classify & Draft` off Ollama~~ — **Part B was moot; the workflow was already on Bolt llama-server (migrated 2026-05-01, PR #53 / commit `6eeecbb`).** Brief handed to TK 2026-07-24.
+3. **BTAI-Site cutover (this repo — assistant)** — branch `feat/lead-taxonomy-cutover` (created, **not yet edited**). 6 edit sites: `app/components/home/ContactSection.tsx` (INTEREST_OPTIONS + doc comment), `src/lib/api/contact-schema.ts` (Zod enum), `src/lib/api/hubspot.ts` (`INTEREST_TO_INQUIRY_TOPIC`), `src/lib/api/email/templates/admin-notification.ts` (label map), `app/services/{governance,data-governance,enablement}/page.tsx` (`ctaInterest`), `__tests__/api/contact-schema.test.ts` (enum test). Held → merged last.
+4. **e2e test (assistant)** — enqueue a test lead, watch the classifier bucket it into a new topic, verify the HubSpot write, delete the test contact.
+5. **Cleanup (post-soak)** — remove the 3 retired options from HubSpot + n8n + BTAI-Site once the new taxonomy is confirmed.
+
+Old → new mapping (form value → inquiry_topic):
+`governance-assessment` → `strategy-design` → `ai_strategy_design` · `data-readiness` → `custom-development` → `custom_ai_development` · `copilot-readiness` → `deployment-operations` → `deployment_operations`.
+
+### Checklist
+- [x] HubSpot options (TK) — **done**, verified 9 options present 2026-07-25
+- [x] n8n Part A prompt update (n8nbuilder CC) — **done + live** 2026-07-25 03:58Z
+- [x] BTAI-Site cutover (assistant) — **PR #65**, all checks green, awaiting TK's merge
+- [ ] prod e2e test (assistant) — blocked on #65 merging
+- [x] ~~n8n Part B Ollama→Bolt migration~~ — **moot**, already on Bolt since 2026-05-01
+- [ ] cleanup old options (post-soak) — **gated on the e2e passing; see the hazard below**
+
+---
+
+# Full transparency report — 2026-07-25
+
+Written for whoever picks this up next, including a future Claude session with no memory of
+this work. It records what happened, what was wrong, and what is still open — not just the
+happy path.
+
+## Who did what
+
+| Actor | Work |
+|---|---|
+| **TK** | Added the three new `inquiry_topic` options in the HubSpot UI. Kicked off the n8n work in a separate Claude Code session. Owns every merge. |
+| **n8nbuilder CC** (separate session, HerculeanN8NBuilder codebase) | Swapped the three old buckets → three new in `Build LLM Prompt` + `Process LLM Result`. Deployed live. Found and reported the poison-message hazard below. Corrected the Ollama claim. |
+| **This session** (HerculeanInfra CC) | Verified all upstream preconditions independently. Shipped the BTAI-Site cutover as PR #65. Ran the preview verification. Corrected this tracker. |
+
+Three-way split across two repos and a UI, so nothing here is verifiable from one repo's
+git history alone. That is why this section exists.
+
+## Sequence as actually executed
+
+1. **HubSpot options added** (TK) — additive; the three retired options were left in place.
+2. **n8n Part A** (n8nbuilder CC) — deployed 2026-07-25 03:58Z, workflow active, first
+   post-deploy run succeeded.
+3. **BTAI-Site cutover** (this session) — PR #65 opened, 7/7 checks green, `mergeState=CLEAN`.
+4. **Prod e2e** — NOT DONE. Structurally cannot run before #65 merges (see below).
+5. **Cleanup** — NOT DONE, and deliberately gated.
+
+The ordering was the whole point and it held: at no instant was a value emitted that a
+downstream consumer did not already accept.
+
+## Correction: this workflow never needed an Ollama migration
+
+An earlier revision of this tracker (and the matching Open Brain thought) stated that
+`Classify & Draft` called Ollama `llama3.1:8b` and that migrating it to Bolt llama-server
+was outstanding work — "Part B". **That was wrong.**
+
+Verified against the deployed workflow JSON: `Classify & Draft` POSTs to
+`{{ $json._llamaBaseUrl }}/v1/chat/completions`, where `_llamaBaseUrl` and `_llamaModel` are
+injected by the `Inject Config` node from `$env.LLAMA_BASE_URL || 'http://10.0.0.40:8080'`
+and `$env.LLAMA_MODEL || 'nemotron-3-super-120b'`. Bolt llama-server, migrated 2026-05-01
+(PR #53 / commit `6eeecbb`). Zero Ollama references anywhere in the workflow.
+
+**The lesson, because this cost real planning effort:** an inference backend must be read
+off the *deployed node parameters*, not off a tracker's prose or a node's display name. The
+env-var indirection (`_llamaBaseUrl`) means the endpoint is not visible in the node's own
+config at a glance — you have to follow it to `Inject Config`. Both the tracker and the OB
+thought have been corrected; the Part B checklist item is struck through rather than deleted
+so the error stays legible.
+
+## The hazard that makes the ordering non-negotiable
+
+Found by the n8nbuilder CC, independently confirmed here against the live workflow JSON.
+This is the single most important thing on this page.
+
+`Process LLM Result` initialises `classification.inquiryTopic` to
+`original.inquiry.inquiryTopic` — **the website form's value** — and overrides it only when
+the LLM returns a topic present in `validTopics`. So the form is a **second, independent
+write path** into HubSpot whenever inference is unavailable or returns junk. `validTopics`
+does not protect that path; it is bypassed entirely.
+
+Now the geometry that makes a mismatch expensive rather than merely noisy:
+
+- `Update Contact` (HubSpot PATCH) has **no `onError` override**, so it takes n8n's default:
+  **stop the workflow**. It also has `retryOnFail: true`.
+- It sits **before** `Ack Queue Message`, which is the Azure Queue `DELETE`.
+- `Dequeue Message` uses `visibilitytimeout=120` on a **5-minute** schedule.
+
+A HubSpot write that gets rejected therefore halts the run *before* the ack. The message's
+120-second invisibility has always expired by the next 5-minute tick, so it is redelivered,
+fails again, and **loops forever — alerting every 5 minutes until a human intervenes.**
+
+Concretely: pulling the three retired HubSpot options before the form stops emitting them
+converts the LLM-unavailable fallback into a permanent alert storm. None of this is visible
+in the workflow diagram, which is why it is written down here.
+
+## Deliberate deviation from the migration plan
+
+The plan (step 3, above) said to swap the Zod enum to the new slugs. **PR #65 does not do
+that.** The enum, `INTEREST_TO_INQUIRY_TOPIC`, and the admin-notification label map all
+**still accept the three retired slugs**.
+
+Reason: a visitor holding a pre-cutover JS bundle in an open tab will POST an old slug to
+the new route handler. Rejecting it returns `400` and silently loses the lead — which is
+*precisely* the failure this whole item was opened to eliminate (see "Why this exists").
+Deploying the plan as literally written would have re-created it in a narrower window.
+
+This is additive-first applied *inside* the repo, not just across systems. Net effect:
+nothing **emits** a retired slug anymore; retired slugs are only **accepted**. The
+transitional keys come out at step 5 alongside the HubSpot options.
+
+## Verification evidence
+
+**Upstream preconditions, checked independently rather than taken on report:**
+
+- HubSpot `inquiry_topic` queried directly → **9 options**: all 3 new present, all 3 retired
+  still present, 3 operational unchanged. Every value the form can emit is already accepted.
+- Live workflow `WgaVq7QEek9OfOk7` → active, `updatedAt 2026-07-25T03:58Z`, both taxonomy
+  nodes on the new buckets only, `validTopics` = the 3 new + 3 operational.
+
+**PR #65:**
+
+- `npm run validate` → **6/6 gates** (79s). `vitest` on the touched suite → **8/8**.
+- Preview functional matrix → **9/9**: 4 current slugs + empty → `200`; 3 retired slugs →
+  `200` (the stale-bundle guard); `training` → `400`. The `400` body echoed the deployed
+  enum, confirming it matches source.
+- Rendered preview HTML → exactly the 4 new option values, **zero** retired slugs, 43,385
+  bytes (so the route still fully prerenders — no regression of the `useSearchParams`
+  loading-shell bug).
+- **Side-effect containment**, which mattered because previews inherit real production
+  credentials: HubSpot search for `taxonomy-cutover-preview@bridgingtrust.ai` → **0
+  matches**. Both preview-gate signals fire for that host (`PREVIEW_BUILD: "true"` baked at
+  `cost-optimized-ci.yml:172`, and `x-forwarded-host` matching the `-65.` +
+  `.azurestaticapps.net` pattern).
+
+## What is still open
+
+1. **Merge PR #65** (TK). Nothing else can proceed.
+2. **Prod e2e** — one submission per bucket → confirm the matching new `inquiry_topic` lands
+   in HubSpot → confirm the queue drains clean → **flag the test contact for TK to delete**
+   (CRM deletion is operator-only). This genuinely cannot be done pre-merge: the preview gate
+   suppresses exactly the side effects the test needs to observe.
+3. **Cleanup, only after the e2e passes** — remove the 3 retired HubSpot options, the
+   transitional enum/map/label keys, and the retired buckets from n8n. **Check for existing
+   contacts still holding old values first**, and re-read the hazard section before touching
+   the HubSpot property.
+
+## Notes, caveats, and limitations for the next session
+
+- **`api/` is untouched on purpose.** The retired Azure Function App tree
+  (`api/src/functions/contact.ts`, `api/src/lib/hubspot.ts`,
+  `api/src/lib/email-templates/admin-notification.ts`) still carries the old-only enum and
+  mapping. It is dead code pending Phase 5 deletion (~2026-08-07); editing it would imply it
+  is live. Do not "fix" it — delete it with the rest of Phase 5.
+- **`?interest=` deep-links are a public contract.** `InterestFromQuery` validates the param
+  against `INTEREST_OPTIONS`, so a link using a retired slug degrades to "Select an option"
+  rather than erroring. Still worth auditing live marketing links / ads / email templates for
+  `?interest=governance-assessment` etc. — they will silently stop preselecting.
+- **Retired service pages got a straight slug rename only.**
+  `app/services/{governance,data-governance,enablement}` each preselect the same form option
+  they did before. `data-governance` → "Custom AI Development" is pre-existing oddness on a
+  `noindex` page; repointing those CTAs at semantically better pillars is a content decision,
+  not part of this remap.
+- **Queue depth is not readable with TK's current Azure identity.** `az storage message peek`
+  on `stbtaisiteprod` / `btai-lead-classify` fails with an RBAC error — the signed-in
+  identity lacks *Storage Queue Data Reader*. The leak check was therefore done via the
+  HubSpot API instead, which is arguably the better signal anyway. If a future session needs
+  actual queue depth, that role has to be granted first (or use `--auth-mode key`).
+- **n8n API access:** direct IP `http://10.0.0.10:5678` + `X-N8N-API-KEY` (the "n8n External
+  API" 1P item). The `n8n.bridgingtrust.ai` URL is Cloudflare-Access-gated and 302s. A
+  different `N8N2_API_KEY` in `.env` is a separate, empty user scope that returns 0 workflows.
+  The access guide lives in **HerculeanInfra** (`docs/N8N_UNRAID_API_ACCESS_GUIDE.md`), not
+  HerculeanN8NBuilder — the n8nbuilder CC asked, and that is the answer.
+- **New regression guard worth keeping.** PR #65 adds a test asserting every accepted
+  non-empty `interest` has an `INTEREST_TO_INQUIRY_TOPIC` entry, derived from the schema so
+  the two cannot drift, with an anti-vacuity assertion. An accepted form value with no
+  mapping never sets `inquiry_topic` — the exact defect class behind this whole item. If the
+  cleanup step removes enum values, that test keeps the map honest.

@@ -479,17 +479,42 @@ Agenda items to raise explicitly:
 
 ---
 
-## 7. Lead classifier taxonomy remap
+## 7. Lead classifier taxonomy remap — executed 2026-07-25, one merge from done
 
 The contact form's `interest` values were repointed to the backend's existing accepted enum
 to stop a live lead-loss bug (three of five options were returning 400 and silently
-discarding submissions). **The pairing is positional, not semantic** — the HubSpot
-`inquiry_topic` values still reflect the retired service taxonomy.
+discarding submissions). **The pairing was positional, not semantic** — the HubSpot
+`inquiry_topic` values still reflected the retired service taxonomy.
 
-Needs an end-to-end remap: form → Zod enum → `INTEREST_TO_INQUIRY_TOPIC` → n8n classifier.
-Until then, do not trust `inquiry_topic` for routing or reporting.
+Remapped end-to-end across three systems, additive-first (consumers accept the new values
+before the producer emits them):
 
-**Done when:** classification buckets match the live Strategy / Build / Operate framing.
+| Step | Owner | State |
+|---|---|---|
+| HubSpot `inquiry_topic` — add 3 new options, keep the 3 retired | TK | ✅ done (9 options verified) |
+| n8n classifier — swap buckets in `Build LLM Prompt` + `Process LLM Result` | n8nbuilder CC | ✅ live 2026-07-25 03:58Z |
+| BTAI-Site — form values, Zod enum, topic map, label map, 3 service CTAs, test | assistant | ✅ **PR #65**, checks green, awaiting merge |
+| Prod e2e — one submission per bucket, verify the HubSpot write | assistant | ⬜ blocked on #65 merging |
+| Cleanup — retire the old options + transitional keys | — | ⬜ gated on the e2e |
+
+`governance-assessment` → `strategy-design` → `ai_strategy_design`; `data-readiness` →
+`custom-development` → `custom_ai_development`; `copilot-readiness` →
+`deployment-operations` → `deployment_operations`; `general` unchanged.
+
+**Two things not to lose**, both detailed in the transparency report in
+`LEAD-TAXONOMY-REMAP-2026-07-24.md`:
+
+1. **Do not pull the retired HubSpot options yet.** The n8n `Update Contact` node stops the
+   workflow on error and sits *before* the queue ack, with a 120s visibility timeout on a
+   5-minute schedule — so a rejected HubSpot write redelivers forever and alerts every 5
+   minutes. The form is a second write path whenever the LLM is unavailable.
+2. **PR #65 deliberately still *accepts* the retired slugs** (while emitting only the new
+   ones), so a visitor on a cached pre-cutover JS bundle does not get a 400 — that would
+   recreate the very lead-loss bug this item exists to fix.
+
+**Done when:** #65 is merged, the prod e2e confirms new-taxonomy writes landing in HubSpot,
+and the retired options are cleaned up. `inquiry_topic` becomes trustworthy for routing and
+reporting at the point #65 merges.
 
 ---
 
