@@ -131,3 +131,39 @@ consumer, so there is no window where a submission can 400 or mis-route.
 
 _Cross-reference: punch-list §7 (`docs/strategy/POST-ROLLUP-PUNCHLIST-2026-07-22.md`). The n8n
 classifier and HubSpot property live in the HerculeanInfra repo._
+
+---
+
+## Execution status & handoff — 2026-07-24 (IN PROGRESS)
+
+Slugs **approved** by TK: `strategy-design` / `custom-development` / `deployment-operations` (+ `general` unchanged).
+
+### Classifier reality (reviewed live via n8n direct-IP access)
+The taxonomy is enforced by a **live LLM classifier**, not just the form enum:
+- Workflow **`btai.lead-intake.schedule.v1`** (id `WgaVq7QEek9OfOk7`), active, on `herc-n8n` (stack 72).
+- Access: **`http://10.0.0.10:5678`** + header `X-N8N-API-KEY` (the "n8n External API" key). The `n8n.bridgingtrust.ai` URL is Cloudflare-Access-gated → 302. Guide: HerculeanInfra `docs/N8N_UNRAID_API_ACCESS_GUIDE.md`.
+- Pipeline: schedule (5 min) → dequeue `btai-lead-classify` → Build LLM Prompt → **Classify (Ollama `llama3.1:8b` — being migrated off, no longer used)** → Process LLM Result → Update HubSpot Contact → ack → gate/note/task.
+- The LLM **overwrites** the form's `inquiry_topic` seed with its own classification into 6 buckets. The 3 topic buckets live in **exactly 2 nodes**: `Build LLM Prompt` (descriptions) + `Process LLM Result` (`validTopics` allow-list). Operational buckets kept: `partnership_vendor_pitch`, `general_inquiry`, `spam_or_junk`.
+
+### New bucket descriptions (approved)
+- `ai_strategy_design`: AI strategy, roadmap, solution/architecture design, use-case scoping, Responsible-AI & governance strategy
+- `custom_ai_development`: Custom AI builds — bespoke agents, integrations, RAG, data pipelines, model/app development
+- `deployment_operations`: Deploying & operating AI — Copilot/M365 rollout, Entra/tenant controls, monitoring, managed ongoing ops
+
+### Execution split & ORDER (additive-first — critical)
+1. **HubSpot (TK)** — add the 3 new options to the `inquiry_topic` property (keep the 6 existing). **Must be first**: the classifier writes `inquiry_topic` to HubSpot, so missing options = rejected write = lead-intake jams.
+2. **n8n (n8nbuilder CC — TK kicks off)** — Part A: swap the 3 old topic buckets → 3 new in the 2 nodes above, then **STOP** for TK's go. Part B: migrate `Classify & Draft` off Ollama to the current fleet inference (Bolt llama-server). Brief handed to TK 2026-07-24.
+3. **BTAI-Site cutover (this repo — assistant)** — branch `feat/lead-taxonomy-cutover` (created, **not yet edited**). 6 edit sites: `app/components/home/ContactSection.tsx` (INTEREST_OPTIONS + doc comment), `src/lib/api/contact-schema.ts` (Zod enum), `src/lib/api/hubspot.ts` (`INTEREST_TO_INQUIRY_TOPIC`), `src/lib/api/email/templates/admin-notification.ts` (label map), `app/services/{governance,data-governance,enablement}/page.tsx` (`ctaInterest`), `__tests__/api/contact-schema.test.ts` (enum test). Held → merged last.
+4. **e2e test (assistant)** — enqueue a test lead, watch the classifier bucket it into a new topic, verify the HubSpot write, delete the test contact.
+5. **Cleanup (post-soak)** — remove the 3 retired options from HubSpot + n8n + BTAI-Site once the new taxonomy is confirmed.
+
+Old → new mapping (form value → inquiry_topic):
+`governance-assessment` → `strategy-design` → `ai_strategy_design` · `data-readiness` → `custom-development` → `custom_ai_development` · `copilot-readiness` → `deployment-operations` → `deployment_operations`.
+
+### Checklist
+- [ ] HubSpot options (TK)
+- [ ] n8n Part A prompt update (n8nbuilder CC) — STOP after, TK greenlights
+- [ ] BTAI-Site cutover (assistant) — branch ready, edits pending TK's go after n8n Part A
+- [ ] e2e test (assistant)
+- [ ] n8n Part B Ollama→Bolt migration (n8nbuilder CC)
+- [ ] cleanup old options (post-soak)
