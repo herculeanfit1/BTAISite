@@ -1,6 +1,10 @@
-// Contact form validation schema, ported verbatim from the Azure Functions
-// handler (api/src/functions/contact.ts) so validation behaviour — and the 400
-// error shape the frontend and CI depend on — is byte-identical.
+// Contact form validation schema, ported from the Azure Functions handler
+// (api/src/functions/contact.ts) so validation behaviour — and the 400 error
+// shape the frontend and CI depend on — matches.
+//
+// The `interest` enum is the one deliberate divergence: it carries the §7
+// Strategy / Build / Operate taxonomy (2026-07-25) plus the retired slugs. The
+// retired `api/` tree still has the old-only enum and is scheduled for deletion.
 import { z } from "zod";
 
 export const contactFormSchema = z.object({
@@ -16,11 +20,19 @@ export const contactFormSchema = z.object({
   company: z.string().max(100, "Company name too long").optional(),
   interest: z
     .enum([
+      // Current taxonomy (§7, 2026-07-25) — the only values the form emits.
+      "strategy-design",
+      "custom-development",
+      "deployment-operations",
+      "general",
+      "",
+      // Retired taxonomy, still accepted transitionally. A visitor holding a
+      // pre-cutover JS bundle submits these; rejecting them would 400 and
+      // silently lose the lead — the failure §7 exists to prevent. Removed in
+      // the §7 cleanup step, after the retired HubSpot options are pulled.
       "governance-assessment",
       "data-readiness",
       "copilot-readiness",
-      "general",
-      "",
     ])
     .optional(),
   message: z

@@ -7,28 +7,32 @@ import { isValidEmail } from "@/src/lib/validation";
 /**
  * Interest options shown in the contact form.
  *
- * NOTE ON `value`: the Azure Functions backend validates `interest` against a
- * Zod enum that currently accepts only "governance-assessment",
- * "data-readiness", "copilot-readiness", "general" and "". Any other value
- * fails validation and the submission is rejected with a 400 — the lead is
- * lost. The three previous options ("governance", "training",
- * "agent-architecture") were not in that enum, so selecting any of them broke
- * the form.
+ * These `value`s are the Strategy / Build / Operate taxonomy. They match their
+ * labels semantically and correspond 1:1 to the HubSpot `inquiry_topic` options
+ * and the n8n classifier's buckets (punch-list §7, cut over 2026-07-25).
  *
- * The labels below are the current service pillars; the values are the
- * backend's existing accepted values, so every option now submits
- * successfully. The value->pillar pairing is positional, not semantic — the
- * HubSpot inquiry_topic each maps to (ai_governance_readiness,
- * data_governance_ai, microsoft_ai_enablement) still reflects the retired
- * taxonomy. Remapping end-to-end — form -> Zod enum ->
- * INTEREST_TO_INQUIRY_TOPIC -> n8n classifier — is tracked as separate work
- * and must land before the topic field is trusted for routing or reporting.
+ * Before this cutover the values carried the *retired* taxonomy
+ * ("governance-assessment", "data-readiness", "copilot-readiness") while the
+ * labels were the current pillars, so `inquiry_topic` could not be trusted for
+ * routing or reporting. That pairing was positional, not semantic — a stopgap
+ * from 2026-07-22, when three options had been submitting values the backend's
+ * Zod enum rejected outright, returning 400 and silently losing the lead.
+ *
+ * The retired slugs are deliberately still ACCEPTED by the Zod enum and still
+ * mapped to their old `inquiry_topic` values: a visitor holding a pre-cutover
+ * JS bundle in an open tab will POST an old slug, and rejecting it would
+ * reintroduce the exact 400-and-lose-the-lead failure above. They come out in
+ * the §7 cleanup step, together with the retired HubSpot property options.
+ *
+ * `?interest=<value>` deep-links preselect an option, so these slugs are a
+ * public contract. Links using a retired slug no longer preselect — they
+ * degrade to "Select an option", never to an error.
  */
 const INTEREST_OPTIONS = [
   { value: "", label: "Select an option (optional)" },
-  { value: "governance-assessment", label: "AI Strategy & Solution Design" },
-  { value: "data-readiness", label: "Custom AI Development" },
-  { value: "copilot-readiness", label: "Deployment & Ongoing Operations" },
+  { value: "strategy-design", label: "AI Strategy & Solution Design" },
+  { value: "custom-development", label: "Custom AI Development" },
+  { value: "deployment-operations", label: "Deployment & Ongoing Operations" },
   { value: "general", label: "General Inquiry" },
 ] as const;
 
