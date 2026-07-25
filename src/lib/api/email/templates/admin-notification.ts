@@ -1,10 +1,17 @@
 import type { ContactFormData } from "../send-contact-email";
 
 const INTEREST_LABELS: Record<string, string> = {
-  "governance-assessment": "AI Governance Readiness Assessment",
-  "data-readiness": "Data Readiness Assessment",
-  "copilot-readiness": "Copilot Readiness Review",
+  // Current taxonomy (§7, 2026-07-25) — mirrors the form's option labels.
+  "strategy-design": "AI Strategy & Solution Design",
+  "custom-development": "Custom AI Development",
+  "deployment-operations": "Deployment & Ongoing Operations",
   general: "General Inquiry",
+  // Retired slugs a pre-cutover bundle may still submit. They map to the same
+  // pillar labels the form displayed for them since 2026-07-22 (only the values
+  // were stale, not the labels), so the notification reports what was clicked.
+  "governance-assessment": "AI Strategy & Solution Design",
+  "data-readiness": "Custom AI Development",
+  "copilot-readiness": "Deployment & Ongoing Operations",
 };
 
 export function generateAdminNotificationEmail(
