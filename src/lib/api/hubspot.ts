@@ -22,11 +22,21 @@ export type HubSpotUpsertResult =
   | { success: true; contactId: string; noteId: string | null }
   | { success: false; error: string };
 
+// Form slug -> HubSpot `inquiry_topic` option. A write of a value that is not in
+// that property's option set is REJECTED by HubSpot, so every target here must
+// exist as an option before this map ships (§7 additive-first ordering).
 export const INTEREST_TO_INQUIRY_TOPIC: Record<string, string> = {
+  // Current taxonomy (§7, 2026-07-25).
+  "strategy-design": "ai_strategy_design",
+  "custom-development": "custom_ai_development",
+  "deployment-operations": "deployment_operations",
+  "general": "general_inquiry",
+  // Retired slugs, still mapped so a pre-cutover browser bundle resolves to a
+  // real topic instead of falling through the unmapped-value warning path.
+  // Their targets stay valid HubSpot options until the §7 cleanup step.
   "governance-assessment": "ai_governance_readiness",
   "data-readiness": "data_governance_ai",
   "copilot-readiness": "microsoft_ai_enablement",
-  "general": "general_inquiry",
 };
 
 type Logger = (msg: string, meta?: object) => void;
