@@ -25,19 +25,34 @@ export type HubSpotUpsertResult =
 // Form slug -> HubSpot `inquiry_topic` option. A write of a value that is not in
 // that property's option set is REJECTED by HubSpot, so every target here must
 // exist as an option before this map ships (§7 additive-first ordering).
+//
+// Every target below is a CURRENT taxonomy value. The three retired options
+// (ai_governance_readiness, data_governance_ai, microsoft_ai_enablement) were
+// archived in HubSpot on 2026-07-25 and must never be written again: archiving
+// sets `hidden: true` rather than removing the option, so such a write would
+// still SUCCEED and quietly repopulate the retired taxonomy — reintroducing the
+// exact semantic mismatch §7 was opened to eliminate. Failing loudly would
+// almost be safer; it doesn't, so the guarantee has to live here.
 export const INTEREST_TO_INQUIRY_TOPIC: Record<string, string> = {
   // Current taxonomy (§7, 2026-07-25).
   "strategy-design": "ai_strategy_design",
   "custom-development": "custom_ai_development",
   "deployment-operations": "deployment_operations",
   "general": "general_inquiry",
-  // Retired slugs, still mapped so a pre-cutover browser bundle resolves to a
-  // real topic instead of falling through the unmapped-value warning path.
-  // Their targets stay valid HubSpot options until the §7 cleanup step.
-  "governance-assessment": "ai_governance_readiness",
-  "data-readiness": "data_governance_ai",
-  "copilot-readiness": "microsoft_ai_enablement",
+  // Retired slugs, still ACCEPTED so a visitor on a pre-cutover JS bundle is not
+  // answered with a 400 and a silently lost lead — but now pointed at their
+  // current-taxonomy equivalents, not their archived originals.
+  "governance-assessment": "ai_strategy_design",
+  "data-readiness": "custom_ai_development",
+  "copilot-readiness": "deployment_operations",
 };
+
+/** Retired `inquiry_topic` values, archived in HubSpot 2026-07-25. Never write these. */
+export const RETIRED_INQUIRY_TOPICS = [
+  "ai_governance_readiness",
+  "data_governance_ai",
+  "microsoft_ai_enablement",
+] as const;
 
 type Logger = (msg: string, meta?: object) => void;
 

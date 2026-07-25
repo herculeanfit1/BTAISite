@@ -18,11 +18,14 @@ import { isValidEmail } from "@/src/lib/validation";
  * from 2026-07-22, when three options had been submitting values the backend's
  * Zod enum rejected outright, returning 400 and silently losing the lead.
  *
- * The retired slugs are deliberately still ACCEPTED by the Zod enum and still
- * mapped to their old `inquiry_topic` values: a visitor holding a pre-cutover
- * JS bundle in an open tab will POST an old slug, and rejecting it would
- * reintroduce the exact 400-and-lose-the-lead failure above. They come out in
- * the §7 cleanup step, together with the retired HubSpot property options.
+ * The retired slugs are deliberately still ACCEPTED by the Zod enum: a visitor
+ * holding a pre-cutover JS bundle in an open tab will POST an old slug, and
+ * rejecting it would reintroduce the exact 400-and-lose-the-lead failure above.
+ * Since 2026-07-25 they map to their CURRENT-taxonomy equivalents rather than
+ * their original topics, because the retired HubSpot options were archived that
+ * day — and archiving only hides an option, it does not stop the API accepting
+ * writes to it, so a stale bundle would otherwise keep repopulating the dead
+ * taxonomy without any error to notice.
  *
  * `?interest=<value>` deep-links preselect an option, so these slugs are a
  * public contract. Links using a retired slug no longer preselect — they

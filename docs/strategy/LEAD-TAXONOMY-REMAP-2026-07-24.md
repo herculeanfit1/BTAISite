@@ -167,7 +167,10 @@ Old → new mapping (form value → inquiry_topic):
 - [x] BTAI-Site cutover (assistant) — **PR #65**, all checks green, awaiting TK's merge
 - [ ] prod e2e test (assistant) — blocked on #65 merging
 - [x] ~~n8n Part B Ollama→Bolt migration~~ — **moot**, already on Bolt since 2026-05-01
-- [ ] cleanup old options (post-soak) — **gated on the e2e passing; see the hazard below**
+- [x] prod e2e — **passed 2026-07-25**, 3/3 correct via the LLM path
+- [x] cleanup old options — **done 2026-07-25**: TK archived the 3 HubSpot options; BTAI-Site
+      remapped (not removed) the retired slugs. See "Cleanup did not go the way this plan
+      assumed" below — archiving hides an option, it does not stop API writes to it.
 
 ---
 
@@ -286,15 +289,40 @@ transitional keys come out at step 5 alongside the HubSpot options.
 
 ## What is still open
 
-1. **Merge PR #65** (TK). Nothing else can proceed.
-2. **Prod e2e** — one submission per bucket → confirm the matching new `inquiry_topic` lands
-   in HubSpot → confirm the queue drains clean → **flag the test contact for TK to delete**
-   (CRM deletion is operator-only). This genuinely cannot be done pre-merge: the preview gate
-   suppresses exactly the side effects the test needs to observe.
-3. **Cleanup, only after the e2e passes** — remove the 3 retired HubSpot options, the
-   transitional enum/map/label keys, and the retired buckets from n8n. **Check for existing
-   contacts still holding old values first**, and re-read the hazard section before touching
-   the HubSpot property.
+**All of the below closed on 2026-07-25 — retained for the record.**
+
+1. ~~**Merge PR #65**~~ — merged Fri Jul 24, 11:50 PM CDT, with #64 and #63.
+2. ~~**Prod e2e**~~ — passed. Three real leads classified correctly (`ai_strategy_design` 0.95,
+   `custom_ai_development` 0.90, `deployment_operations` 0.95), all via the LLM path on
+   Bolt/nemotron, queue acked cleanly. It also surfaced an unrelated defect — `Create Task`
+   sending an invalid `hs_due_date` — fixed and deployed the same day (n8nbuilder #106).
+   Test contacts deleted by TK.
+3. ~~**Cleanup**~~ — TK archived the 3 retired HubSpot options. Verified afterwards: 6
+   selectable options (the correct set) and **zero** contacts holding a retired value.
+
+### Cleanup did not go the way this plan assumed — read this before repeating the pattern
+
+The plan said "remove the retired options." **HubSpot does not remove them.** Archiving an
+enumeration option sets `hidden: true` and leaves it in the property — confirmed by reading the
+property back: 9 options in the array, 3 with `hidden: true`. Hidden options are dropped from
+the UI picker but **remain writable through the API**.
+
+That inverts the risk. The expectation was that archiving would make a stale write fail loudly.
+Instead a stale pre-cutover browser bundle would have kept writing retired topics *successfully*,
+silently repopulating the taxonomy §7 existed to retire, with no error anywhere to alert on.
+A loud failure would genuinely have been safer.
+
+So the BTAI-Site half of the cleanup became a **remap, not a removal**: the retired slugs stay
+accepted by the Zod enum (still preventing the 400-and-lose-the-lead failure) but now point at
+their current-taxonomy equivalents — `governance-assessment` → `ai_strategy_design`,
+`data-readiness` → `custom_ai_development`, `copilot-readiness` → `deployment_operations`. Two
+tests encode the invariant, because nothing else fails when it breaks.
+
+Nothing was required on the n8n side: `validTopics` already lists only current buckets, and the
+fallback path seeds from the form, which can no longer emit a retired value.
+
+The transitional slugs can be dropped from the enum entirely once no pre-cutover bundle can
+plausibly still be in a browser tab. There is no longer any urgency or hazard in leaving them.
 
 ## Notes, caveats, and limitations for the next session
 

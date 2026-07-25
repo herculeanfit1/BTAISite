@@ -479,7 +479,7 @@ Agenda items to raise explicitly:
 
 ---
 
-## 7. Lead classifier taxonomy remap — executed 2026-07-25, one merge from done
+## 7. Lead classifier taxonomy remap — CLOSED 2026-07-25
 
 The contact form's `interest` values were repointed to the backend's existing accepted enum
 to stop a live lead-loss bug (three of five options were returning 400 and silently
@@ -494,8 +494,8 @@ before the producer emits them):
 | HubSpot `inquiry_topic` — add 3 new options, keep the 3 retired | TK | ✅ done (9 options verified) |
 | n8n classifier — swap buckets in `Build LLM Prompt` + `Process LLM Result` | n8nbuilder CC | ✅ live 2026-07-25 03:58Z |
 | BTAI-Site — form values, Zod enum, topic map, label map, 3 service CTAs, test | assistant | ✅ **PR #65**, checks green, awaiting merge |
-| Prod e2e — one submission per bucket, verify the HubSpot write | assistant | ⬜ blocked on #65 merging |
-| Cleanup — retire the old options + transitional keys | — | ⬜ gated on the e2e |
+| Prod e2e — one submission per bucket, verify the HubSpot write | assistant | ✅ 3/3 correct via the LLM path, queue acked clean |
+| Cleanup — retire the old options + transitional keys | TK + assistant | ✅ options archived; slugs **remapped**, not removed |
 
 `governance-assessment` → `strategy-design` → `ai_strategy_design`; `data-readiness` →
 `custom-development` → `custom_ai_development`; `copilot-readiness` →
@@ -512,9 +512,14 @@ before the producer emits them):
    ones), so a visitor on a cached pre-cutover JS bundle does not get a 400 — that would
    recreate the very lead-loss bug this item exists to fix.
 
-**Done when:** #65 is merged, the prod e2e confirms new-taxonomy writes landing in HubSpot,
-and the retired options are cleaned up. `inquiry_topic` becomes trustworthy for routing and
-reporting at the point #65 merges.
+**Done.** `inquiry_topic` is now trustworthy for routing and reporting.
+
+One correction worth carrying forward: **archiving a HubSpot enumeration option does not remove
+it.** It sets `hidden: true`, dropping the option from the UI picker while leaving it fully
+writable through the API. So retiring a value in HubSpot does not stop anything from writing it
+— it only stops humans from picking it. The BTAI-Site cleanup therefore became a remap of the
+retired slugs onto current topics rather than a removal, guarded by tests, since a stale write
+would otherwise succeed silently.
 
 ---
 
