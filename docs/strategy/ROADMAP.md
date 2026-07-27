@@ -10,6 +10,37 @@ implementing.
 
 ---
 
+## Execution status
+
+Updated as plans land. The tables below are the original 2026-07-03 plan; this section is
+the current truth. Full findings are in the transparency report at the end of this file,
+and per-plan detail in each plan's "Execution notes" block.
+
+| Plan                                | Status                                                                    | Landed as |
+| ----------------------------------- | ------------------------------------------------------------------------- | --------- |
+| PLAN-001 email HTML escaping        | ✅ Executed 2026-07-27                                                    | #74       |
+| PLAN-002 cloud quality gate         | ✅ Executed 2026-07-27                                                    | #75       |
+| PLAN-003 repo hygiene purge         | ✅ Executed 2026-07-27                                                    | #67–#72   |
+| PLAN-004 dead code & deps           | ✅ Executed 2026-07-27                                                    | #67–#72   |
+| PLAN-005 test-suite honesty         | ✅ Executed 2026-07-27                                                    | #67–#72   |
+| PLAN-006 newsletter persistence     | ⏸️ **Deferred** — feature not scheduled                                   | #77       |
+| PLAN-007 API test harness           | ✅ Executed 2026-07-27                                                    | #76       |
+| PLAN-008 route & locale unification | ⬜ Open — highest availability risk remaining                             | —         |
+| PLAN-009 abuse hardening            | ✅ Executed 2026-07-27                                                    | this PR   |
+| PLAN-010 observability & alerting   | ⬜ Open — unblocked by 011                                                | —         |
+| PLAN-011 IaC completeness           | ✅ Executed 2026-07-27                                                    | #78       |
+| PLAN-012 docs truth reconciliation  | ◐ Partial — step 5 done; ADRs 0003–0005 and ~27 `docs/` root files remain | #67–#72   |
+| API-consolidation Phase 5 teardown  | ⬜ Open — delete `api/`, tear down orphaned Azure resources               | —         |
+
+**Found during execution, not in any plan:**
+
+| Item                                                                                              | Status  |
+| ------------------------------------------------------------------------------------------------- | ------- |
+| Static Web App settings entirely undeclared in IaC (production reads settings no Bicep describes) | ⬜ Open |
+| Verify empirically whether the platform appends the client IP to `x-forwarded-for`                | ⬜ Open |
+
+---
+
 ## Now (0–30 days) — highest leverage, lowest risk
 
 | #   | Plan     | What                                                                                                                                                   | Effort | Why now                                                                         |
@@ -94,3 +125,91 @@ happen under a working gate. 003 before 004 keeps the big deletion PR reviewable
    (e.g., PLAN-001 touches ContactSection's backend, not the component).
 9. **Do NOT add a database, CMS, or auth.** This is a marketing site with one form. The
    moment that changes, write an ADR first.
+
+---
+
+## Transparency report
+
+Written 2026-07-27, covering the execution of PLAN-001 through PLAN-011. Appended to
+rather than rewritten, so the record stays chronological.
+
+### The headline finding: these plans are hypotheses, not instructions
+
+**Every plan executed so far contained at least one instruction that was wrong against the
+code, and several would have caused real damage if followed literally.** Not one was
+caught by reading the prose — each surfaced only because the plan's own verify-first step
+was actually run.
+
+| Plan     | What following it literally would have done                                                                                                                             |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PLAN-003 | Deleted the only working backup script (the "duplicate" was a 3-line stub)                                                                                              |
+| PLAN-004 | `git rm -r src/` — deleted the live backend; removing `resend` would have broken the contact form                                                                       |
+| PLAN-005 | Deleted seven real API tests as "placeholders"                                                                                                                          |
+| PLAN-001 | Patched the **undeployed** `api/` tree — a green PR closing the ticket while the injection kept running in production                                                   |
+| PLAN-002 | Pinned a test list naming a deleted file; a vitest filter matching zero files is silently ignored, so the gate would have run green while covering less than it claimed |
+| PLAN-007 | Rebuilt a harness from scratch on the premise that "zero tests exist"; seven real test files were already there                                                         |
+| PLAN-011 | **Deployed a template that re-links the retired Functions backend**, the one action CI explicitly warns is not the fix for a broken `/api/*`                            |
+| PLAN-009 | "Tightened" a CORS rule that was inverted — it rejected our own origin and admitted every stranger's                                                                    |
+
+The common root cause is dating: the plans were written 2026-07-03, before the
+2026-07-24 API consolidation. **Six of them still describe `api/` — an Azure Functions
+tree that has not served traffic since — as the live system.** Any future plan naming
+`api/src/...` should be treated as describing a system that no longer exists.
+
+### What actually shipped
+
+| Area                                             | Before                                      | After                                         |
+| ------------------------------------------------ | ------------------------------------------- | --------------------------------------------- |
+| Stored HTML injection on the public contact form | live                                        | closed, structurally tested                   |
+| Cloud CI correctness gates                       | **zero** (5 required checks, all lint/scan) | type-check + full suite + build, **required** |
+| Tests / files                                    | 140 / 21                                    | **228 / 30**                                  |
+| Coverage (lines / branches / functions)          | 23.05 / 80.78 / 76.03                       | **31.39 / 84.87 / 85.81**                     |
+| `src/lib/api` coverage                           | 60.81% lines, 70.83% functions              | **95.71% / 95.83%**                           |
+| `hubspot.ts`                                     | 9.49% lines, **0% functions**               | **100%**                                      |
+| Rate-limit identity                              | leftmost XFF — client-controlled            | rightmost public entry                        |
+| Rate-limit stores                                | unbounded, no eviction                      | capped, oldest-first eviction                 |
+| Request body cap                                 | none                                        | 50 KB → 413                                   |
+| CORS                                             | admitted any `*.azurestaticapps.net`        | exact allow-list only                         |
+| Bicep                                            | would re-link the retired backend           | link removed; live queue declared             |
+| 1Password vault/token names in this public repo  | in two scripts                              | removed                                       |
+
+### Known limitations — stated plainly
+
+1. **The XFF rightmost assumption is not empirically verified.** It is safe either way
+   (never worse than the leftmost parsing it replaced), but whether this platform appends
+   the true client IP was not proven. Verifying needs a header-echoing endpoint; observing
+   the limiter in production would require sending real submissions, generating real
+   emails, CRM contacts and queue messages. Tracked as open above.
+2. **In-memory rate limiting is per-instance and resets on deploy.** Accepted at current
+   traffic; durable limiting remains a triggered Later item. The bounded store fixes the
+   memory lever, not the distribution.
+3. **`api/` was deliberately left carrying the injection bug.** It is unreachable and
+   scheduled for deletion; CLAUDE.md forbids editing it. Not residual exposure, but it
+   will look like an unfixed vulnerability to anyone reading that tree.
+4. **Coverage is 31% repo-wide.** That number is honest but low, and it is dominated by
+   untested presentational components. The logic-heavy API layer is at ~96%. Do not read
+   the headline figure as the risk picture.
+5. **Anti-abuse tunables are still published in this public repo**
+   (`src/lib/api/email/send-contact-email.ts` — window and max requests as literals).
+   CLAUDE.md says these belong only in the private runbook. Not fixed: moving them is a
+   config-plumbing change with its own risk, and the tests deliberately avoid restating
+   them. Flagged for a follow-up decision.
+6. **Nothing here was load-tested.** The limits are unit-tested for logic, not exercised
+   under concurrency.
+
+### Verification practices adopted
+
+Because three separate sweeps in this effort reported "clean" while being structurally
+incapable of matching anything, the following are now standing practice and are why the
+findings above can be trusted:
+
+- **Prove a search can hit before trusting an empty result.** `git grep -E` does not
+  honour `\b`; `git check-ignore` skips tracked files without `--no-index`; a vitest path
+  filter matching zero files is silently ignored.
+- **Mutation-test new tests.** Every suite added was checked by breaking the thing it
+  guards and confirming exactly that test fails. This caught one test that passed against
+  both the fixed and unfixed code, and one mutation that silently rewrote a comment
+  instead of the code it targeted.
+- **Read live state before changing infrastructure.** The `what-if` comparison against
+  `origin/main` is what turned "the Bicep is stale" into "the Bicep would re-link the
+  retired backend."
