@@ -82,7 +82,7 @@ cat > "$BACKUP_DIR/README.md" << EOF
 These workflows were archived on $(date) as part of a consolidation effort.
 Their functionality has been merged into the main \`ci-pipeline.yml\` workflow.
 
-See \`docs/workflow-consolidation.md\` for details.
+See \`docs/archive/workflow-consolidation.md\` for details.
 EOF
 
 echo "✅ Consolidation completed. Redundant workflows have been moved to $BACKUP_DIR"
