@@ -146,7 +146,16 @@ jobs:
   # PR DEPLOYMENT JOB (deployment only)
   # =============================================================================
   deploy-pr-to-azure:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    # Same-repo PRs only. This repo is public, so a fork PR reaching this job
+    # gets an empty AZURE_STATIC_WEB_APPS_API_TOKEN_* (GitHub withholds secrets
+    # from fork-triggered `pull_request` runs) and fails with a confusing red X
+    # on an otherwise valid contribution. The guard also keeps the job from
+    # becoming a real token-exposure path if the trigger is ever changed to
+    # `pull_request_target`, which does receive secrets.
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.action != 'closed'
+      && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

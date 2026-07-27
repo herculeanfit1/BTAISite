@@ -1,0 +1,60 @@
+# REPO-OWNED workflow — not a canonical fleet file. Edit it here.
+#
+# Cloud CI for this repo was deployment-only: cost-optimized-ci.yml deploys,
+# standards-check.yml lints, security-scan.yml runs Trivy. Nothing compiled the
+# app, type-checked it, or ran a test, so a PR that failed to build could merge
+# and the push-to-main deploy fired with no correctness check ahead of it. The
+# only real gate was an optional ~15-minute local script.
+#
+# Lint is deliberately absent here: standards-check.yml already runs
+# `npx eslint .`, and a second copy would just double the failure surface.
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Must key on BOTH github.workflow and github.event_name — sharing a group
+# across workflows made Standards Check and SWA Deployment cancel each other
+# (PR #14), and omitting event_name cancelled the merge run when push and
+# pull_request:closed fired together (PR #18).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Quality Gate / frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run type-check
+
+      # The full suite, with coverage thresholds enforced. `npm run` (not
+      # `npx vitest`) is required: the pretest:coverage hook runs
+      # scripts/fix-rollup.js, which works around npm/cli#4828 on Linux, and
+      # calling vitest directly silently skips it.
+      #
+      # Do NOT narrow this to a pinned path list. A vitest path filter matching
+      # zero files is ignored as long as another filter matches, so a stale
+      # entry makes the gate quietly run less than it claims while staying
+      # green — the exact failure this workflow exists to prevent.
+      - name: Tests + coverage thresholds
+        run: npm run test:coverage
+
+      - run: npm run build

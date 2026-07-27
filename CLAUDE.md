@@ -43,7 +43,9 @@ npx playwright test e2e/basic.spec.ts --headed
 
 A vitest path filter matching **zero** files is silently ignored as long as another filter matches, so a green run does not prove your file ran — check the reported file count. This is why `test:ci-basic` and `test:security` still pass despite both naming the deleted `__tests__/middleware.test.ts`.
 
-`dev`/`dev:http`/`start` run a **custom `server.js`**, not `next dev`. Cloud CI is deploy-only and re-runs none of these checks — `npm run validate` locally is the gate. `ci/g_master.sh` runs build → type-check → lint → test → security → deploy-check; skip tests with `./ci/g_master.sh --skip-tests`.
+`dev`/`dev:http`/`start` run a **custom `server.js`**, not `next dev`. `ci/g_master.sh` runs build → type-check → lint → test → security → deploy-check; skip tests with `./ci/g_master.sh --skip-tests`.
+
+**Cloud CI gates correctness as of PLAN-002.** `.github/workflows/quality-gate.yml` (repo-owned, not a canonical fleet file) runs type-check → `npm run test:coverage` → `next build` on every PR and is a **required status check**. It deliberately runs the whole suite rather than a pinned path list, because a vitest filter matching zero files is silently ignored. Still _not_ covered in cloud: Playwright/E2E, the security scripts, and deploy-check — `npm run validate` locally remains the broader gate.
 
 ### Broken/misleading npm scripts (verified — don't trust them)
 
@@ -54,7 +56,7 @@ A vitest path filter matching **zero** files is silently ignored as long as anot
 
 Facts a fresh session cannot cheaply derive from the tree:
 
-- **`/api/*` is Next.js route handlers, not Azure Functions.** `app/api/{contact,health,status}/route.ts` are thin adapters over runtime-agnostic domain logic in **`src/lib/api/`** (`contact-handler.ts` is the orchestrator; also `contact-schema`, `cors`, `rate-limit`, `queue-client`, `classify-queue`, `email/`). Route handlers set `export const dynamic = "force-dynamic"`. `api_location: ""` in CI and there is **no linked backend**.
+- **`/api/*` is Next.js route handlers, not Azure Functions.** `app/api/{contact,health,status}/route.ts` are thin adapters over runtime-agnostic domain logic in **`src/lib/api/`** (`contact-handler.ts` is the orchestrator; also `contact-schema`, `cors`, `rate-limit`, `queue-client`, `classify-queue`, `html`, `email/`). Route handlers set `export const dynamic = "force-dynamic"`. `api_location: ""` in CI and there is **no linked backend**.
 - **`api/` (Azure Functions v4) is dead code awaiting teardown.** It is still tracked and still has its own tsconfig + esbuild, but nothing deploys it — the `deploy-functions` job was retired in #55. Do not "fix" bugs there or port changes into it; edit `src/lib/api/` instead. Deleting `api/` plus its Azure resources is the unfinished Phase 5 of `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
 - **Contact flow** (`src/lib/api/contact-handler.ts`): Zod validation → server-side anti-abuse checks (implementation and all tunables live only in the private runbook, never in this public file) → Resend dual delivery (submitter confirmation + admin notification). Non-blocking side-effects: HubSpot contact upsert + note (`src/lib/api/hubspot.ts`) and a versioned JSON message enqueued to an Azure Storage Queue for downstream classification (`src/lib/api/queue-client.ts`, encoded by `queue-encoding.ts`). The Functions output binding is gone — the queue is now reached with a queue-scoped, add-only SAS URL. Sole production caller: `app/components/home/ContactSection.tsx`.
 - **Security headers and CSP live in `next.config.js` `headers()`** — _not_ in `staticwebapp.config.json` (see Gotchas). Any CSP edit happens there.
@@ -109,6 +111,26 @@ The v3 directives (`@tailwind base/utilities/components`) partially work but **s
 ### Exactly one `<html>`/`<body>`, and inline-only error boundaries
 
 Only `app/layout.tsx` renders `<html>`/`<body>`. `app/[locale]/layout.tsx` **must** stay a pass-through (`<>{children}</>`) — nested HTML tags cause hydration failure that trips the error boundary and blanks the whole site. `app/error.tsx` and `app/[locale]/error.tsx` use **inline styles only**, never Tailwind classes, so they still render when CSS fails to load. That layout also pins `dynamicParams = false` and 404s unsupported locales: without it the `[locale]` segment matched any single path segment, serving the full homepage at `/banana` with a 200.
+
+### User input reaching HTML must be escaped at the sink (PLAN-001)
+
+Every user-controlled string in the two Resend templates and the HubSpot note body goes
+through `escapeHtml` from `src/lib/api/html.ts`. Do **not** move this into the Zod schema —
+input sanitization mangles legitimate messages and leaves the next sink unprotected.
+`ipAddress` and `userAgent` are header-derived and never touch Zod, so they are the most
+attacker-controlled values in the admin email.
+
+- `escapeHtmlMultiline` (adds `<br />`) belongs **only** in the confirmation template. The
+  admin template's `.message-content` is `white-space: pre-wrap`, so newlines already
+  render there and `<br />` would double every line break.
+- Do not assert `not.toContain("onerror=")` in a test — escaped payloads survive as inert
+  text and that assertion fails against a _correct_ fix. `__tests__/api/email-template-injection.test.ts`
+  parses the HTML and asserts structurally instead.
+
+### Testing route handlers: two harness traps (PLAN-007)
+
+- `vitest.setup.js` mocks `next/server`. It used to share **one** module-scope `Map` across every response, ignore `init.headers`, and expose `NextResponse` without a constructor — so header assertions read an empty Map and `new NextResponse(...)` could not be built. It is now faithful (per-instance `Headers`, honoured `init`, `json`/`text`). If you extend it, keep it per-instance.
+- `origin` is a **forbidden header name**: `new Request(url, { headers: { origin } })` silently drops it, so CORS assertions read `null` no matter what the handler does. Build a request stub (`{ method, headers: new Headers(...), json: async () => body }`) instead — route handlers only touch those.
 
 ### Root tsconfig must exclude `api/` (PR #16)
 
