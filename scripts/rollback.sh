@@ -4,6 +4,11 @@
 # Rollback script for emergency deployments
 # Usage: ./scripts/rollback.sh [commit-hash]
 #
+# Rollback here means GIT-REVERT-AND-REDEPLOY, not Static Web Apps' native
+# instant revert — this repo does not use SWA deployment slots or their
+# swap/revert mechanism. A rollback therefore takes a full deploy cycle
+# (~5 minutes), which is the number to quote during an incident.
+#
 # This script:
 # 1. Creates a rollback branch from the specified commit (or last successful deployment)
 # 2. Pushes the branch to origin
@@ -44,7 +49,7 @@ fi
 # If commit hash is not provided, use the last successful deployment
 if [ -z "$1" ]; then
   log "No commit hash provided. Finding last successful deployment..."
-  LAST_SUCCESSFUL=$(gh run list --workflow=azure-static-web-apps.yml --status=success --limit=1 --json headSha --jq '.[0].headSha')
+  LAST_SUCCESSFUL=$(gh run list --workflow=cost-optimized-ci.yml --status=success --limit=1 --json headSha --jq '.[0].headSha')
   
   if [ -z "$LAST_SUCCESSFUL" ]; then
     error "Could not find last successful deployment. Please provide a commit hash."
@@ -66,12 +71,12 @@ BRANCH_NAME="rollback-$(date +%Y-%m-%d-%H-%M)"
 log "Creating rollback branch: $BRANCH_NAME"
 
 git fetch origin
-git checkout -b $BRANCH_NAME main || error "Failed to create branch"
-git reset --hard $COMMIT_HASH || error "Failed to reset to commit $COMMIT_HASH"
+git checkout -b "$BRANCH_NAME" main || error "Failed to create branch"
+git reset --hard "$COMMIT_HASH" || error "Failed to reset to commit $COMMIT_HASH"
 
 # Push the branch
 log "Pushing branch to origin..."
-git push origin $BRANCH_NAME || error "Failed to push branch"
+git push origin "$BRANCH_NAME" || error "Failed to push branch"
 
 # Create pull request
 log "Creating pull request..."
@@ -89,7 +94,7 @@ This rollback reverts all changes between commit $COMMIT_HASH and the current HE
 - [ ] Tested critical features
 " \
   --base main \
-  --head $BRANCH_NAME)
+  --head "$BRANCH_NAME")
 
 if [ $? -ne 0 ]; then
   error "Failed to create pull request"
@@ -98,7 +103,7 @@ fi
 log "Rollback PR created: $PR_URL"
 
 # Return to original branch
-git checkout $CURRENT_BRANCH
+git checkout "$CURRENT_BRANCH"
 
 log "Rollback preparation complete."
 log ""
@@ -109,4 +114,4 @@ log "3. Get approval from required reviewers"
 log "4. Merge the PR to trigger the deployment"
 log ""
 log "For expedited emergencies, you can also manually trigger the workflow:"
-log "gh workflow run azure-static-web-apps.yml --ref $BRANCH_NAME" 
+log "gh workflow run cost-optimized-ci.yml --ref $BRANCH_NAME" 

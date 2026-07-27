@@ -5,18 +5,26 @@
 # This script: operator recovery backup only
 #
 # Requires:
-#   - az CLI (authenticated to BTAI subscription)
-#   - op CLI (with BTAI-CC-BTAI-Site vault access via btaisite-sa-token)
+#   - az CLI (authenticated to the BTAI subscription)
+#   - op CLI, with OP_VAULT and OP_SA_TOKEN_FILE set. Their values are in the
+#     private runbook and must NOT be committed: this repo is public, and a
+#     vault or item name narrows an attacker's search even though it is not
+#     itself a secret.
 #
-# Usage: ./scripts/escrow-kv-to-1p.sh
+# Usage: OP_VAULT=... OP_SA_TOKEN_FILE=... ./scripts/escrow-kv-to-1p.sh
 
 set -euo pipefail
 
 KV="kv-btai-site-prod"
 ITEM="Azure Key Vault Escrow"
 
-export OP_SERVICE_ACCOUNT_TOKEN="$(cat ~/.config/op/btaisite-sa-token)"
-VAULT="BTAI-CC-BTAI-Site"
+# Sourced from the environment so no 1Password identifier lands in this file.
+VAULT="${OP_VAULT:?OP_VAULT is not set (value is in the private runbook)}"
+OP_SA_TOKEN_FILE="${OP_SA_TOKEN_FILE:?OP_SA_TOKEN_FILE is not set (path is in the private runbook)}"
+[ -r "$OP_SA_TOKEN_FILE" ] || { echo "Cannot read the service-account token at OP_SA_TOKEN_FILE" >&2; exit 1; }
+
+OP_SERVICE_ACCOUNT_TOKEN="$(cat "$OP_SA_TOKEN_FILE")"
+export OP_SERVICE_ACCOUNT_TOKEN
 
 SECRETS=(
   "resend-api-key"
