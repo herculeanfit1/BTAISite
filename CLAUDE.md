@@ -76,10 +76,10 @@ Incident-derived; each has burned someone. WRONG/CORRECT where it helps.
 
 ### No middleware runs at all
 
-Next.js resolves middleware only from the project root (or `src/`). **There is no root `middleware.ts`.** The only file is `app/middleware.ts`, which Next.js never executes.
+Next.js resolves middleware only from the project root (or `src/`). **This repo has no middleware at all** — there is no root `middleware.ts`, and the `app/middleware.ts` that used to sit here was deleted in PR #70 along with the `lib/nonce.ts` it existed to support. Next.js never loaded it, so its CSP-nonce logic had never once executed.
 
-- WRONG: edit `app/middleware.ts` to change CSP/nonces/security headers — it is dead code from an abandoned hybrid experiment and changes nothing in dev or prod.
-- CORRECT: security headers → `next.config.js`; redirects → `staticwebapp.config.json`. The live CSP needs `'unsafe-inline'` for scripts and styles precisely because that nonce path never ran.
+- WRONG: add CSP/nonce logic under `app/` — Next.js ignores middleware there, and the file will look authoritative while doing nothing. That decoy cost real debugging time before it was removed.
+- CORRECT: security headers → `next.config.js`; redirects → `staticwebapp.config.json`. The live CSP needs `'unsafe-inline'` for scripts and styles precisely because that nonce path never ran. Reinstating nonces means a **root** `middleware.ts` plus a matching CSP change, not a file under `app/`.
 
 ### Tailwind v4 — all custom CSS must be in `@layer` blocks
 
@@ -120,7 +120,7 @@ Never pass a logger method as a bare callback into another module — the `this`
 
 ### Coverage only counts `app/components/**`
 
-`vitest.config.js` sets `coverage.include` to `app/components/**` (plus the now-deleted `src/components/**`) with `all: false`. Tests you add for `src/lib/api/**` — the most logic-heavy code in the repo — earn **no** coverage credit and cannot lift the thresholds. Thresholds are 70/60/70/70 locally and 30/20/30/30 in CI (lines/branches/functions/statements).
+`vitest.config.js` sets `coverage.include` to `app/components/**` only, with `all: false`. Tests you add for `src/lib/api/**` — the most logic-heavy code in the repo, and the whole `/api/*` implementation — earn **no** coverage credit and cannot lift the thresholds. Thresholds are 70/60/70/70 locally and 30/20/30/30 in CI (lines/branches/functions/statements). Widening the include list is PLAN-005's call; until then, do not read a passing coverage gate as evidence the API layer is tested.
 
 ### CI concurrency groups (PR #14, #18)
 
