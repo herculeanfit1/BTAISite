@@ -127,6 +127,11 @@ attacker-controlled values in the admin email.
   text and that assertion fails against a _correct_ fix. `__tests__/api/email-template-injection.test.ts`
   parses the HTML and asserts structurally instead.
 
+### Testing route handlers: two harness traps (PLAN-007)
+
+- `vitest.setup.js` mocks `next/server`. It used to share **one** module-scope `Map` across every response, ignore `init.headers`, and expose `NextResponse` without a constructor — so header assertions read an empty Map and `new NextResponse(...)` could not be built. It is now faithful (per-instance `Headers`, honoured `init`, `json`/`text`). If you extend it, keep it per-instance.
+- `origin` is a **forbidden header name**: `new Request(url, { headers: { origin } })` silently drops it, so CORS assertions read `null` no matter what the handler does. Build a request stub (`{ method, headers: new Headers(...), json: async () => body }`) instead — route handlers only touch those.
+
 ### Root tsconfig must exclude `api/` (PR #16)
 
 `api/` is a separate TS project. If it is missing from the root `exclude` array, `next build` tries to type-check Azure Functions code and fails on missing `@azure/functions` types.

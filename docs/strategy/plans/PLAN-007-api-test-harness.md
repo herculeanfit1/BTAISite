@@ -1,7 +1,79 @@
 # PLAN-007: API test harness (real tests over the Azure Functions backend)
 
-**Status**: Blocked (by PLAN-001)
+**Status**: Executed 2026-07-27 — see "Execution notes"
 **Effort**: M · **Risk**: Low
+
+## Execution notes (2026-07-27)
+
+**The title is wrong and so is every path.** There is no Azure Functions backend to test.
+`api/` has not been deployed since 2026-07-24; the live API is `app/api/*/route.ts` over
+`src/lib/api/`. All ten steps name `api/src/...` files. Executed against the live tree
+instead.
+
+**The premise "zero automated tests over the real handlers" was false**, and the plan's
+claim that PLAN-005 removes the existing `__tests__/api/` tests is the opposite of what
+happened — PLAN-005 _kept_ seven real ones (46 tests) and deleted only the broken and
+placeholder files. Rewriting from scratch would have discarded working tests.
+
+So the work was re-scoped to what the coverage report showed was actually untested:
+
+| Module                                    | Before                          | After               |
+| ----------------------------------------- | ------------------------------- | ------------------- |
+| `src/lib/api/hubspot.ts`                  | 9.49% lines, **0% functions**   | **100%**            |
+| `src/lib/api/queue-client.ts`             | 0%                              | **100%**            |
+| `src/lib/api/email/send-contact-email.ts` | 0%                              | **98.07%**          |
+| `src/lib/api/email/resend-provider.ts`    | 19.35%                          | **100%**            |
+| `src/lib/api/correlation.ts`              | 71.42%                          | **100%**            |
+| `app/api/*/route.ts`                      | **not measured at all**         | **100%**            |
+| `src/lib/api` overall                     | 60.81% lines / 70.83% functions | **95.71% / 95.83%** |
+
+Repo-wide: 23.05 → **30.36** lines, 76.03 → **84.96** functions, 192 tests across 27 files.
+
+### The blocker the plan could not have known about
+
+`vitest.setup.js` mocked `next/server` with a **decoy**: one module-scope `new Map()`
+shared by every response ever constructed, `init.headers` ignored entirely, and
+`NextResponse` exposed as a plain object with only `json`/`next` — so
+`new NextResponse(...)`, which `app/api/contact/route.ts` uses for preflight, could not be
+constructed at all. Any header assertion read an empty shared Map, indistinguishable from
+a genuinely missing header. Route-handler tests were **impossible, while appearing merely
+unwritten**. Replaced with a faithful mock (per-instance real `Headers`, honoured `init`, a
+usable constructor, `json`/`text`). No existing test imported `next/server`, so nothing
+depended on the old behaviour.
+
+Second harness trap: `origin` is a forbidden header name, so
+`new Request(url, { headers: { origin } })` silently drops it and every CORS assertion
+reads `null` regardless of handler behaviour. The tests build request stubs instead.
+
+### Other corrections
+
+- **No `Quality Gate / api` job exists** for step 10 to adjust. PLAN-002 deliberately did
+  not create one, because a required check on a tree scheduled for deletion blocks every
+  PR the moment the teardown lands.
+- **The coverage `include` list never covered the `app/api` tree**, so the three route
+  handlers earned no credit despite two of their response shapes being a **deploy
+  contract** (`/api/health` must contain `"status"`; an invalid POST to `/api/contact`
+  must return a JSON 400). Widened, and those contracts are now asserted.
+- **No thresholds "one plan later"** — they are raised here, to the measured baseline minus
+  ~2 points, per PLAN-005's rule.
+- Steps 1 and 2 (export handlers, build an `HttpRequest` stub factory) are moot: the live
+  route handlers already export `GET`/`POST`/`OPTIONS`, and take a Fetch `Request`.
+- Step 5's instruction to keep anti-abuse tunables out of the public repo was followed
+  literally and is the reason the rate-limit and circuit-breaker tests **loop until the
+  behaviour flips** rather than asserting a literal count. A test asserting "the 6th
+  request is blocked" publishes the number to stay under.
+- `newsletter` and `cspReport` handlers (steps 3, 8) **do not exist in the live tree** —
+  no route, no UI, no fetch anywhere in `app/`. They exist only in `api/`. This also
+  undercuts PLAN-006, which assumes a live newsletter endpoint that merely lacks
+  persistence.
+
+### Verification
+
+Every new suite was mutation-tested rather than trusted for being green: removing
+`escapeHtml` from the HubSpot note body, changing the `/api/health` response shape, and
+deleting the Resend `error` check each produced exactly one failing test. (A fourth
+mutation appeared to pass until the mutation itself was checked — `perl s///` without `/g`
+had rewritten a code comment rather than the code.)
 
 ## Context
 
