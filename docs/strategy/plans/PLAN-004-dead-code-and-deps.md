@@ -1,8 +1,49 @@
 # PLAN-004: Dead code & dead dependency removal
-**Status**: Ready
+
+**Status**: Executed 2026-07-27 (reduced scope — see "Execution notes")
 **Effort**: M · **Risk**: Med
 
+## Execution notes (2026-07-27)
+
+Most of this plan had already been done by other work, and **two of its remaining
+instructions had become destructive.** What shipped: `app/middleware.ts` and the orphaned
+`lib/nonce.ts` deleted; four genuinely dead dependencies removed; the stale
+`src/components/**` entry dropped from vitest coverage. `npm ci`, `type-check`, 145 tests
+and `next build` all pass, and the build emits **identical chunk hashes and the same
+103 kB first-load JS**, proving the removed packages were never in the bundle.
+
+**DO NOT run step 5 (`git rm -r src/`). It would delete the live backend.** When this plan
+was written, `src/` was a dead mirror. The API consolidation (PRs #52–#57, 2026-07-24) then
+made `src/lib/api/**` the _live_ implementation of `/api/*`, imported by
+`app/api/contact/route.ts` and six test files. Every file under `src/` is now live. Steps
+2–4 (re-home libs, relocate Playwright, delete the tree) are obsolete: the `src/` component
+mirror went in PR #60 and `src/uitests/` in PR #63.
+
+**DO NOT remove `resend` (step 8). It is load-bearing.** The plan says "email sending moved
+to `api/`; no frontend import remains." The consolidation moved it back: root
+`resend@4.5.1` is imported by `src/lib/api/email/resend-provider.ts`, which the live
+`/api/contact` route reaches through the provider seam — and `__tests__/api/resend-import-guard.test.ts`
+exists specifically to assert that seam. Removing it would have broken the production
+contact form. The `api/` project keeps its own separate `resend@^6.11.0`.
+
+Removed as verified-dead (zero imports in `app/ src/ lib/ __tests__/ e2e/ smoke/ types/`):
+`three`, `@react-three/fiber`, `@types/three`, `critters`. The plan's own reasoning held for
+all four — the live "globe" (`app/components/home/GlobeOverlaySection.tsx`) is CSS-only, and
+`critters`' only consumer, `experimental.optimizeCss`, is commented out in `next.config.js`.
+Note the grep for `three` produces false positives: the English word appears in comments in
+`ContactSection.tsx` and `hubspot.ts`. `__tests__/components/globe/GlobeVisualization.test.tsx`
+imports a component that does not exist, but its entire body is inside a block comment, so it
+neither runs nor breaks — it belongs to PLAN-005's deletion list.
+
+Already satisfied before this change, no action needed: **step 1** — `tsconfig.json` has only
+`@/*` → `./*`; the `@/components/*`, `@/lib/*`, `@/types/*` aliases are already gone, and
+grep confirms zero usages. **Step 6** is therefore a no-op for tsconfig.
+
+Deferred as written: `autoprefixer` / `postcss-import` / `postcss` untouched — all three are
+load-bearing in `postcss.config.cjs`, exactly as the plan cautions.
+
 ## Context
+
 The repo carries a near-complete parallel dead codebase: `src/` holds 118 tracked files —
 a second App Router (`src/app/`), ~57 mirrors of `app/components/`, and ~20 lib files —
 of which exactly **three modules are alive**. Meanwhile `tsconfig.json` aliases
@@ -13,6 +54,7 @@ Additionally ~1 MB+ of dependencies have zero imports. Nothing in this plan chan
 runtime behavior; it removes what provably doesn't run.
 
 ## Goal / Non-goals
+
 **Goal**: One live source tree (`app/` + root `lib/`), no aliases into dead code, no
 dependencies without imports. Build output byte-equivalent-in-behavior to before.
 **Non-goals**: Removing the Jest/Babel test stack (PLAN-005, it's test infra);
@@ -20,8 +62,10 @@ unifying `/` vs `/[locale]` routes (PLAN-008); refactoring oversized components;
 touching `api/` (separate project, nothing dead found there).
 
 ## Current state
+
 Live imports INTO `src/` — exactly four, all via the `@/*` → `./*` alias
 (`tsconfig.json:34-37`):
+
 - `app/components/home/ContactSection.tsx:5` → `@/src/lib/validation`
 - `app/GoogleAnalytics.tsx:4` → `@/src/lib/use-consent`
 - `app/components/TelemetryProvider.tsx:4-5` → `@/src/lib/telemetry` and `@/src/lib/use-consent`
@@ -34,6 +78,7 @@ Playwright lives inside `src/`: `playwright.config.ts:13` sets `testDir` to
 `src/uitests/` — those files are NOT dead.
 
 Dead dependencies (zero imports, verified by grep across `app/ src/ lib/ api/`):
+
 - `three@0.171.0`, `@react-three/fiber@9.1.2`, `@types/three` (`package.json:100,104,118`)
   — the `globe/` component dirs are empty; the live "globe" (`GlobeOverlaySection.tsx`)
   is CSS-only.
@@ -50,6 +95,7 @@ one. `lib/nonce.ts` exists to support the dead one — check imports before remo
 Dead files inside `app/` were removed by PLAN-003 (`test-page.tsx` etc.).
 
 ## Target state
+
 - `src/` deleted except content relocated: live libs → root `lib/`, Playwright suite →
   `uitests/` at root.
 - `tsconfig.json` paths: only `@/*` → `./*` remains.
@@ -57,6 +103,7 @@ Dead files inside `app/` were removed by PLAN-003 (`test-page.tsx` etc.).
 - `app/middleware.ts` and (if orphaned) `lib/nonce.ts` deleted.
 
 ## Steps
+
 1. Verify assumptions (abort & re-plan on surprises):
    ```bash
    grep -rn "@/components/\|@/lib/\|@/types/" app/ lib/ __tests__/ middleware.ts server.js
@@ -104,6 +151,7 @@ Dead files inside `app/` were removed by PLAN-003 (`test-page.tsx` etc.).
    (now nonexistent) — leave the rest of coverage policy to PLAN-005.
 
 ## Security & compliance notes
+
 Shrinks the audit/attack surface (~6 fewer dependency trees for Trivy/Dependabot to
 track; `three` alone is a large tree). No secrets, no permission changes. The dead
 `app/middleware.ts` deletion removes a false sense of CSP nonce protection — the real
@@ -111,6 +159,7 @@ CSP posture (static headers in `staticwebapp.config.json`, including the non-fun
 literal `{nonce}`) is addressed in PLAN-012 documentation and future hardening.
 
 ## Validation
+
 ```bash
 npm ci
 npm run type-check          # no missing-module errors
@@ -119,9 +168,11 @@ node scripts/fix-rollup.js && npx vitest run __tests__/components __tests__/inte
 npx playwright test uitests/smoke.spec.ts   # local, with dev server, if feasible
 grep -rn "src/lib\|src/components\|@/components/\|@/lib/" app/ lib/ __tests__/ tsconfig.json  # → empty
 ```
+
 Bundle check: `ANALYZE=true npm run build` before/after — expect equal or smaller
 first-load JS; any growth = something was resolving differently, investigate.
 
 ## Rollback
+
 Revert the PR (single commit). No data or infra involved. If a hidden consumer of a
 deleted module surfaces post-merge, `git revert` restores everything including lockfile.
