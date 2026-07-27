@@ -1,5 +1,6 @@
 # Bridging Trust AI Website
 
+[![Quality Gate](https://github.com/herculeanfit1/BTAISite/actions/workflows/quality-gate.yml/badge.svg)](https://github.com/herculeanfit1/BTAISite/actions/workflows/quality-gate.yml)
 [![CI/CD Pipeline](https://github.com/herculeanfit1/BTAISite/actions/workflows/cost-optimized-ci.yml/badge.svg)](https://github.com/herculeanfit1/BTAISite/actions/workflows/cost-optimized-ci.yml)
 
 Marketing and consulting site for Bridging Trust AI — a single-page Next.js App Router
@@ -63,8 +64,10 @@ npm run type-check   # tsc --noEmit
 npm run validate     # full pre-push quality gate (ci/g_master.sh)
 ```
 
-Cloud CI is deploy-only and re-runs none of these checks. **`npm run validate` locally is
-the gate** before pushing.
+Cloud CI enforces type-check, the full test suite with its coverage thresholds, and the
+production build on every PR (`.github/workflows/quality-gate.yml`, a required status
+check). It does not run Playwright/E2E, the security scripts, or the deploy-check — so
+`npm run validate` locally is still the broader gate before pushing.
 
 ### Environment setup
 

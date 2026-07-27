@@ -1,8 +1,51 @@
 # PLAN-001: Escape user input in Resend email templates
-**Status**: Ready
+
+**Status**: Executed 2026-07-27 — see "Execution notes"
 **Effort**: S · **Risk**: Low
 
+## Execution notes (2026-07-27)
+
+The vulnerability was **real and live**, exactly as diagnosed. Every file path in this
+plan was **wrong**, and following it literally would have produced a green PR that fixed
+nothing.
+
+**The plan targets `api/`, which has not been deployed since 2026-07-24.** The live code
+is `src/lib/api/email/templates/`. Patching `api/src/lib/email-templates/` would have left
+the injection running in production while closing the ticket. This is the fourth
+consecutive plan whose stated target contradicted the tree.
+
+Other corrections, each verified against the code:
+
+| Plan says                                                 | Reality                                                                                                                                                                                                                                              |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `escapeHtml` is private at `api/src/lib/hubspot.ts:31-38` | Live twin at `src/lib/api/hubspot.ts:59-66`; now shared from `src/lib/api/html.ts`                                                                                                                                                                   |
+| Import with a `.js` extension                             | The live tree imports **extensionless** (`from "../../html"`); `.js` is an `api/`-only ESM convention                                                                                                                                                |
+| Seed a new Vitest harness inside `api/`                   | The root repo already has Vitest and seven API tests in `__tests__/api/`. A second harness in a tree scheduled for deletion is waste — tests went to `__tests__/api/`                                                                                |
+| Use `escapeHtmlMultiline` for the admin message           | **Wrong.** `.message-content` in the admin template is `white-space: pre-wrap`, so newlines already render; `<br />` would double every line break. Only the confirmation template needs it                                                          |
+| Assert output `not.toContain("onerror=")`                 | **This assertion fails against a correct fix.** The payload survives as inert _text_, and also appears harmlessly inside the escaped `mailto:` href. Tests parse the HTML and assert structurally instead: no `script`, no `img`, no `on*` attribute |
+
+**Sinks the plan missed**: `interestLabel` (falls through to the raw `data.interest` when
+unmapped — Zod-constrained via the live route, but the function signature permits any
+string), and the fact that `ipAddress`/`userAgent` are **header-derived and never touch
+the Zod schema**, making them the most directly attacker-controlled strings in the
+template.
+
+**`api/` was deliberately left vulnerable.** It is undeployed and slated for deletion in
+API-consolidation Phase 5; CLAUDE.md forbids porting changes into it. It is unreachable,
+so this is not residual exposure.
+
+**Every test was proven to fail against the pre-fix code** before being accepted — the
+templates were reverted to `origin/main` and the suite re-run. Two assertions passed
+pre-fix (so proved nothing) and were rewritten until they failed: the `mailto:` guard now
+detects the attribute truncation a raw `"` causes (`expected 'mailto:' to contain
+'@example.com'`).
+
+Result: **158 tests across 23 files, all green.** Coverage moved 23.05 → 24.22 lines and
+76.03 → 77.04 functions, branches flat at 80.67. `type-check`, `next build`, and ESLint
+all clean.
+
 ## Context
+
 BTAI-Site's contact form (public, anonymous) posts to an Azure Functions backend
 (`api/src/functions/contact.ts`) that sends two HTML emails via Resend: an admin
 notification and a user confirmation. User-controlled fields (`firstName`, `lastName`,
@@ -19,11 +62,13 @@ bundle to `dist/index.js`, ESM with `.js` import extensions). It currently has *
 setup**; this plan seeds a minimal Vitest harness that PLAN-007 later expands.
 
 ## Goal / Non-goals
+
 **Goal**: No user-controlled string reaches email HTML unescaped; regression tests prove it.
 **Non-goals**: Redesigning the templates; changing Zod schemas; touching the frontend
 form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
 
 ## Current state
+
 - `api/src/lib/email-templates/admin-notification.ts` — `generateAdminNotificationEmail()`
   (exported at line 10) interpolates raw: `${data.firstName} ${data.lastName}` (~line 151),
   `mailto:${data.email}` + `${data.email}` display (~line 156), `${data.company}` (~line 162),
@@ -41,6 +86,7 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
   `@azure/functions ^4.6.0`, `resend ^6.11.0`, `zod ^3.25.0`.
 
 ## Target state
+
 - A shared `api/src/lib/html.ts` module exports `escapeHtml`; both templates and
   `hubspot.ts` import it. Every user-controlled interpolation in both templates is
   escaped; `message` preserves line breaks via `<br />` after escaping; `mailto:` URL
@@ -49,7 +95,9 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
   in `api/`.
 
 ## Steps
+
 1. Create `api/src/lib/html.ts`:
+
    ```ts
    export function escapeHtml(s: string): string {
      return s
@@ -65,6 +113,7 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
      return escapeHtml(s).replace(/\r?\n/g, "<br />");
    }
    ```
+
 2. In `api/src/lib/hubspot.ts`: delete the local `escapeHtml` (lines 31-38) and add
    `import { escapeHtml } from "./html.js";` (note the `.js` extension — ESM convention
    used throughout `api/src/`). Behavior unchanged.
@@ -76,7 +125,7 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
    - Message → `${escapeHtmlMultiline(data.message)}`
    - Reply button → `href="mailto:${encodeURIComponent(data.email)}?subject=${encodeURIComponent("Re: Your inquiry to Bridging Trust AI")}&body=${encodeURIComponent(`Dear ${data.firstName},\r\n\r\nThank you for reaching out to Bridging Trust AI...`)}"` and label `Reply to ${escapeHtml(data.firstName)}`
    - Technical details → `${escapeHtml(data.ipAddress || "Not available")}` and same for `userAgent`.
-   Do not restructure the template otherwise; keep all CSS/markup identical.
+     Do not restructure the template otherwise; keep all CSS/markup identical.
 4. In `api/src/lib/email-templates/contact-confirmation.ts`: import from `"../html.js"`;
    escape `firstName`; message → `"${escapeHtmlMultiline(data.message)}"`.
 5. Seed the test harness in `api/`:
@@ -85,7 +134,9 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
    - Create `api/vitest.config.ts`:
      ```ts
      import { defineConfig } from "vitest/config";
-     export default defineConfig({ test: { environment: "node", include: ["src/**/*.test.ts"] } });
+     export default defineConfig({
+       test: { environment: "node", include: ["src/**/*.test.ts"] },
+     });
      ```
 6. Create `api/src/lib/html.test.ts` covering: each of the 5 escaped characters;
    multiline conversion; idempotence not required (document that double-escaping is
@@ -97,12 +148,14 @@ form; full API test coverage (PLAN-007); fixing rate limiting (PLAN-009).
    Assert a message containing `line1\nline2` renders `line1<br />line2`.
 
 ## Security & compliance notes
+
 This closes the only known active injection vulnerability. No secrets involved; no data
 handling changes; no new permissions. Escaping is output-encoding at the sink, which is
 the correct layer (do NOT add input sanitization to Zod schemas — that mangles legitimate
 messages).
 
 ## Validation
+
 ```bash
 cd api
 npm install
@@ -110,10 +163,12 @@ npm run typecheck        # passes
 npm run build            # esbuild bundle succeeds
 npm test                 # all new tests green
 ```
+
 Then send one manual test submission with `RESEND_TEST_MODE=true` locally (see CLAUDE.md
 "Local Environment Setup") or via the deployed preview, using a message containing
 `<b>bold</b>` and a newline, and confirm the received/logged email shows the literal
 `<b>bold</b>` text and a line break.
 
 ## Rollback
+
 Single revert of the PR commit. Templates are pure functions with no persisted state.

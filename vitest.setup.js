@@ -53,33 +53,52 @@ vi.mock("next/image", () => ({
   },
 }));
 
-// Mock next/server
+// Mock next/server.
+//
+// The previous version of this mock was a decoy: it shared ONE module-scope
+// `new Map()` across every response ever constructed, ignored `init.headers`
+// entirely, and exposed NextResponse as a plain object with only `json`/`next`
+// — so `new NextResponse(...)`, which app/api/contact/route.ts uses for
+// preflight, could not be constructed at all. Any test asserting a response
+// header would have read an empty shared Map and had no way to tell that from a
+// genuinely missing header. Route-handler tests were effectively impossible
+// while appearing merely unwritten.
+//
+// This version is faithful to the parts the route handlers actually use:
+// per-instance real Headers, honoured init, a usable constructor, and json/text.
 vi.mock("next/server", () => {
-  const headers = new Map();
-  
   class MockNextResponse {
-    constructor(body, init) {
-      this.body = body;
-      this.status = init?.status || 200;
-      this.headers = headers;
+    constructor(body, init = {}) {
+      this.body = body ?? null;
+      this.status = init.status ?? 200;
+      this.headers = new Headers(init.headers ?? {});
+    }
+
+    static json(body, init = {}) {
+      const res = new MockNextResponse(body, init);
+      if (!res.headers.has("content-type")) {
+        res.headers.set("content-type", "application/json");
+      }
+      return res;
+    }
+
+    static next(init = {}) {
+      return new MockNextResponse(null, init);
     }
 
     async json() {
       return this.body;
     }
+
+    async text() {
+      if (this.body === null || this.body === undefined) return "";
+      return typeof this.body === "string"
+        ? this.body
+        : JSON.stringify(this.body);
+    }
   }
 
-  return {
-    NextResponse: {
-      json: vi.fn().mockImplementation((body, init) => {
-        return new MockNextResponse(body, init);
-      }),
-      next: vi.fn().mockImplementation(() => {
-        return { headers };
-      })
-    },
-    NextRequest: vi.fn()
-  };
+  return { NextResponse: MockNextResponse, NextRequest: vi.fn() };
 });
 
 // Mock Web API used by Next.js App Router
