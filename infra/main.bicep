@@ -85,6 +85,27 @@ resource deployContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   name: 'deploymentpackages'
 }
 
+// ── Lead-classification queue ───────────────────────────────────────
+// Live and in use: app/api/contact enqueues here for the downstream
+// classification pipeline. It was created by hand, so the environment could not
+// be rebuilt from this file until now (PLAN-011).
+//
+// Access is a queue-scoped, add-only SAS URL held in the Static Web App's
+// CLASSIFY_QUEUE_SAS_URL setting — NOT the Functions managed identity. There is
+// deliberately no "Storage Queue Data Message Sender" role assignment here and
+// no AzureWebJobsStorage__queueServiceUri app setting: both belong to the
+// retired Functions runtime and would grant a dead identity live queue access.
+
+resource queueService 'Microsoft.Storage/storageAccounts/queueServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource classifyQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2023-05-01' = {
+  parent: queueService
+  name: 'btai-lead-classify'
+}
+
 // ── Functions App (Flex Consumption) ────────────────────────────────
 
 resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
@@ -203,15 +224,20 @@ resource swa 'Microsoft.Web/staticSites@2024-04-01' existing = {
   name: swaName
 }
 
-// Link SWA backend to Functions app
-resource swaBackend 'Microsoft.Web/staticSites/linkedBackends@2024-04-01' = {
-  parent: swa
-  name: 'functions-backend'
-  properties: {
-    backendResourceId: functionsApp.id
-    region: location
-  }
-}
+// NO linked backend. Removed 2026-07-27 (PLAN-011).
+//
+// This template still declared `Microsoft.Web/staticSites/linkedBackends`
+// pointing at the Functions app. That link was retired on 2026-07-24 when /api/*
+// moved to App Router route handlers inside the Next.js app, and the SWA has no
+// linked backend today (`az staticwebapp backends show` → []).
+//
+// Deploying this template as written would have RE-CREATED the link. Microsoft
+// documents Function App linking as unsupported for hybrid Next.js, and
+// cost-optimized-ci.yml's post-deploy check explicitly warns that re-linking is
+// not the fix for a broken /api/*. So the one action this file invited — deploy
+// it to reconcile drift — was the action that could break the live API.
+//
+// Do not reinstate. See docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md.
 
 // ── Auth: allow anonymous — CORS handled in function code ──────────
 

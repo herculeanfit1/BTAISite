@@ -1,7 +1,71 @@
 # PLAN-011: IaC completeness (queue in Bicep, missing wiring script, broken rollback)
 
-**Status**: Ready
+**Status**: Executed 2026-07-27 — see "Execution notes"
 **Effort**: S–M · **Risk**: Low
+
+## Execution notes (2026-07-27)
+
+**The plan's own validation step was the most dangerous instruction in it.** It ends with
+"deploy" after a `what-if`. Deploying `infra/main.bicep` as it stood would have
+**re-created the SWA linked backend** retired on 2026-07-24 — the one thing
+`cost-optimized-ci.yml` explicitly warns is not the fix for a broken `/api/*`, and which
+Microsoft documents as unsupported for hybrid Next.js. The plan's whole framing is
+"bring IaC into sync with reality"; the template was describing the _pre-consolidation_
+topology, so syncing in that direction would have pushed the retired architecture back
+onto the live site.
+
+Proven with `what-if`, not asserted:
+
+| Template      | `staticSites/.../linkedBackends/functions-backend` |
+| ------------- | -------------------------------------------------- |
+| `origin/main` | **`Create`**                                       |
+| This PR       | absent — no link would be created                  |
+
+The SWA has no linked backend today (`az staticwebapp backends show` → `[]`), confirming
+the removal matches reality rather than causing drift.
+
+### What was done
+
+- **Removed the `swaBackend` resource** — the live foot-gun above.
+- **Declared the queue** (`queueServices` + `queues/btai-lead-classify`). It is live and
+  in use, and was hand-created, so the environment genuinely could not be rebuilt from
+  this repo. `what-if` reports it as **`NoChange`**, i.e. the declaration matches live
+  exactly and causes no churn.
+- **Fixed `scripts/rollback.sh`** — `azure-static-web-apps.yml` → `cost-optimized-ci.yml`
+  at both sites (this claim was accurate). Documented that rollback here means
+  git-revert-and-redeploy (~5 min), not SWA native instant revert, and quoted five
+  unquoted variables shellcheck flagged in a script that only ever runs during incidents.
+
+### Where the plan was wrong
+
+- **Steps 3 and 4 would have granted a dead identity live access.** The queue is reached
+  with a queue-scoped, add-only SAS URL held in the **Static Web App's**
+  `CLASSIFY_QUEUE_SAS_URL`. The "Storage Queue Data Message Sender" role for the Functions
+  identity and the `AzureWebJobsStorage__queueServiceUri` app setting are Functions-runtime
+  mechanisms for an app that no longer serves traffic. Both deliberately omitted; the Bicep
+  says why.
+- **Step 5's premise is false — `scripts/wire-functions-settings.sh` exists** (69 lines).
+  It is also inert: its default mode writes settings onto the retired Functions app, while
+  every live runtime setting (`RESEND_API_KEY`, `HUBSPOT_TOKEN`, `CLASSIFY_QUEUE_SAS_URL`,
+  `EMAIL_*`) sits on the Static Web App. Rather than rewrite it to target the SWA — a live
+  infrastructure change this plan lists as a non-goal — it now carries a header saying it
+  is inert and should be deleted with the Functions app in Phase 5.
+- **The script leaked recon detail into a public repo**, which is the one thing CLAUDE.md
+  says must never land here: it hard-coded the 1Password vault name and the
+  service-account token filename. Both are now read from `OP_VAULT` /
+  `OP_SA_TOKEN_FILE`, with the values documented as private-runbook material.
+- **The real IaC gap is not where the plan says.** It is not that the Functions app's
+  settings are unmanaged — it is that **the Static Web App's settings are entirely
+  undeclared**, and those are the ones production actually reads. Not fixed here: writing
+  live SWA settings from Bicep risks clobbering working production values and is squarely
+  the "changing live infrastructure" non-goal. Recorded as follow-up work.
+
+### Not deployed
+
+Nothing was applied. `what-if` shows the template converges (queue `NoChange`, no link
+created), so there is no drift left for a deployment to fix, and `Modify` still appears
+against the retired Functions app's settings. Applying it is unnecessary and only carries
+downside. The site was never touched.
 
 ## Context
 
