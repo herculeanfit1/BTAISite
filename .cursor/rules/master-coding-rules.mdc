@@ -1,4 +1,4 @@
-description: "Bridging Trust AI – Website master coding rules (Next.js 15.4.x, Tailwind 4.1, npm). Quality-first, server components by default, enforced patterns for repeatable excellence."
+description: "Bridging Trust AI – Website master coding rules (Next.js App Router, Tailwind v4, npm). Quality-first, server components by default, enforced patterns for repeatable excellence."
 globs:
 
 * "\*\*/\*"
@@ -10,9 +10,9 @@ globs:
 
 <!--  Master .cursorrules | Bridging Trust AI – Website only   -->
 
-<!--  Next.js 15.4.x | Tailwind 4.1 | npm | Vitest | Playwright -->
+<!--  Next.js App Router | Tailwind v4 | npm | Vitest | Playwright -->
 
-<!--  Last updated: 2025-09-03 (America/Chicago)               -->
+<!--  Last updated: 2026-07-26 (America/Chicago)               -->
 
 <!-- ========================================================= -->
 
@@ -45,18 +45,24 @@ This document is the **single source of truth** for the Bridging Trust AI **webs
 
 ```
 root/
-├─ app/                 # App Router: pages, layouts, route handlers (server-first)
-├─ src/
-│  ├─ components/       # Shared UI (server-first). Client islands in subfolders.
-│  ├─ lib/              # Utilities, fetching, caching, logger, schemas (zod)
-│  └─ types/            # Global TS types & interfaces
+├─ app/
+│  ├─ components/       # ACTIVE UI components (server-first). Client islands in subfolders.
+│  ├─ api/              # Route handlers — contact, health, status (the live backend)
+│  └─ …                 # pages, layouts, globals.css
+├─ src/lib/             # Utilities and schemas; src/lib/api/ holds API domain logic
+├─ lib/                 # App-side helpers (logger, env, i18n dictionaries, cookies)
+├─ api/                 # DEAD Azure Functions project — retired, do not edit
 ├─ public/              # Static assets (images optimized or via next/image)
-├─ tests/               # Vitest unit & Playwright e2e/visual
+├─ __tests__/           # Vitest unit + integration;  e2e/ and smoke/ are Playwright
 ├─ docs/                # architecture notes, ADRs, promptlog.md
-└─ .cursorrules
+└─ .cursor/rules/
 ```
 
-* **Path aliases** (must use): `@/components`, `@/lib`, `@/types`.
+* **Path aliases**: there is exactly one — `@/*` → repo root (tsconfig.json). Import as
+  `@/src/lib/api/…`, `@/lib/…`, `@/app/…`. There is no `@/components` or `@/types` mapping;
+  a new top-level alias must be added to both `tsconfig.json` and `vitest.config.js`.
+* **`CLAUDE.md` is authoritative for architecture facts and platform gotchas.** Where this
+  file disagrees with it about how the app is wired, `CLAUDE.md` wins.
 * **File size**: soft cap **150 lines** (app code) / **250** (infra/config). Cursor warns & proposes refactor above caps.
 * **Docs**: Every public function/component gets a terse JSDoc. Major features add/update an ADR.
 
@@ -64,7 +70,8 @@ root/
 
 # 3  Technology Locks
 
-* **Next.js**: lock to **15.4.x**.
+* **Next.js**: `package.json` is the authoritative pin — read it rather than assuming a
+  minor. Upgrades are deliberate and land with a full `npm run validate`.
 * **TypeScript**: `"strict": true`. Disallow `any`; if unavoidable, isolate and justify in a comment.
 * **Tailwind**: v4.1.x with `prettier-plugin-tailwindcss@0.6.11`. No inline styles.
 * **Package manager**: **npm** (keep `package-lock.json` authoritative).
@@ -110,10 +117,10 @@ root/
 
 # 5  Security & Compliance (website)
 
-* **CSP/SRI**: Already configured in `staticwebapp.config.json`. Cursor must **not** generate patterns that require unsafe inline scripts/styles. Use `next/script` with `strategy` and SRI when external.
+* **CSP/SRI**: Configured in `next.config.js` `headers()` — **not** in `staticwebapp.config.json`, whose header directives the SWA hybrid adapter silently ignores. The live policy currently permits `'unsafe-inline'` for scripts and styles because the nonce middleware never executed and components still carry inline `style=` attributes; do not add new dependencies on that relaxation. Use `next/script` with `strategy` and SRI when external.
 * **Inputs/Outputs**: Sanitize untrusted HTML. Never `dangerouslySetInnerHTML` unless vetted & wrapped.
-* **Auth & Abuse**: Contact/API routes enforce **zod validation**, header honeypot, per-IP **rate limit**, and **circuit breaker** patterns (keep your Resend flow).
-* **Secrets**: Use **Azure SWA secrets** (status quo). No secrets in repo, commits, or logs.
+* **Auth & Abuse**: Contact/API routes enforce **zod validation** plus server-side anti-abuse checks. Do not document the mechanisms or their tunables in this repo — it is public; they live in the private runbook.
+* **Secrets**: **Azure Key Vault** via system-assigned managed identity, referenced with `@Microsoft.KeyVault()`; 1Password for local `op://` refs. No secrets in repo, commits, or logs.
 * **Supply chain**: Pin critical deps; dependabot/renovate allowed. No post-install scripts from unknown deps.
 
 ---
@@ -223,9 +230,14 @@ export async function POST(req: Request) {
 
 # 12  Azure Static Web Apps (deployment norms)
 
-* Keep `staticwebapp.config.json` authoritative for **CSP**, headers, routes, and API.
-* Env/secrets via SWA; **never** in repo.
-* Artifacts: upload Playwright/Lighthouse results for traceability on each PR.
+* `staticwebapp.config.json` is authoritative for **redirects and route rules only** — its
+  `globalHeaders`, `routes[].headers`, and `responseOverrides` are ignored by the hybrid
+  adapter and were removed rather than left as a decoy. Response headers live in
+  `next.config.js`. Conversely `next.config.js` `redirects()` is ignored by the adapter and
+  broke the route map when tried — keep redirects in the SWA config.
+* Env/secrets via Key Vault; **never** in repo.
+* `/api/*` is served by the managed hybrid backend as App Router route handlers. There is no
+  linked Functions backend; `api_location` is empty.
 
 ---
 
@@ -242,7 +254,7 @@ Cursor will:
 
 ---
 
-# 14  Quick Next.js 15.4.x Cheatsheet (for code-gen)
+# 14  Quick Next.js App Router Cheatsheet (for code-gen)
 
 | Scenario            | Required pattern                                                                                |
 | ------------------- | ----------------------------------------------------------------------------------------------- |
