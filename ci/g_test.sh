@@ -69,23 +69,16 @@ else
     exit 1
 fi
 
-# Check test coverage with ratchet (cursor rules: coverage ratchet - CI ≥ 70%)
-log_info "Checking test coverage with ratchet..."
+# Coverage. The thresholds in vitest.config.js are the gate — they are set to the
+# measured baseline, so a drop fails here rather than being waved through.
+# The former ci/coverage-ratchet.js was deleted (PLAN-005): its CI floors were 0 and it
+# exited green whenever coverage data was missing, which was the permanent state.
+log_info "Checking test coverage against configured thresholds..."
 if npm run test:coverage; then
-    log_success "Tests passed with coverage"
-    
-    # Run coverage ratchet to prevent regressions
-    log_info "Running coverage ratchet analysis..."
-    if node ci/coverage-ratchet.js --verbose; then
-        log_success "Coverage ratchet passed - no regressions detected"
-    else
-        log_error "Coverage ratchet failed - coverage regression detected"
-        log_info "Either add tests to improve coverage or investigate the regression"
-        exit 1
-    fi
+    log_success "Tests passed and coverage thresholds met"
 else
-    log_error "Test coverage below threshold (70% required)"
-    log_info "Add more tests to increase coverage"
+    log_error "Coverage below the thresholds in vitest.config.js"
+    log_info "Add tests to raise it — do not lower the thresholds to make this pass"
     exit 1
 fi
 

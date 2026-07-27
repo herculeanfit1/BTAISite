@@ -1,8 +1,62 @@
 # PLAN-005: Test-suite honesty (remove theater, fix hooks, align coverage with reality)
-**Status**: Ready
+
+**Status**: Executed 2026-07-27 — see "Execution notes"
 **Effort**: M · **Risk**: Low
 
+## Execution notes (2026-07-27)
+
+Result: **21 test files, 140 tests, zero placeholders, zero skips, zero broken imports.**
+Coverage is measured over **79 files (was 18)** and the thresholds are the measured
+baseline. `type-check`, the full suite with coverage, and `next build` all pass.
+
+**The biggest finding is not in this plan.** `vitest.config.js`'s `exclude` list contained
+`app/**/*.{js,jsx,ts,tsx}` and `lib/**/*.{js,jsx,ts,tsx}`, which **silently cancelled the
+`include` list**. So the old config measured nothing whatsoever from `app/components/**`
+despite naming it, and the 30/70 thresholds were being judged against whichever files a
+test happened to import — 18 of them. Simply widening `include` as step 8 says would have
+changed nothing; the exclude had to be fixed first. Real numbers now: **23.05 lines /
+80.78 branches / 76.03 functions / 23.05 statements**, floors set ~2 points under.
+
+**Do not follow step 10's `git rm -r __tests__/api`.** It claims the directory "is now
+empty". It holds seven real tests of the live API layer (`contact-handler`,
+`contact-schema`, `queue-encoding`, `rate-limit-ip`, `email-provider`,
+`resend-import-guard`, `contact-cors`), which arrived with the API consolidation after
+this plan was written. `test:api` stays.
+
+**`__tests__/api/contact-cors.test.ts` was NOT deleted**, contrary to the placeholder
+list. Its stated reason — "tests a hand-copied clone of CORS logic, not the real handler"
+— was inverted by the consolidation: it now imports `resolveCorsOrigin` from
+`src/lib/api/cors`, the real module.
+
+Five files in the plan's lists no longer exist, so those instructions were no-ops:
+`__tests__/api/status.test.ts`, `__tests__/integration/FormValidation.test.tsx`,
+`__tests__/components/BookingEmbed.test.tsx`, `__tests__/components/Newsletter.test.tsx`,
+`__tests__/middleware.test.ts` (so steps 4 and 5 had nothing to act on). Step 9 is also a
+no-op: `.github/workflows/quality-gate.yml` does not exist because PLAN-002 was never
+executed.
+
+Beyond the plan, three things it did not know about:
+
+1. `__tests__/e2e/dark-mode.spec.ts` ran in **neither** suite — vitest excludes
+   `__tests__/e2e/`, and Playwright's `testDir` is `./e2e`. It is 264 lines with 30 real
+   assertions, so it was moved to `e2e/dark-mode.spec.ts` rather than deleted, and
+   `test:e2e:dark-mode` repointed.
+2. `__tests__/utils/ci-test-mode.js` exported `skipInCI()` and `adjustThresholdsForCI()`
+   — unused, and encoding exactly the pattern this plan ends (skip tests and halve
+   coverage floors in CI). Removed; the file's load-time behaviour is kept.
+3. Seven npm scripts pointed at files that do not exist — the same `scripts/` vs `ci/`
+   path defect the plan spotted for `validate:pre-commit`. `test:ci-dev` named a deleted
+   test; `deploy:local` and the five `lock:*` scripts pointed at `scripts/` copies that
+   live in `ci/`. All repointed; all 83 scripts now resolve.
+
+`vitest.integration.config.js` keeps `all: false` deliberately rather than mirroring
+`all: true`: it is two scoped theme tests, so measuring them against all of `app/**` would
+produce a near-zero number that gates nothing. Its CI/local threshold split was collapsed
+to a single measured set, which was the substantive half of step 8's "mirror the same
+treatment".
+
 ## Context
+
 The test suite projects far more coverage than it delivers. Seven files are always-pass
 placeholders (`expect(true).toBe(true)`), two suites are fully `describe.skip`ped, one
 test imports a module deleted months ago (breaking `npm run test:api` entirely), one
@@ -17,6 +71,7 @@ confidence. This plan deletes the lies and makes the remaining ~15 real test fil
 enforced baseline. Run AFTER PLAN-004 (which deletes `src/` mirrors some config refers to).
 
 ## Goal / Non-goals
+
 **Goal**: `npx vitest run` (whole suite) passes with zero placeholder files, zero skipped
 suites, zero broken imports; coverage numbers are real; the pre-commit hook runs without
 Docker; the PLAN-002 CI gate widens to the full suite.
@@ -24,7 +79,9 @@ Docker; the PLAN-002 CI gate widens to the full suite.
 thresholds AT the honest baseline, not above it; E2E in CI.
 
 ## Current state
+
 Placeholder / always-pass files (delete):
+
 - `__tests__/api/send-email.test.ts` (placeholder, early-returns in CI)
 - `__tests__/api/status.test.ts` (imports nonexistent `../../app/api/status/route` at :2)
 - `__tests__/api/contact-cors.test.ts` (tests a hand-copied clone of CORS logic, not the
@@ -47,6 +104,7 @@ component), `OptimizedImage`, `ThemeToggle`, `Todo`, `DarkModeIntegration`,
 at ~:160-166 which asserts against its own mock), `next-config.test.ts`.
 
 Theater infrastructure:
+
 - `scripts/fix-component-tests.js` — rewrites production components (`BookingEmbed.tsx`,
   `OptimizedImage.tsx`, `Newsletter.tsx`) to make tests pass; npm script `fix:tests`
   (`package.json:83`).
@@ -68,11 +126,13 @@ Coverage config: `vitest.config.js:59-69` — `all: false`, include only
 `CI ? 30 : 70` (never enforced in CI since CI runs no tests until PLAN-002).
 
 ## Target state
+
 Honest suite: every file in `__tests__/` runs and asserts real behavior; coverage
 measured over `app/components/**` and `lib/**` with `all: true`; thresholds = measured
 baseline; ratchet script gone; hooks Docker-free; CI gate runs the entire suite.
 
 ## Steps
+
 1. Delete all files in the placeholder list above (`git rm`). Delete
    `tests-examples/` and `uitests/example.spec.ts`. Delete `vitest.setup.ts` (keep `.js`).
 2. Delete `scripts/fix-component-tests.js`; remove `fix:tests` script
@@ -82,7 +142,7 @@ baseline; ratchet script gone; hooks Docker-free; CI gate runs the entire suite.
    `ci/pre-commit-validation.sh` and the `validate:pre-commit` npm script
    (`package.json:91`) — orphaned approach per `scripts/validate-before-push.sh:6-7`.
 4. Fix `__tests__/middleware.test.ts`: remove the self-mocking matcher test (~:40-51 mock
-   + ~:160-166 assertion); keep the two real header tests.
+   - ~:160-166 assertion); keep the two real header tests.
 5. `__tests__/components/Newsletter.test.tsx:38` — run the skipped case; if it fails
    because the component genuinely lacks the behavior, delete the case; if it passes,
    un-skip. Do not modify the component.
@@ -112,11 +172,13 @@ baseline; ratchet script gone; hooks Docker-free; CI gate runs the entire suite.
     `test:e2e:dark-mode` path check, `pretest:*` hooks for removed scripts.
 
 ## Security & compliance notes
+
 None directly; indirectly this is SOC 2 change-management evidence — the claim "tests
 gate every change" becomes true. `fix-component-tests.js` deletion removes a script that
 silently mutates production source, which is an integrity hazard.
 
 ## Validation
+
 ```bash
 npm ci
 node scripts/fix-rollup.js
@@ -126,9 +188,11 @@ grep -rn "describe.skip\|it.skip" __tests__/             # → empty
 git commit --dry-run             # hook path: stage a component change, verify
                                   # eslint + vitest related run without Docker
 ```
+
 CI: the PR itself must pass the widened Quality Gate.
 
 ## Rollback
+
 Revert the PR. Deleted tests were placeholders — restoring them restores nothing of
 value, so partial rollback is never needed; a threshold set too aggressively is fixed by
 lowering the number, not reverting.

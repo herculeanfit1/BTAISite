@@ -135,26 +135,11 @@ if (isCI) {
   }
 }
 
-// Export a helper function to conditionally skip tests in CI
-export function skipInCI(test) {
-  if (isCI) {
-    console.log(`Skipping test in CI environment: ${test.name}`);
-    return test.skip;
-  }
-  return test;
-}
+// `skipInCI()` and `adjustThresholdsForCI()` were removed here (PLAN-005). Nothing
+// imported either one, and both encoded the pattern this plan exists to end: skipping
+// tests and halving coverage floors precisely where the gate is supposed to bite.
+// Coverage thresholds now live in vitest.config.js as a single set that applies
+// identically in CI and locally. If a test genuinely cannot run in CI, fix or delete
+// it — do not reintroduce a helper that hides it.
 
-// Function to reduce coverage requirements in CI
-export function adjustThresholdsForCI(thresholds) {
-  if (isCI) {
-    return {
-      lines: Math.min(thresholds.lines || 70, 30),
-      branches: Math.min(thresholds.branches || 60, 20),
-      functions: Math.min(thresholds.functions || 70, 30),
-      statements: Math.min(thresholds.statements || 70, 30)
-    };
-  }
-  return thresholds;
-}
-
-export default { isCI, isProduction, skipInCI, adjustThresholdsForCI }; 
+export default { isCI, isProduction };
