@@ -1,8 +1,48 @@
 # PLAN-012: Docs truth reconciliation (CLAUDE.md, README, ADR backfill, docs pruning)
-**Status**: Blocked (by PLAN-004, PLAN-005, PLAN-006)
+
+**Status**: Partially executed 2026-07-26 — see "Execution status" below
 **Effort**: M · **Risk**: Low
 
+## Execution status (2026-07-26)
+
+Executed out of order, because documentation that contradicts the code was actively
+misleading agent sessions and the blocking plans had not moved.
+
+**Done:**
+
+- Steps 1, 2, 6 — CLAUDE.md, README.md, `testing.md` and `.cursor/rules/` reconciled
+  against the code, plus a reference sweep for moved/renamed paths.
+- Step 3 — `0001-project-architecture.md` marked Superseded.
+- Step 4 (partial) — ADR `0002-swa-hybrid-with-api-on-route-handlers.md` written.
+- Step 7 — session memory refreshed.
+
+**Not done:**
+
+- Step 4, ADRs 0003–0005 (i18n deferral, deployment gating, public-repo/no-self-hosted-
+  runner). 0005 needs the operator's repo-visibility confirmation first.
+
+**In progress:**
+
+- Step 5 — the `docs/` prune. **Batch one shipped in PR #69**: 48 of 75 root files moved
+  to `docs/archive/` via `git mv`, plus a `docs/archive/README.md` stating that nothing
+  there describes the current system. Three files this plan expected to survive were
+  archived after being verified stale (`techstack.md` pins Next 15.3.1;
+  `security-testing.md` documents the deleted `src/uitests`; `ci-cd-workflow.md` names six
+  workflows that do not exist). 27 files remain — the `azure-*` deployment guides,
+  `deployment.md`, `production-deployment.md`, `env-example.md`, and
+  `testing-requirements.md` need a closer read than a pattern match. This plan's "~5–8
+  living docs" target is not yet met.
+
+**This plan is itself now partly outdated.** It was written before the API consolidation
+(PRs #52–#57, 2026-07-24) and still assumes the linked Azure Functions backend and that
+CSP lives in `staticwebapp.config.json`. Both are wrong as of 2026-07-24: `/api/*` is
+served by App Router route handlers and CSP comes from `next.config.js`. Its step-4 spec
+for ADR-0002 ("SWA Oryx hybrid + linked Azure Functions backend") describes a
+superseded architecture; the ADR as written records the actual end state instead.
+Re-verify every claim in this plan against the code before acting on it.
+
 ## Context
+
 This repo's documentation disagrees with its code and with itself, and because the repo
 is worked on primarily by AI agents that read CLAUDE.md as ground truth, every false
 claim gets re-injected into every future session. Current falsehoods include: CLAUDE.md
@@ -20,6 +60,7 @@ Blocked by PLAN-004/005/006 because this plan documents the post-cleanup end sta
 writing it earlier means documenting things twice.
 
 ## Goal / Non-goals
+
 **Goal**: CLAUDE.md, README.md, and the ADR set are accurate; stale docs are archived
 (not deleted); the four "Phase R2 self-hosted runner" TODOs have a written cancellation
 decision.
@@ -29,8 +70,10 @@ TODOs live in canonical `security-scan.yml` and are cancelled via ADR + an upstr
 against HerculeanOlympus, NOT by editing the file here).
 
 ## Current state
+
 See Context. Exact claims to fix, with locations (line numbers as of 2026-07-03; re-grep
 before editing):
+
 - `CLAUDE.md` "Project Overview": "Next.js 15.4.x" → verify against `package.json` at
   execution time and write the ACTUAL value; better, write "Next.js 15.x (see
   package.json)" so it can't rot again.
@@ -64,10 +107,12 @@ before editing):
 - `docs/`: ~70 loose files; `docs/archive/` already exists.
 
 ## Target state
+
 Accurate CLAUDE.md/README; ADRs 0002–0005 recorded; `docs/` root contains only living
 documents; a written, discoverable decision cancelling Phase R2 for this repo.
 
 ## Steps
+
 1. Apply the CLAUDE.md corrections enumerated above. Verify each against the code at
    execution time (grep, don't trust this plan's line numbers).
 2. Rewrite README.md top sections as described. Keep the CI badge, Node-version section
@@ -112,11 +157,13 @@ documents; a written, discoverable decision cancelling Phase R2 for this repo.
    files if it has access.)
 
 ## Security & compliance notes
+
 ADR-0005 is the control that prevents the public-repo/self-hosted-runner landmine from
 being armed. Documentation accuracy is itself an audit-readiness control (SOC 2 asks
 "does your documentation reflect reality" in every control walkthrough). No secrets.
 
 ## Validation
+
 ```bash
 # every corrected claim, spot-checked:
 grep -n "15.4" CLAUDE.md README.md                      # → empty
@@ -125,8 +172,10 @@ grep -rn "coverage ratchet" CLAUDE.md                    # → only the correcte
 ls docs/*.md | wc -l                                     # → ~5-8 living docs
 ls docs/adr/                                             # → 0001..0005
 ```
+
 The `standards-check.yml` workflow (required check) passing on the PR confirms required
 files/gitignore rules weren't broken by the moves.
 
 ## Rollback
+
 Revert; documentation-only.
