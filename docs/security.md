@@ -63,10 +63,9 @@ All API routes are protected with:
 4. **Data Sanitization**: Sanitizes all user inputs before processing.
 5. **Cache Control Headers**: Prevents caching of sensitive API responses.
 
-API rate limits:
-
-- Contact form: 5 requests per minute
-- Newsletter subscription: 3 requests per minute
+API rate limit values are per-IP and are **not published here** — this repo is public,
+and printing the thresholds tells an abuser exactly how to stay under them. They live in
+the private runbook alongside the circuit-breaker settings.
 
 ## Cookie Security
 
