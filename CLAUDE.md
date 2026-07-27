@@ -43,7 +43,9 @@ npx playwright test e2e/basic.spec.ts --headed
 
 A vitest path filter matching **zero** files is silently ignored as long as another filter matches, so a green run does not prove your file ran — check the reported file count. This is why `test:ci-basic` and `test:security` still pass despite both naming the deleted `__tests__/middleware.test.ts`.
 
-`dev`/`dev:http`/`start` run a **custom `server.js`**, not `next dev`. Cloud CI is deploy-only and re-runs none of these checks — `npm run validate` locally is the gate. `ci/g_master.sh` runs build → type-check → lint → test → security → deploy-check; skip tests with `./ci/g_master.sh --skip-tests`.
+`dev`/`dev:http`/`start` run a **custom `server.js`**, not `next dev`. `ci/g_master.sh` runs build → type-check → lint → test → security → deploy-check; skip tests with `./ci/g_master.sh --skip-tests`.
+
+**Cloud CI gates correctness as of PLAN-002.** `.github/workflows/quality-gate.yml` (repo-owned, not a canonical fleet file) runs type-check → `npm run test:coverage` → `next build` on every PR and is a **required status check**. It deliberately runs the whole suite rather than a pinned path list, because a vitest filter matching zero files is silently ignored. Still _not_ covered in cloud: Playwright/E2E, the security scripts, and deploy-check — `npm run validate` locally remains the broader gate.
 
 ### Broken/misleading npm scripts (verified — don't trust them)
 
