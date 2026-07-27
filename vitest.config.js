@@ -44,8 +44,15 @@ export default defineConfig({
         "public/**",
         "performance/**",
         "smoke/**",
-        "app/**/*.{js,jsx,ts,tsx}",
-        "lib/**/*.{js,jsx,ts,tsx}",
+        // NOTE: this list used to blanket-exclude "app/**" and "lib/**", which silently
+        // cancelled the `include` below — so the previous config measured NOTHING from
+        // app/components despite naming it, and the 30/70 thresholds were judged against
+        // whatever happened to slip through. Exclude specific non-source instead.
+        "app/**/layout.tsx",
+        "app/**/error.tsx",
+        "app/**/loading.tsx",
+        "app/**/not-found.tsx",
+        "lib/i18n/**",
         "middleware.ts*",
         "server.js",
         "*.config.{js,ts}",
@@ -55,17 +62,27 @@ export default defineConfig({
         "test-minimal/**",
         "__mocks__/**"
       ],
-      // `src/components/**` was dropped here: that tree was deleted in PR #60 and the
-      // stale entry made the include list look broader than it was. Note this still
-      // excludes `src/lib/api/**` — the most logic-heavy code in the repo earns no
-      // coverage credit. Widening it is PLAN-005's call, not this change's.
-      include: ["app/components/**/*.{js,jsx,ts,tsx}"],
-      all: false,
+      // Measured, not aspirational. `all: true` counts files with no test at all, so
+      // these numbers reflect the whole included surface rather than only what a test
+      // happened to import. `src/lib/api/**` is included because it is the entire
+      // /api/* implementation and previously earned no coverage credit whatsoever.
+      include: [
+        "app/components/**/*.{js,jsx,ts,tsx}",
+        "src/lib/**/*.{js,ts}",
+        "lib/**/*.{js,ts}",
+      ],
+      all: true,
+      // Set to the measured baseline minus a small margin (PLAN-005), and identical in
+      // CI and locally — the old `process.env.CI ? 30 : 70` split meant the number that
+      // actually gated was never the number anyone read. Raise these when coverage
+      // genuinely improves; never lower them to make a run pass.
+      // Measured 2026-07-27 over 79 files: 23.05 lines / 80.78 branches / 76.03 functions
+      // / 23.05 statements. Floors are those minus ~2 points of headroom.
       thresholds: {
-        lines: process.env.CI ? 30 : 70,
-        branches: process.env.CI ? 20 : 60,
-        functions: process.env.CI ? 30 : 70,
-        statements: process.env.CI ? 30 : 70,
+        lines: 21,
+        branches: 78,
+        functions: 74,
+        statements: 21,
       },
     },
   },
