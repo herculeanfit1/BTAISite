@@ -74,7 +74,7 @@ All major dependency decisions should be documented:
 
 - Document framework upgrades in dedicated ADRs (Architecture Decision Records)
 - Keep this dependency maintenance document updated
-- Update `docs/nextjs-tailwind-v4-fixes.md` with any Tailwind or Next.js specific issues and solutions
+- Update `docs/archive/nextjs-tailwind-v4-fixes.md` with any Tailwind or Next.js specific issues and solutions
 
 ## Troubleshooting Common Issues
 

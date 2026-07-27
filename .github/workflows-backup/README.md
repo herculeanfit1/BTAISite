@@ -14,4 +14,4 @@ Their functionality has been merged into the main `ci-pipeline.yml` workflow.
 
 ## See Also
 
-See `docs/workflow-consolidation.md` for a detailed explanation of the changes made.
+See `docs/archive/workflow-consolidation.md` for a detailed explanation of the changes made.

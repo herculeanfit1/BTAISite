@@ -1,8 +1,10 @@
 # PLAN-009: Abuse hardening (IP trust, bounded stores, size caps, CORS tightening)
+
 **Status**: Blocked (by PLAN-007)
 **Effort**: M · **Risk**: Med
 
 ## Context
+
 The API's anti-abuse controls have four weaknesses that compound: (1) client identity is
 the **first** value of `x-forwarded-for` — attacker-controlled, so rotating XFF bypasses
 both rate limiters and poisons the `submission_ip` recorded in HubSpot and the classify
@@ -20,19 +22,22 @@ is a known, accepted limitation at current traffic — durable rate limiting is 
 roadmap item with an abuse-evidence trigger. Do not add Redis/Table storage here.)
 
 ## Goal / Non-goals
+
 **Goal**: Spoofed XFF no longer trivially defeats rate limiting or poisons CRM data;
 memory use is bounded; cspReport can't be used to flood logs; CORS allows only this
 project's origins.
 **Non-goals**: Distributed/durable rate limiting (Later, triggered); WAF/Front Door
-(infrastructure decision above this repo); changing rate-limit numbers (5/hr contact,
-3/min newsletter stay).
+(infrastructure decision above this repo); changing the rate-limit numbers (the current
+contact and newsletter thresholds stay as-is — values in the private runbook, not here:
+this repo is public).
 
 ## Current state
+
 - `api/src/lib/rate-limit.ts:26-33` — `getClientIp()`: first XFF value → `x-real-ip` →
   `cf-connecting-ip` → `"unknown"`. `:14` unbounded `ipStore` Map; `:17-24` 10-min
   `setInterval` cleanup, not `.unref()`'d.
-- `api/src/lib/email.ts:19` — separate unbounded `rateLimitStore` Map (5/hr), no cleanup;
-  `:21-30` circuit breaker state.
+- `api/src/lib/email.ts:19` — separate unbounded `rateLimitStore` Map (contact threshold
+  per runbook), no cleanup; `:21-30` circuit breaker state.
 - `api/src/functions/contact.ts:48-61` — CORS: exact-match list + regex
   `^https:\/\/[a-z0-9-]+\.azurestaticapps\.net$` (`:53`); disallowed origins still get
   `ACAO: https://bridgingtrust.ai` (`:56`).
@@ -46,11 +51,13 @@ project's origins.
   the client sent.
 
 ## Target state
+
 Rightmost-public-IP XFF parsing; both limiters share one bounded-store implementation;
 50 KB body cap on all POST handlers; cspReport rate-limited and truncated; CORS
 anchored to this project's SWA hostname.
 
 ## Steps
+
 1. Rewrite `getClientIp` in `api/src/lib/rate-limit.ts`:
    - Split XFF on commas, trim, strip `:port` suffixes (IPv4 only — bracketed IPv6
      `[::1]:port` also handled), walk from the RIGHT, return the first entry that parses
@@ -95,6 +102,7 @@ anchored to this project's SWA hostname.
    size stays 10_000 and oldest evicted).
 
 ## Security & compliance notes
+
 - `submission_ip` in HubSpot/queue becomes meaningfully accurate — improves audit
   quality of lead data, and stops attacker-chosen strings flowing into CRM fields.
 - Memory bound removes a cheap DoS lever on the (cost-metered) Flex Consumption app.
@@ -103,10 +111,13 @@ anchored to this project's SWA hostname.
 - No new secrets or permissions.
 
 ## Validation
+
 ```bash
 cd api && npm run typecheck && npm test   # updated suite green
 ```
+
 Manual against the PR preview (or prod post-merge):
+
 ```bash
 # spoof attempt: 7 rapid submissions rotating XFF must still 429 by the 6th
 for i in $(seq 1 7); do curl -s -o /dev/null -w "%{http_code}\n" \
@@ -116,9 +127,11 @@ for i in $(seq 1 7); do curl -s -o /dev/null -w "%{http_code}\n" \
 head -c 60000 /dev/zero | tr '\0' 'a' | curl -s -o /dev/null -w "%{http_code}\n" \
   -X POST https://<host>/api/contact -H "content-type: application/json" -d @-
 ```
+
 (Note: the platform appends the real IP rightmost, so rotating the leftmost value no
 longer rotates identity — expect 429 on the 6th request.)
 
 ## Rollback
+
 Revert the PR and redeploy Functions. No stored state or schema changes; the limiter
 resets on deploy anyway (in-memory).

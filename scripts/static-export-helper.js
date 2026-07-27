@@ -247,7 +247,7 @@ function checkMiddlewareCompatibility() {
         console.log("✅ Middleware appears to be compatible with static exports");
       } else {
         console.warn("⚠️ Warning: Make sure middleware.ts is compatible with 'output: export'");
-        console.warn("⚠️ See docs/middleware-to-static-export.md for more information");
+        console.warn("⚠️ See docs/archive/middleware-to-static-export.md for more information");
       }
     } catch (error) {
       console.warn("⚠️ Warning: Could not read middleware.ts file: ", error.message);

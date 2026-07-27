@@ -5,18 +5,25 @@
 The Bridging Trust AI website uses a custom email relay system built with Resend for handling contact form submissions. This system provides:
 
 - Professional email templates for user confirmations and admin notifications
-- Rate limiting (5 requests per hour per IP)
-- Circuit breaker pattern for reliability
-- Bot protection with honeypot fields
+- Per-IP rate limiting and a circuit breaker for reliability
+- Server-side bot protection
 - Comprehensive logging and error handling
+
+Thresholds and anti-abuse tunables are deliberately **not** documented in this
+repo — it is public. See the private runbook.
 
 ## Architecture
 
 ```
-Contact Form → Azure Functions handler → Resend API → Email Delivery
-     ↓                  ↓                    ↓            ↓
-  Validation       Rate Limiting        Email Templates  Recipients
+Contact Form → Next.js route handler → Resend API → Email Delivery
+     ↓                  ↓                   ↓            ↓
+  Validation       Anti-abuse        Email Templates  Recipients
 ```
+
+`/api/contact` is an App Router route handler (`app/api/contact/route.ts`) over the
+orchestration in `src/lib/api/contact-handler.ts`, served by the Static Web Apps managed
+hybrid backend. The Azure Functions app that previously served it was retired
+2026-07-24.
 
 ## Required Environment Variables
 
@@ -47,23 +54,26 @@ RESEND_TEST_MODE=false  # Set to true for testing without sending real emails
 After configuration, you can test the email system by:
 
 1. **Using the contact form** on the website
-2. **Direct API testing** with curl:
+2. **Direct API testing** against a local dev server with curl:
    ```bash
-   curl -X POST https://bridgingtrust.ai/api/contact \
+   curl -X POST http://localhost:3000/api/contact \
      -H "Content-Type: application/json" \
      -d '{
        "firstName": "Test",
        "lastName": "User",
        "email": "test@example.com",
        "company": "Test Company",
-       "message": "Test message",
-       "_gotcha": ""
+       "message": "Test message"
      }'
    ```
+   Run it with `EMAIL_TEST_MODE=true` so no real mail is sent. Do not point this at
+   production — a submission there creates a real HubSpot contact and a real queue
+   message, and CRM records are cleaned up by the operator, not automatically.
 
 A successful response will look like:
+
 ```json
-{"success": true, "message": "Emails sent successfully"}
+{ "success": true, "message": "Emails sent successfully" }
 ```
 
 ## Email Addresses Setup
@@ -79,6 +89,7 @@ The following email addresses have been created and configured:
 ### 1. Email Service (`src/lib/email.ts`)
 
 Core email functionality with:
+
 - Lazy initialization of Resend client
 - Rate limiting implementation
 - Circuit breaker pattern
@@ -87,12 +98,14 @@ Core email functionality with:
 ### 2. Email Templates
 
 #### User Confirmation (`src/lib/email-templates/contact-confirmation.ts`)
+
 - Professional HTML template
 - Branded styling with company colors
 - Next steps information
 - Contact information
 
 #### Admin Notification (`src/lib/email-templates/admin-notification.ts`)
+
 - Detailed contact information
 - Technical details (IP, User-Agent)
 - Recommended next steps
@@ -101,6 +114,7 @@ Core email functionality with:
 ### 3. Contact Function (`api/src/functions/contact.ts`)
 
 Azure Functions handler that handles:
+
 - Form validation with Zod schema
 - Bot protection via honeypot field
 - Rate limiting enforcement
@@ -110,6 +124,7 @@ Azure Functions handler that handles:
 ### 4. Contact Form Components
 
 Both `app/components/home/ContactSection.tsx` and `src/components/home/ContactSection.tsx` have been updated to:
+
 - Submit to `/api/contact` endpoint
 - Handle success/error states
 - Include honeypot field for bot protection
@@ -120,6 +135,7 @@ Both `app/components/home/ContactSection.tsx` and `src/components/home/ContactSe
 ### Local Testing
 
 1. Set up environment variables in `.env.local`:
+
 ```bash
 RESEND_API_KEY=your_resend_api_key
 EMAIL_FROM=hello@bridgingtrust.ai
@@ -129,11 +145,13 @@ RESEND_TEST_MODE=true
 ```
 
 2. Run the test script:
+
 ```bash
 node scripts/test-email.js
 ```
 
 3. Test the contact form locally:
+
 ```bash
 npm run dev
 # Navigate to http://localhost:3000/#contact
@@ -147,29 +165,33 @@ npm run dev
 
 ## Rate Limiting
 
-- **Limit**: 5 requests per hour per IP address
-- **Storage**: In-memory (for production, consider Redis)
-- **Response**: HTTP 429 with appropriate error message
+- **Limit**: per-IP, within a fixed window — values in the private runbook
+- **Storage**: in-memory, so it resets on instance restart and is not
+  multi-instance-safe. This is a known, accepted limitation, not an oversight; a
+  durable limiter is roadmapped
+- **Response**: HTTP 429 with a generic error message
 
 ## Circuit Breaker
 
-- **Threshold**: 5 consecutive failures
-- **Timeout**: 5 minutes
-- **Response**: HTTP 503 with service unavailable message
+- **Trip condition**: a run of consecutive upstream failures — values in the private
+  runbook
+- **Response**: HTTP 503 with a service-unavailable message
 
 ## Security Features
 
 1. **Input Validation**: Zod schema validation for all form fields
-2. **Bot Protection**: Honeypot field (`_gotcha`) to catch automated submissions
-3. **Rate Limiting**: Prevents spam and abuse
-4. **CORS Headers**: Proper cross-origin request handling
-5. **Error Handling**: No sensitive information exposed in error messages
+2. **Bot Protection**: a server-side honeypot check that silently accepts and drops
+   automated submissions
+3. **Rate Limiting**: per-IP, plus a circuit breaker on the upstream mail provider
+4. **CORS Headers**: proper cross-origin request handling
+5. **Error Handling**: no sensitive information exposed in error messages
 
 ## Monitoring
 
 ### Development Mode
 
-When `RESEND_TEST_MODE=true`:
+When `EMAIL_TEST_MODE=true` (or the legacy `RESEND_TEST_MODE=true`):
+
 - Emails are simulated (not actually sent)
 - Console logging shows what would be sent
 - Useful for development and testing
@@ -185,14 +207,17 @@ When `RESEND_TEST_MODE=true`:
 ### Common Issues
 
 1. **"Missing required environment variable: RESEND_API_KEY"**
+
    - Verify the API key is set in Azure Static Web Apps configuration
    - Check the key is valid in Resend dashboard
 
 2. **"Rate limit exceeded"**
+
    - Normal behavior for testing
    - Wait 1 hour or restart the application to reset
 
 3. **"Service temporarily unavailable"**
+
    - Circuit breaker is open due to failures
    - Check Resend API status and credentials
 
@@ -204,11 +229,13 @@ When `RESEND_TEST_MODE=true`:
 ### Debug Steps
 
 1. Check environment variables:
+
 ```bash
 node scripts/test-email.js
 ```
 
 2. Test API endpoint directly:
+
 ```bash
 curl -X POST https://your-site.azurestaticapps.net/api/contact \
   -H "Content-Type: application/json" \
@@ -229,4 +256,4 @@ curl -X POST https://your-site.azurestaticapps.net/api/contact \
 2. **Email Templates**: Add more template variations for different use cases
 3. **Analytics**: Add email delivery tracking and analytics
 4. **Webhooks**: Implement Resend webhooks for delivery status updates
-5. **Queue System**: Add email queue for high-volume scenarios 
+5. **Queue System**: Add email queue for high-volume scenarios
