@@ -16,28 +16,33 @@ Updated as plans land. The tables below are the original 2026-07-03 plan; this s
 the current truth. Full findings are in the transparency report at the end of this file,
 and per-plan detail in each plan's "Execution notes" block.
 
-| Plan                                | Status                                                                    | Landed as |
-| ----------------------------------- | ------------------------------------------------------------------------- | --------- |
-| PLAN-001 email HTML escaping        | ✅ Executed 2026-07-27                                                    | #74       |
-| PLAN-002 cloud quality gate         | ✅ Executed 2026-07-27                                                    | #75       |
-| PLAN-003 repo hygiene purge         | ✅ Executed 2026-07-27                                                    | #67–#72   |
-| PLAN-004 dead code & deps           | ✅ Executed 2026-07-27                                                    | #67–#72   |
-| PLAN-005 test-suite honesty         | ✅ Executed 2026-07-27                                                    | #67–#72   |
-| PLAN-006 newsletter persistence     | ⏸️ **Deferred** — feature not scheduled                                   | #77       |
-| PLAN-007 API test harness           | ✅ Executed 2026-07-27                                                    | #76       |
-| PLAN-008 route & locale unification | ⬜ Open — highest availability risk remaining                             | —         |
-| PLAN-009 abuse hardening            | ✅ Executed 2026-07-27                                                    | this PR   |
-| PLAN-010 observability & alerting   | ⬜ Open — unblocked by 011                                                | —         |
-| PLAN-011 IaC completeness           | ✅ Executed 2026-07-27                                                    | #78       |
-| PLAN-012 docs truth reconciliation  | ◐ Partial — step 5 done; ADRs 0003–0005 and ~27 `docs/` root files remain | #67–#72   |
-| API-consolidation Phase 5 teardown  | ⬜ Open — delete `api/`, tear down orphaned Azure resources               | —         |
+**All twelve plans are now closed.** Everything below is merged to `main` and deployed.
 
-**Found during execution, not in any plan:**
+| Plan                                | Status                                                                       | Landed as |
+| ----------------------------------- | ---------------------------------------------------------------------------- | --------- |
+| PLAN-001 email HTML escaping        | ✅ Executed                                                                  | #74       |
+| PLAN-002 cloud quality gate         | ✅ Executed                                                                  | #75       |
+| PLAN-003 repo hygiene purge         | ✅ Executed                                                                  | #67–#72   |
+| PLAN-004 dead code & deps           | ✅ Executed                                                                  | #67–#72   |
+| PLAN-005 test-suite honesty         | ✅ Executed                                                                  | #67–#72   |
+| PLAN-006 newsletter persistence     | ⏸️ **Deferred** — feature not scheduled; premise corrected                   | #77       |
+| PLAN-007 API test harness           | ✅ Executed                                                                  | #76       |
+| PLAN-008 route & locale unification | ✅ Executed — **steps 6/7 rejected as harmful** (redirect loop)              | #81       |
+| PLAN-009 abuse hardening            | ✅ Executed                                                                  | #79       |
+| PLAN-010 observability & alerting   | ◐ IaC merged, **awaiting deployment** — alerts protect nothing until applied | #80       |
+| PLAN-011 IaC completeness           | ✅ Executed                                                                  | #78       |
+| PLAN-012 docs truth reconciliation  | ✅ Executed — batch one #67–#72, remainder #82                               | #82       |
+| API-consolidation Phase 5 teardown  | ⬜ **Open** — delete `api/`, tear down orphaned Azure resources              | —         |
 
-| Item                                                                                              | Status  |
-| ------------------------------------------------------------------------------------------------- | ------- |
-| Static Web App settings entirely undeclared in IaC (production reads settings no Bicep describes) | ⬜ Open |
-| Verify empirically whether the platform appends the client IP to `x-forwarded-for`                | ⬜ Open |
+**Found during execution, not in any plan** — the carried-forward list:
+
+| Item                                                                                                       | Status  |
+| ---------------------------------------------------------------------------------------------------------- | ------- |
+| Deploy the PLAN-010 alerting resources (billable; emails a real inbox)                                     | ⬜ Open |
+| Static Web App settings entirely undeclared in IaC — production reads settings no Bicep describes          | ⬜ Open |
+| Delete the unreachable `app/[locale]/` tree — needs preview verification of the Oryx prerender claim first | ⬜ Open |
+| Verify empirically whether the platform appends the client IP to `x-forwarded-for`                         | ⬜ Open |
+| Anti-abuse tunables still published as literals in `src/lib/api/email/send-contact-email.ts`               | ⬜ Open |
 
 ---
 
@@ -300,3 +305,100 @@ wrote things down wrongly; it was that **nothing failed when the writing stopped
 the code**. Each plan in this batch therefore ends with a guard rather than a correction:
 the redirect map has a loop detector, the logging convention has a static scan, the API
 behaviours have mutation-proven tests, and the docs now have a manifest.
+
+---
+
+## Closing transparency report — 2026-07-27
+
+All twelve plans are closed and merged. This section is the honest final accounting; the
+per-batch addenda above stay as the chronological record.
+
+### What shipped, measured
+
+|                                                  | Start of effort                                                   | Now                                                |
+| ------------------------------------------------ | ----------------------------------------------------------------- | -------------------------------------------------- |
+| Stored HTML injection on the public contact form | **live**                                                          | closed, structurally tested                        |
+| Cloud CI correctness gates                       | **zero** — 5 required checks, all lint/scan                       | type-check + full suite + build, **required**      |
+| Tests / files                                    | 140 / 21                                                          | **253 / 33**                                       |
+| Coverage (lines / branches / functions)          | 23.05 / 80.78 / 76.03                                             | **~31 / ~84 / ~85**                                |
+| `src/lib/api` coverage                           | 60.81% lines, 70.83% functions                                    | **~96% / ~96%**                                    |
+| `hubspot.ts`                                     | 9.49% lines, **0% functions**                                     | **100%**                                           |
+| Rate-limit identity                              | leftmost XFF — client-controlled                                  | rightmost public entry                             |
+| Rate-limit stores                                | unbounded, no eviction                                            | capped, oldest-first eviction                      |
+| Request body cap                                 | none                                                              | 50 KB → 413                                        |
+| CORS                                             | admitted **any** `*.azurestaticapps.net`, rejected our own origin | exact allow-list; disallowed origins get no header |
+| Submitter email in logs                          | written on **every** validated submission (30-day retention)      | removed                                            |
+| Alerting                                         | none                                                              | declared, **not yet deployed**                     |
+| Bicep                                            | would **re-link the retired backend** on deploy                   | link removed; live queue declared                  |
+| Living `docs/` files                             | 75 → 27                                                           | **7**, manifest-enforced                           |
+| ADRs                                             | 1 (superseded)                                                    | 5                                                  |
+
+Live-verified on `bridgingtrust.ai` after the final deploy: homepage 200, `/api/health` →
+`{"status":"ok"}`, invalid POST to `/api/contact` → JSON 400, `/privacy` 200,
+`/en/privacy` → 301 → `/privacy`, `/fr` → 301 → `/`, and a disallowed CORS origin
+receiving **no** `Access-Control-Allow-Origin` header while the real origin is echoed.
+
+### The finding that matters most
+
+**Every one of the twelve plans contained at least one instruction that was wrong against
+the code.** Not one was caught by reading it. Each surfaced only because the plan's own
+verify-first step was actually run — which means the process worked, and reading alone
+would have failed twelve times out of twelve.
+
+Ranked by what following them literally would have cost:
+
+1. **PLAN-008** — an infinite redirect loop on the privacy policy, a compliance-critical
+   page, by pointing `/privacy` at a path that already redirects back.
+2. **PLAN-011** — deploying a template that re-links the retired Functions backend, the
+   one action CI explicitly warns is not the fix for a broken `/api/*`.
+3. **PLAN-004** — `git rm -r src/`, deleting the live backend.
+4. **PLAN-001** — patching the undeployed tree: a green PR closing the ticket while the
+   injection kept running in production.
+5. **PLAN-010** — two permanently silent alerts, which is worse than none because silence
+   reads as coverage.
+6. **PLAN-003 / PLAN-005 / PLAN-007** — deleting the only working backup script, seven
+   real API tests, and an existing harness respectively.
+
+The root cause is uniform and worth stating plainly: the plans were written 2026-07-03,
+three weeks before the API consolidation, and **six still describe the retired `api/`
+Functions tree as the live system**. Any future plan naming `api/src/...` is describing
+something that no longer exists.
+
+### What is knowingly unresolved
+
+Stated rather than buried:
+
+1. **The alerting is not deployed.** Until applied it protects nothing. Deployment is
+   billable and emails a real inbox, so it is the owner's call.
+2. **The XFF rightmost change ships on reasoning, not measurement.** It is provably never
+   worse than the leftmost parsing it replaced, but whether this platform appends the
+   client IP was never empirically confirmed — verifying needs a header-echo endpoint, and
+   observing the limiter in production would mean generating real emails and CRM records.
+3. **`app/[locale]/` remains, unreachable.** CLAUDE.md ties it to Oryx prerendering; that
+   needs preview verification before deletion.
+4. **Anti-abuse tunables are still published** in a public repo.
+5. **`api/` still carries the injection bug**, deliberately — unreachable and scheduled for
+   deletion, but it will read as an unfixed vulnerability to anyone browsing that tree.
+6. **Coverage is ~31% repo-wide**, dominated by untested presentational components. The
+   logic-heavy API layer is ~96%. Do not read the headline number as the risk picture.
+7. **Nothing was load-tested.** Limits are unit-tested for logic, not under concurrency.
+
+### The durable change
+
+The recurring failure was never that people wrote things down wrongly. It was that
+**nothing failed when the writing stopped matching the code**. So this effort ends with
+guards rather than corrections:
+
+- `__tests__/routing/redirect-map.test.ts` — loop detector; fails with the offending chain
+  and names the plan that would reintroduce it.
+- `__tests__/docs/docs-manifest.test.ts` — `docs/` cannot silently refill, and a living doc
+  cannot reassert retired architecture.
+- `__tests__/api/logging-hygiene.test.ts` — no bare `console.*`, no personal data in logs.
+- `__tests__/api/abuse-hardening.test.ts` and the API suite — mutation-proven.
+- The Quality Gate — a required check that runs the whole suite, because a filter matching
+  zero files is silently ignored.
+
+Every one of those was verified by breaking the thing it guards and confirming the right
+test failed. Two were rewritten after passing against both the fixed and unfixed code, and
+one mutation appeared to pass until the mutation itself was checked and found to have
+rewritten a comment instead of the code.
