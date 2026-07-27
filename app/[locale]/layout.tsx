@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 
 // Define supported locales
-const supportedLocales = ["en", "es", "fr"];
+// Only locales the site can actually serve. "fr" was listed here with no
+// French content anywhere — it prerendered a page of English at a French URL.
+// Removing it is invisible to users: every /{locale} path 301s to a canonical
+// top-level path at the edge (staticwebapp.config.json) before routing reaches
+// this segment.
+const supportedLocales = ["en", "es"];
 
 // Generate static params for all supported locales
 export function generateStaticParams() {

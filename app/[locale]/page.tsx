@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { HomePageContent } from "../components/HomePageContent";
+import { HomeSections } from "../components/home/HomeSections";
 
 export const metadata: Metadata = {
   title: "Bridging Trust AI | Custom AI Solutions, Built to Ship",
@@ -21,5 +21,5 @@ export default async function Home(props: PageProps) {
     console.warn(`Rendering page for locale: ${params.locale}`);
   }
 
-  return <HomePageContent />;
+  return <HomeSections />;
 }

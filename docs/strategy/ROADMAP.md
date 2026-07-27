@@ -247,3 +247,31 @@ deployed** — it protects nothing until applied, and deployment is the owner's 
 it is billable and emails a real inbox. And PLAN-009's rightmost-XFF change ships on
 reasoning, not measurement: it is provably never worse than the leftmost parsing it
 replaced, but whether this platform appends the client IP was not empirically confirmed.
+
+### Addendum — PLAN-008 (2026-07-27)
+
+**The most dangerous instruction found in any plan so far.** PLAN-008's canonical
+direction is the reverse of production's. PR #61 settled it on 2026-07-25: top-level paths
+are canonical and every `/{locale}` path 301s to them. Step 6 asks to delete
+`app/privacy/` — the page currently serving 200 — and add `/privacy → /en/privacy`, while
+`/en/privacy → /privacy` already ships. That is an **infinite redirect loop on the privacy
+policy**, a compliance-critical page, and step 7 would have pointed the cookie banner at
+it. Both rejected.
+
+Its other premises had also expired. The "two divergent homepages" were rendering the
+**identical** eight sections; `GlobeOverlaySection` no longer exists anywhere, so step 1's
+production check could not have resolved either way. The only real difference was a
+`pt-20` class present in one copy and not the other, under a comment asking the next
+person to keep them in sync by hand.
+
+Delivered: one shared `HomeSections` component (the duplicate is deleted), `supportedLocales`
+reduced to what the site can actually serve, and — the durable part —
+`__tests__/routing/redirect-map.test.ts`, which fails with
+`redirect loop: /privacy -> /en/privacy -> /privacy` if anyone re-implements step 6, and
+explains why in the failure message.
+
+**Not done, deliberately:** `app/[locale]/` was left in place even though the edge
+redirects make it unreachable. CLAUDE.md ties it to Oryx static prerendering for the legal
+pages, and that needs verifying on a real preview before acting. On the
+highest-availability-risk plan, with the 2026-07-23 `next.config.js redirects()` incident
+as precedent, a confident routing assumption is exactly the wrong thing to ship.
