@@ -1,7 +1,43 @@
 # PLAN-012: Docs truth reconciliation (CLAUDE.md, README, ADR backfill, docs pruning)
 
-**Status**: Partially executed 2026-07-26 — see "Execution status" below
+**Status**: Executed — batch one 2026-07-26, remainder 2026-07-27
 **Effort**: M · **Risk**: Low
+
+## Execution notes — remainder (2026-07-27)
+
+The two open items are closed.
+
+**Step 4, ADRs 0003–0005 — written.** 0005 no longer needed the repo-visibility
+confirmation this plan was waiting on: the repository is public and that is settled and
+acted on throughout (scrubbed operator scripts, RFC 5737 test fixtures, the anti-abuse
+tunables tracked as an open item). The ADR records the posture rather than asking for it.
+
+**Step 5, the `docs/` prune — finished.** 20 of the remaining 27 root files archived,
+leaving **7 living docs**, inside this plan's "~5–8" target.
+
+Triage was evidence-driven rather than by pattern match, since the earlier marker sweep
+returned "—" for most files and an empty result proves nothing on its own. Each file was
+checked for repo paths that no longer exist and for claims contradicting the code:
+
+- `azure-swa-deployment.md` was an **empty 0-line file**.
+- `security.md` stated that "security headers are implemented via Next.js middleware
+  (`middleware.ts`)" — flatly false; there is no middleware and headers come from
+  `next.config.js`. This is precisely the class of document that misleads a session.
+- `email-setup.md` referenced `src/components/` and `src/lib/email-templates/`, four paths
+  deleted in #60 and the API consolidation.
+- `deployment.md` referenced `app/i18n.ts`; `docker-testing.md` a workflow that does not
+  exist; `production-deployment.md` a Let's Encrypt flow the site does not use.
+
+The seven kept are durable by nature — product intent, design intent, policy — rather than
+descriptions of how the system currently works, which is why they do not rot the way the
+archived operational guides did.
+
+**New: the prune is now enforced, not just performed.** `docs/README.md` carries a manifest
+and `__tests__/docs/docs-manifest.test.ts` fails if the directory and the table disagree,
+if a listed file vanishes, if the archive disclaimer is removed, or if a living doc
+reasserts retired architecture. Verified by mutation: unlisting `prd.md` and appending the
+middleware falsehood to a living doc each failed exactly the intended test. Without it,
+`docs/` refills silently — which is how it reached 75 files.
 
 ## Execution status (2026-07-26)
 

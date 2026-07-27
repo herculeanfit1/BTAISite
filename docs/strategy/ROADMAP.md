@@ -275,3 +275,28 @@ redirects make it unreachable. CLAUDE.md ties it to Oryx static prerendering for
 pages, and that needs verifying on a real preview before acting. On the
 highest-availability-risk plan, with the 2026-07-23 `next.config.js redirects()` incident
 as precedent, a confident routing assumption is exactly the wrong thing to ship.
+
+### Addendum — PLAN-012 remainder (2026-07-27)
+
+ADRs 0003–0005 written (i18n deferral, the gating model, public-repo posture), closing the
+step-4 gap. 0005 no longer needed the repo-visibility confirmation the plan was waiting
+on — the posture is settled and already acted on.
+
+The `docs/` prune is finished: 20 of the remaining 27 root files archived, leaving **7
+living docs**, inside the plan's "~5–8" target. Triage was evidence-driven, because the
+first marker sweep returned "—" for most files and an empty result proves nothing.
+`azure-swa-deployment.md` turned out to be an **empty 0-line file**, and `security.md`
+claimed security headers come from `middleware.ts` — flatly false, and exactly the class
+of document that sends a session down the wrong path.
+
+**The prune is now enforced rather than merely performed.** `docs/README.md` carries a
+manifest and `__tests__/docs/docs-manifest.test.ts` fails if the directory and the table
+disagree, if a listed file vanishes, if the archive disclaimer is dropped, or if a living
+doc reasserts retired architecture. Without a mechanism, `docs/` refills silently — which
+is how it reached 75 files in the first place.
+
+That is the through-line of this whole effort. The recurring failure was never that people
+wrote things down wrongly; it was that **nothing failed when the writing stopped matching
+the code**. Each plan in this batch therefore ends with a guard rather than a correction:
+the redirect map has a loop detector, the logging convention has a static scan, the API
+behaviours have mutation-proven tests, and the docs now have a manifest.
