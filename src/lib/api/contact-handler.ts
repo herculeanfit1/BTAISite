@@ -70,6 +70,16 @@ function isNonProduction(headers: Headers): boolean {
   return fwd.endsWith(".azurestaticapps.net") && /-\d+\./.test(fwd);
 }
 
+/**
+ * Log-safe stand-in for a client IP. An address identifies a person under GDPR
+ * and these logs are retained for 30 days, so the log keeps only what is
+ * diagnostically useful: whether a real client address was resolvable at all.
+ * The correlation id already links every line of one request together.
+ */
+export function ipClass(ipAddress: string): "resolved" | "unknown" {
+  return ipAddress === "unknown" ? "unknown" : "resolved";
+}
+
 // The contact schema caps `message` at 2000 chars, so a legitimate submission is
 // a couple of KB at most. This rejects on the declared Content-Length BEFORE the
 // body is parsed, so an oversized payload costs a header read rather than a full
@@ -132,7 +142,7 @@ export async function handleContact(
     const body = (await input.readBody()) as Record<string, unknown>;
 
     if (body._gotcha && String(body._gotcha).trim() !== "") {
-      apiLog.warn(`[contact ${cid}] honeypot triggered`, { ipAddress });
+      apiLog.warn(`[contact ${cid}] honeypot triggered`, { ip: ipClass(ipAddress) });
       return {
         status: 400,
         body: { success: false, message: "Invalid submission" },
@@ -152,7 +162,13 @@ export async function handleContact(
         corsOrigin,
       };
     }
-    apiLog.info(`[contact ${cid}] validated`, { email: parsed.data.email });
+    // Never log the submitter's address. The correlation id already ties
+    // this line to the rest of the request's trace, so the email adds no
+    // diagnostic value while putting personal data in a 30-day log store.
+    apiLog.info(`[contact ${cid}] validated`, {
+      interest: parsed.data.interest || "unspecified",
+      hasCompany: Boolean(parsed.data.company),
+    });
 
     // Preview environments inherit production secrets, so skip all real side
     // effects there. Validation + honeypot still run (the form stays testable in

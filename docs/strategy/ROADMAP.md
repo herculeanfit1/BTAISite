@@ -213,3 +213,37 @@ findings above can be trusted:
 - **Read live state before changing infrastructure.** The `what-if` comparison against
   `origin/main` is what turned "the Bicep is stale" into "the Bicep would re-link the
   retired backend."
+
+### Addendum — PLAN-009 and PLAN-010 (2026-07-27)
+
+**PLAN-009.** Three of four weaknesses were real. The CORS finding was worse than the plan
+described: the wildcard `^https://[a-z0-9-]+\.azurestaticapps\.net$` **rejected this
+project's own origin** (the character class excludes the dot in
+`wonderful-bush-0e888f30f.6`) while **admitting every other Azure tenant's** Static Web
+App. It never once admitted the site it was written for. Removed rather than tightened —
+the form posts to a relative path, so it is same-origin and never consults CORS at all.
+
+Client identity moved from the leftmost `x-forwarded-for` entry (client-controlled) to the
+rightmost public one, unbounded rate-limit Maps became one capped store with eviction, and
+a 50 KB body cap now returns 413. Test fixtures containing **real captured IPs — one
+residential** — were replaced with RFC 5737 ranges.
+
+**PLAN-010.** The premise held: zero alerts exist. But **two of its three proposed alerts
+would have been permanently silent** — one scoped to the retired Functions app, one to App
+Insights server-side telemetry that nothing emits (the SWA carries only a browser-side
+connection string). Shipping them would have manufactured the appearance of monitoring.
+
+Built instead: an action group, an availability test on `/api/health`, and one the plan
+did not contain — a webtest that POSTs an **invalid** payload to `/api/contact` and
+requires a **400**. Zod rejects it before any email, CRM write or enqueue, so it monitors
+the real lead path continuously without creating a lead. That is the only check that
+catches "site up, form broken".
+
+Also removed the submitter's **email address from the logs of every validated
+submission** (30-day retention), and reduced raw IPs to a resolved/unknown class.
+
+**Two limitations to carry forward.** The PLAN-010 alerting is **declared but not
+deployed** — it protects nothing until applied, and deployment is the owner's call because
+it is billable and emails a real inbox. And PLAN-009's rightmost-XFF change ships on
+reasoning, not measurement: it is provably never worse than the leftmost parsing it
+replaced, but whether this platform appends the client IP was not empirically confirmed.
