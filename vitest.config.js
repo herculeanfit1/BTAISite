@@ -55,10 +55,11 @@ export default defineConfig({
         "test-minimal/**",
         "__mocks__/**"
       ],
-      include: [
-        "app/components/**/*.{js,jsx,ts,tsx}",
-        "src/components/**/*.{js,jsx,ts,tsx}"
-      ],
+      // `src/components/**` was dropped here: that tree was deleted in PR #60 and the
+      // stale entry made the include list look broader than it was. Note this still
+      // excludes `src/lib/api/**` — the most logic-heavy code in the repo earns no
+      // coverage credit. Widening it is PLAN-005's call, not this change's.
+      include: ["app/components/**/*.{js,jsx,ts,tsx}"],
       all: false,
       thresholds: {
         lines: process.env.CI ? 30 : 70,
