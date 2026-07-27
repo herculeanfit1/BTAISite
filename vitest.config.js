@@ -68,6 +68,11 @@ export default defineConfig({
       // /api/* implementation and previously earned no coverage credit whatsoever.
       include: [
         "app/components/**/*.{js,jsx,ts,tsx}",
+        // The route handlers were unmeasured entirely: `include` named only
+        // app/components, so the three files serving /api/* earned no coverage
+        // credit even though two of their response shapes are a deploy contract
+        // (PLAN-007).
+        "app/api/**/*.{js,ts}",
         "src/lib/**/*.{js,ts}",
         "lib/**/*.{js,ts}",
       ],
@@ -76,13 +81,14 @@ export default defineConfig({
       // CI and locally — the old `process.env.CI ? 30 : 70` split meant the number that
       // actually gated was never the number anyone read. Raise these when coverage
       // genuinely improves; never lower them to make a run pass.
-      // Measured 2026-07-27 over 79 files: 23.05 lines / 80.78 branches / 76.03 functions
-      // / 23.05 statements. Floors are those minus ~2 points of headroom.
+      // Measured 2026-07-27 after PLAN-007: 30.36 lines / 83.18 branches /
+      // 84.96 functions / 30.36 statements (was 23.05 / 80.78 / 76.03 before
+      // the API tests landed). Floors are those minus ~2 points of headroom.
       thresholds: {
-        lines: 21,
-        branches: 78,
-        functions: 74,
-        statements: 21,
+        lines: 28,
+        branches: 81,
+        functions: 82,
+        statements: 28,
       },
     },
   },
