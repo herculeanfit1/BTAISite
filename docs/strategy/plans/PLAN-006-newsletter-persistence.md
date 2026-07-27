@@ -1,12 +1,39 @@
 # PLAN-006: Newsletter persistence (stop discarding signups)
-**Status**: Blocked (by PLAN-001)
+
+**Status**: **Deferred 2026-07-27 — not scheduled. Retained for future development.**
 **Effort**: S–M · **Risk**: Low
 
+## Deferral note (2026-07-27)
+
+Deferred by owner decision. Newsletter signup is not being built yet; this plan is kept
+as the starting point for whenever it is.
+
+**Re-scope before executing it.** The plan is written as "stop discarding signups," which
+implies a live endpoint that merely fails to persist. That endpoint does not exist in
+production:
+
+- No route — `app/api/` contains only `contact`, `health` and `status`.
+- No UI — nothing under `app/` references a newsletter, and there is no `Newsletter`
+  component (the plan's non-goals claim "the existing `Newsletter` component already posts
+  to `/api/newsletter`"; it does not exist).
+- No caller — no `fetch` to `/api/newsletter` anywhere in `app/` or `src/`.
+
+`api/src/functions/newsletter.ts` is the only newsletter code in the tree, and that tree
+has not been deployed since 2026-07-24. So **no signup has ever been silently discarded in
+production, because no signup has ever been accepted** — the integrity concern in the
+Context section does not apply to the live site.
+
+That makes this "build a newsletter feature," not "add persistence": a route handler under
+`app/api/`, a form component, consent handling, and the HubSpot write. Estimate S–M is
+low for that scope. Whoever picks it up should also decide whether a mailing-list provider
+belongs in the design before reusing the contact form's HubSpot-notes approach.
+
 ## Context
+
 The newsletter endpoint (`api/src/functions/newsletter.ts`) validates input, rate-limits,
 checks honeypots — and then does nothing. It logs the subscriber's PII to console
-(`newsletter.ts:67`) and returns *"You have been successfully subscribed to our
-newsletter!"* (`newsletter.ts:73`) without persisting anything anywhere. Every genuine
+(`newsletter.ts:67`) and returns _"You have been successfully subscribed to our
+newsletter!"_ (`newsletter.ts:73`) without persisting anything anywhere. Every genuine
 signup since launch has been silently discarded. This is both lost business (leads
 volunteering contact permission) and an integrity problem (the site lies to users).
 
@@ -17,6 +44,7 @@ reference (CLAUDE.md, `kv-btai-site-prod`). Blocked by PLAN-001 only because PLA
 seeds the `api/` Vitest harness this plan's tests need.
 
 ## Goal / Non-goals
+
 **Goal**: A newsletter signup creates-or-updates a HubSpot contact and attaches a
 "Newsletter signup" note; the success message is returned only after persistence
 succeeds; failures return an honest 503.
@@ -26,6 +54,7 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
 `Newsletter` component already posts to `/api/newsletter`).
 
 ## Current state
+
 - `api/src/functions/newsletter.ts:62-81` — after building `sanitizedData`
   (`{email, name?}`), logs it and returns success. Honeypot (`:36-48`) returns fake
   success to bots — keep that behavior.
@@ -41,10 +70,12 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
   arrow-wrap it).
 
 ## Target state
+
 `hubspot.ts` exports a second entry point `upsertNewsletterContact(email, name, log)`;
 `newsletter.ts` calls it and reports honestly.
 
 ## Steps
+
 1. In `api/src/lib/hubspot.ts`, extract the existing note-creation block from
    `upsertContactAndLogInquiry` into a private helper
    `createNoteForContact(contactId: string, noteHtml: string, token: string, log: Logger): Promise<string | null>`
@@ -56,8 +87,8 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
    export async function upsertNewsletterContact(
      email: string,
      name: string | undefined,
-     log: Logger,
-   ): Promise<HubSpotUpsertResult>
+     log: Logger
+   ): Promise<HubSpotUpsertResult>;
    ```
    Logic (mirror the contact upsert's create→409→search→patch pattern):
    - Missing `HUBSPOT_TOKEN` → `{ success: false, error: "missing token" }` + `log("hubspot.token.missing")`.
@@ -76,11 +107,21 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
    - Replace `console.log("Newsletter subscription:", sanitizedData)` (`:67`) with the
      HubSpot call:
      ```ts
-     const result = await upsertNewsletterContact(sanitizedData.email, sanitizedData.name, log);
+     const result = await upsertNewsletterContact(
+       sanitizedData.email,
+       sanitizedData.name,
+       log
+     );
      if (!result.success) {
        context.log("newsletter.persist.failed", { error: result.error });
-       return { status: 503, jsonBody: { success: false,
-         message: "We couldn't process your subscription right now. Please try again shortly." } };
+       return {
+         status: 503,
+         jsonBody: {
+           success: false,
+           message:
+             "We couldn't process your subscription right now. Please try again shortly.",
+         },
+       };
      }
      ```
      Success path returns the existing 200 body unchanged. Honeypot path unchanged.
@@ -97,6 +138,7 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
    - assert no log call contains the raw email string.
 
 ## Security & compliance notes
+
 - Removes PII (email/name) from plaintext logs — a GDPR improvement.
 - `HUBSPOT_TOKEN` continues to come from Key Vault via managed identity; no new secrets.
 - Data flow change: newsletter PII now stored in HubSpot CRM (same lawful basis as the
@@ -105,9 +147,11 @@ are sufficient until a marketing tool is chosen). No frontend changes (the exist
   listed for contact, no change needed).
 
 ## Validation
+
 ```bash
 cd api && npm run typecheck && npm run build && npm test
 ```
+
 Manual, after deploy to prod (or via SWA preview with prod-linked backend — note preview
 shares the prod Function App): submit a signup with a test address you control, verify
 the contact + note appear in HubSpot, verify the browser receives success only after.
@@ -115,6 +159,7 @@ Then check App Insights traces contain `newsletter.subscribed` with a contactId 
 email address.
 
 ## Rollback
+
 Revert the PR. Worst case during incident: the endpoint returns 503 to real users —
 which is still more honest than the current silent discard; frontend already displays
 error states.
