@@ -1,8 +1,10 @@
 # PLAN-011: IaC completeness (queue in Bicep, missing wiring script, broken rollback)
+
 **Status**: Ready
 **Effort**: S–M · **Risk**: Low
 
 ## Context
+
 The production environment cannot be rebuilt from this repo. Three gaps: (1) the Azure
 Storage Queue `btai-lead-classify` — which the contact pipeline enqueues to — is not
 declared in `infra/main.bicep`, nor is the "Storage Queue Data Message Sender" role
@@ -16,6 +18,7 @@ broken — it queries a workflow file (`azure-static-web-apps.yml`) that doesn't
 during an incident the no-arg rollback fails.
 
 ## Goal / Non-goals
+
 **Goal**: `main.bicep` + `parameters.prod.json` + one documented script fully describe
 the production environment; rollback script works.
 **Non-goals**: Changing any live infrastructure (this plan brings IaC INTO SYNC with
@@ -23,6 +26,7 @@ reality — `what-if` must show only additions of already-manually-created resou
 adopted, or pure no-ops); alerting resources (PLAN-010); multi-environment support.
 
 ## Current state
+
 - `infra/main.bicep` declares: Log Analytics, App Insights, StorageV2 account +
   `deploymentpackages` blob container (`:83-86`), Flex Consumption plan, Functions app
   (system-assigned identity, Node 22), **Storage Blob Data Owner** role (`:159-167`),
@@ -36,15 +40,17 @@ adopted, or pure no-ops); alerting resources (PLAN-010); multi-environment suppo
   `btai-lead-classify`), invoked from `api/src/functions/contact.ts:181-204`.
 - `scripts/rollback.sh:47` and `:112` — `--workflow=azure-static-web-apps.yml`; actual
   deploy workflow is `cost-optimized-ci.yml`.
-- Live resources (per CLAUDE.md): RG `BTAI-RG1`, storage `stbtaisiteprod`, KV
-  `kv-btai-site-prod`, Functions `func-btai-site-prod`, secrets `RESEND_API_KEY`,
-  `HUBSPOT_TOKEN`; 1Password vault `BTAI-CC-BTAI-Site`.
+- Live resources (names in `infra/main.bicep`, which is authoritative): resource group,
+  storage account, Key Vault, Function App; secrets `RESEND_API_KEY`, `HUBSPOT_TOKEN`.
+  The 1Password vault name is in the private runbook, not here — this repo is public.
 
 ## Target state
+
 Bicep declares queue + role + app setting matching live values; a working, idempotent
 `scripts/wire-functions-settings.sh`; a rollback script whose default path succeeds.
 
 ## Steps
+
 1. **Read live state first** (read-only; establishes exact names/casing so `what-if`
    converges instead of churning):
    ```bash
@@ -83,13 +89,13 @@ Bicep declares queue + role + app setting matching live values; a working, idemp
    value's format exactly. Caution: the Bicep `appSettings` block REPLACES the app's
    settings on deploy for `siteConfig`-managed settings — verify how the existing
    template handles settings written post-deploy by the wiring script (KV references,
-   EMAIL_*). If the template would clobber them, add ALL live settings to the template
+   EMAIL\_\*). If the template would clobber them, add ALL live settings to the template
    as parameters/KV-references now (preferred — that's the point of this plan) and make
    the wiring script only responsible for SEEDING Key Vault, not app settings.
 5. Author `scripts/wire-functions-settings.sh` (bash, `set -euo pipefail`, idempotent):
-   - `--seed-kv` flag: read `RESEND_API_KEY` and `HUBSPOT_TOKEN` from 1Password vault
-     `BTAI-CC-BTAI-Site` via `op read`, `az keyvault secret set` into
-     `kv-btai-site-prod` (skip unchanged values).
+   - `--seed-kv` flag: read `RESEND_API_KEY` and `HUBSPOT_TOKEN` from the project's
+     1Password vault (name in the private runbook) via `op read`, then
+     `az keyvault secret set` into the Key Vault (skip unchanged values).
    - Default mode: `az functionapp config appsettings set` the
      `@Microsoft.KeyVault(SecretUri=...)` references + `EMAIL_FROM/EMAIL_TO/EMAIL_ADMIN`
      literals (take current values from step 1's output as the canonical defaults).
@@ -101,6 +107,7 @@ Bicep declares queue + role + app setting matching live values; a working, idemp
    (SWA native instant-revert is not used).
 
 ## Security & compliance notes
+
 - Role assignment is least-privilege (Message Sender, not Contributor) — matches what
   the code needs (enqueue only).
 - The wiring script handles secrets: it must never echo secret values (use
@@ -110,6 +117,7 @@ Bicep declares queue + role + app setting matching live values; a working, idemp
 - IaC-as-truth is direct SOC 2 change-management evidence.
 
 ## Validation
+
 ```bash
 az deployment group what-if -g BTAI-RG1 --template-file infra/main.bicep \
   --parameters infra/parameters.prod.json
@@ -120,10 +128,12 @@ bash -n scripts/wire-functions-settings.sh && shellcheck scripts/wire-functions-
 scripts/rollback.sh --dry-run 2>/dev/null || true   # if no dry-run flag, verify the
 # gh run list --workflow=cost-optimized-ci.yml query in it returns runs
 ```
+
 After deploying: submit a test contact form entry and confirm a message lands in
 `btai-lead-classify` (az storage message peek) — the enqueue path still works.
 
 ## Rollback
+
 `git revert`; the deployment is additive (queue + role already existed functionally).
 If step 4's appSettings consolidation clobbers a live setting, restore from step 1's
 recorded output (that's why step 1 records everything first).
