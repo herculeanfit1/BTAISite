@@ -4,6 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Bridging Trust AI marketing/consulting site — Next.js 15.5 (App Router) + React 19 + TypeScript 5 (strict) + Tailwind CSS v4, deployed on **Azure Static Web Apps**. `/api/*` is served by the SWA **managed hybrid backend** as App Router route handlers; the linked Azure Functions backend was retired 2026-07-24 (see Architecture facts).
 
+## Identity and scope
+
+**Identity**: `BTAI-Site` — the public marketing and consulting website for Bridging Trust AI (bridgingtrust.ai). A single Next.js application; one deployable.
+
+**Scope**: the website itself, its `/api/*` route handlers (`app/api/` over `src/lib/api/`), and the Azure infrastructure that hosts them (`infra/main.bicep`). **Out of scope**: the downstream lead-classification pipeline that consumes the queue this site writes to, client engagement material, and the retired `api/` Functions project (dead code pending teardown — do not edit).
+
 ## Commands
 
 Node **20.19.1** is required and pinned in `.nvmrc` / `engines` — 18.x is incompatible and 23.x breaks the build. Start every session with `nvm use 20`.
