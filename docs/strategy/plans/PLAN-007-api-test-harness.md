@@ -1,8 +1,10 @@
 # PLAN-007: API test harness (real tests over the Azure Functions backend)
+
 **Status**: Blocked (by PLAN-001)
 **Effort**: M · **Risk**: Low
 
 ## Context
+
 The Azure Functions backend (`api/src/`) is the business-critical path of this repo —
 contact-form validation, rate limiting, circuit breaking, Resend email, HubSpot upsert,
 queue enqueue — and has **zero automated tests over the real handlers**. Historical
@@ -13,6 +15,7 @@ so that the CI gate (PLAN-002's `Quality Gate / api` job, which already runs
 `npm test --if-present` in `api/`) meaningfully protects the lead pipeline.
 
 ## Goal / Non-goals
+
 **Goal**: Unit tests over every function handler and lib module in `api/src/`, running in
 CI, locking current behavior — including behaviors we plan to change later (PLAN-009
 hardening will then update the tests deliberately).
@@ -23,6 +26,7 @@ trivially a bug the plan owner would obviously fix… no: lock current behavior,
 findings; behavior changes ride PLAN-009).
 
 ## Current state
+
 - Harness: `api/vitest.config.ts` (from PLAN-001), `vitest` devDep, `npm test` script.
 - Handlers register via `app.http(...)` side effects (e.g. `contact.ts:237`); the inner
   `handler` functions are currently module-private in `contact.ts` and `status.ts`
@@ -38,11 +42,13 @@ findings; behavior changes ride PLAN-009).
   - CORS: allowed-origin echo incl. `*.azurestaticapps.net` regex (`contact.ts:48-61`).
 
 ## Target state
+
 `cd api && npm test` exercises all five handlers and four lib modules with mocked
 externals; `Quality Gate / api` runs it on every PR; ~all of `api/src/lib` and the
 handler branch logic covered.
 
 ## Steps
+
 1. Export handlers for testability: in `contact.ts` and `status.ts`, change
    `async function handler(...)` to `export async function handler(...)` (registration
    via `app.http` at the bottom is unchanged; the `app.http` call in an imported module
@@ -56,9 +62,9 @@ handler branch logic covered.
 3. `api/src/functions/contact.test.ts` — mock `../lib/email.js`, `../lib/hubspot.js`,
    `../lib/classify-queue.js` with `vi.mock`:
    - invalid body → 400 with Zod error shape; `sendContactEmail` not called.
-   - `_gotcha` set → 200 success shape, no email/hubspot/queue calls (and assert
+   - honeypot field set → 200 success shape, no email/hubspot/queue calls (and assert
      honeypot short-circuits before validation by sending an INVALID body + honeypot →
-     still 200).
+     still 200). Read the field name off the schema; it is not restated here.
    - happy path → 200; email, hubspot, queue all called; queue message built from
      hubspot's contactId.
    - hubspot failure → 200 still returned; queue NOT called (lock current coupling —
@@ -79,11 +85,15 @@ handler branch logic covered.
    - dual delivery: two `emails.send` calls (user confirmation then admin), correct
      to/replyTo per CLAUDE.md; failure of the first send blocks the second (current
      sequential behavior — lock it).
-   - rate limit: 6th call within an hour from same IP → rate-limited result.
-   - circuit breaker: 5 consecutive failures → open; open → immediate breaker result
-     without calling resend; fake-timer advance 5 min → half-open/close path.
-   - `RESEND_TEST_MODE=true` short-circuit if present in code — read `email.ts` first
-     and cover whatever the actual branch does.
+   - rate limit: one call past the threshold, inside the window, from the same IP →
+     rate-limited result.
+   - circuit breaker: the configured run of consecutive failures → open; open →
+     immediate breaker result without calling resend; fake-timer advance past the
+     cooldown → half-open/close path.
+   - Thresholds, window and cooldown are in the private runbook, not here (public
+     repo) — read the actual constants out of the module under test.
+   - `EMAIL_TEST_MODE` / `RESEND_TEST_MODE` short-circuit if present in code — read
+     `email.ts` first and cover whatever the actual branch does.
 6. `api/src/lib/classify-queue.test.ts` — `buildClassifyMessage`: schema v1 fields,
    8 KB guard throws `QueueMessageTooLargeError` (`classify-queue.ts:57-62`), excerpt
    truncation to 500 chars (`:64-68`).
@@ -103,20 +113,24 @@ handler branch logic covered.
     test script fails loudly.
 
 ## Security & compliance notes
+
 Tests must use obviously-fake PII (`test@example.com`), never real addresses. No secrets
 in fixtures — mocked `HUBSPOT_TOKEN`/`RESEND_API_KEY` values like `"test-token"`. This
 plan is itself compliance evidence: documented, automated verification of the
 lead-intake control path.
 
 ## Validation
+
 ```bash
 cd api
 npm run typecheck && npm test    # all green, no hanging processes (runner exits)
 npx vitest run --coverage        # baseline recorded in PR description
 ```
+
 CI: `Quality Gate / api` green on the PR.
 
 ## Rollback
+
 Revert. Test-only change; zero production risk. If the handler-export change (step 1)
 somehow affects the esbuild bundle, `npm run build` diff in validation would catch it
 (exports from the entry's imports don't change `dist/index.js` registration behavior).

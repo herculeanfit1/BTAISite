@@ -4,11 +4,16 @@ Date: 2025-01-27
 
 ## Status
 
-Accepted
+Superseded by [0002](0002-swa-hybrid-with-api-on-route-handlers.md).
+
+Retained as the historical record of the original design. Three decisions below no
+longer hold: static export was abandoned, Jest was never configured, and next-intl was
+never wired up. Do not treat this ADR as current guidance.
 
 ## Context
 
 The Bridging Trust AI website requires a modern, scalable architecture that supports:
+
 - Static site generation for optimal performance
 - Internationalization for global reach
 - Component-based development for maintainability
@@ -29,6 +34,7 @@ We will use Next.js 15.3.2 with App Router as the primary framework with the fol
 ## Consequences
 
 ### Positive
+
 - Static export provides excellent performance and security
 - App Router enables modern React patterns with Server Components
 - TypeScript strict mode catches errors early
@@ -36,10 +42,12 @@ We will use Next.js 15.3.2 with App Router as the primary framework with the fol
 - Tailwind CSS provides consistent, maintainable styling
 
 ### Negative
+
 - Static export limits some dynamic features
 - Learning curve for App Router patterns
 - Build complexity with multiple testing frameworks
 
 ### Neutral
+
 - Requires adherence to cursor rules for consistency
-- Documentation overhead for architectural decisions 
+- Documentation overhead for architectural decisions
