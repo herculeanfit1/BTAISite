@@ -12,14 +12,14 @@ implementing.
 
 ## Now (0–30 days) — highest leverage, lowest risk
 
-| # | Plan | What | Effort | Why now |
-|---|---|---|---|---|
-| 1 | PLAN-001 | Escape user input in Resend email templates | S | Active injection vulnerability on a public form |
-| 2 | PLAN-002 | Cloud quality gate: build + type-check + unit tests as required PR checks | S | Converts existing branch protection into a real gate; protects every later plan |
-| 3 | PLAN-003 | Repo hygiene purge: committed logs, SBOMs, `.bak`, scratch files, dead dev servers | S | Pure deletions; public-repo credibility; makes PLAN-004 reviewable |
-| 4 | PLAN-004 | Dead code & dead dependency removal: `src/` mirrors, three.js, Jest/Babel stack, root `resend`, fix tsconfig aliases | M | Biggest compounding win; removes the edit-the-dead-copy trap |
-| 5 | PLAN-005 | Test-suite honesty: delete placeholders/skips/broken imports, delete `fix-component-tests.js`, align coverage config with reality, fix pre-commit hook | M | Ends false confidence; makes the PLAN-002 gate meaningful |
-| 6 | PLAN-006 | Newsletter persistence via existing HubSpot module | S–M | Endpoint currently lies to users and discards leads |
+| #   | Plan     | What                                                                                                                                                   | Effort | Why now                                                                         |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------- |
+| 1   | PLAN-001 | Escape user input in Resend email templates                                                                                                            | S      | Active injection vulnerability on a public form                                 |
+| 2   | PLAN-002 | Cloud quality gate: build + type-check + unit tests as required PR checks                                                                              | S      | Converts existing branch protection into a real gate; protects every later plan |
+| 3   | PLAN-003 | Repo hygiene purge: committed logs, SBOMs, `.bak`, scratch files, dead dev servers                                                                     | S      | Pure deletions; public-repo credibility; makes PLAN-004 reviewable              |
+| 4   | PLAN-004 | Dead code & dead dependency removal: `src/` mirrors, three.js, Jest/Babel stack, root `resend`, fix tsconfig aliases                                   | M      | Biggest compounding win; removes the edit-the-dead-copy trap                    |
+| 5   | PLAN-005 | Test-suite honesty: delete placeholders/skips/broken imports, delete `fix-component-tests.js`, align coverage config with reality, fix pre-commit hook | M      | Ends false confidence; makes the PLAN-002 gate meaningful                       |
+| 6   | PLAN-006 | Newsletter persistence via existing HubSpot module                                                                                                     | S–M    | Endpoint currently lies to users and discards leads                             |
 
 Sequencing: 001 is independent — do it first (vuln). 002 before 004/005 so deletions
 happen under a working gate. 003 before 004 keeps the big deletion PR reviewable.
@@ -27,33 +27,33 @@ happen under a working gate. 003 before 004 keeps the big deletion PR reviewable
 
 ## Next (30–90 days) — structural moves
 
-| # | Plan | What | Effort | Depends on |
-|---|---|---|---|---|
-| 7 | PLAN-007 | API test harness: Vitest in `api/`, handler tests for contact/newsletter, wired into the CI gate | M | 001 (seeds harness), 002 (gate exists) |
-| 8 | PLAN-012 | Docs truth reconciliation: fix CLAUDE.md false claims, ADR backfill (hybrid architecture, i18n deferral, gating model), archive stale `docs/` files | M | 004/005 landed (docs describe end state) |
-| 9 | PLAN-011 | IaC completeness: declare queue + role + `queueServiceUri` in Bicep; author missing `wire-functions-settings.sh`; fix `rollback.sh` | S–M | none |
-| 10 | PLAN-009 | Abuse hardening: XFF parsing, bounded rate-limit stores, body-size caps, CORS tightening, cspReport limits | M | 007 (tests to lock behavior) |
-| 11 | PLAN-010 | Observability & alerting: action group, Functions failure alerts, availability test on `/api/health`, consistent `context.log`, host.json logging config | M | 011 (touches same Bicep) |
-| 12 | PLAN-008 | Route & locale unification: one homepage content tree, canonical privacy/terms, drop phantom `fr` locale | M | 004 (dead code gone first) |
+| #   | Plan     | What                                                                                                                                                     | Effort | Depends on                               |
+| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------- |
+| 7   | PLAN-007 | API test harness: Vitest in `api/`, handler tests for contact/newsletter, wired into the CI gate                                                         | M      | 001 (seeds harness), 002 (gate exists)   |
+| 8   | PLAN-012 | Docs truth reconciliation: fix CLAUDE.md false claims, ADR backfill (hybrid architecture, i18n deferral, gating model), archive stale `docs/` files      | M      | 004/005 landed (docs describe end state) |
+| 9   | PLAN-011 | IaC completeness: declare queue + role + `queueServiceUri` in Bicep; author missing `wire-functions-settings.sh`; fix `rollback.sh`                      | S–M    | none                                     |
+| 10  | PLAN-009 | Abuse hardening: XFF parsing, bounded rate-limit stores, body-size caps, CORS tightening, cspReport limits                                               | M      | 007 (tests to lock behavior)             |
+| 11  | PLAN-010 | Observability & alerting: action group, Functions failure alerts, availability test on `/api/health`, consistent `context.log`, host.json logging config | M      | 011 (touches same Bicep)                 |
+| 12  | PLAN-008 | Route & locale unification: one homepage content tree, canonical privacy/terms, drop phantom `fr` locale                                                 | M      | 004 (dead code gone first)               |
 
 ## Later (90+ days) — strategic bets, each with a trigger
 
 - **Major-version upgrade campaign** (Next 16, ESLint 10, Vitest 4, happy-dom 20,
-  Playwright 1.61, @types/node). *Trigger*: PLAN-002 + PLAN-005 + PLAN-007 landed (a real
+  Playwright 1.61, @types/node). _Trigger_: PLAN-002 + PLAN-005 + PLAN-007 landed (a real
   test gate exists to catch regressions) **and** the fleet-wide upgrade sequencing has
   chosen this repo's slot. Do Vitest 4 first (test-only blast radius), Next 16 last.
   Dependabot's ignore-all-majors rule (`.github/dependabot.yml:26-28`) stays until then.
-- **Real i18n with next-intl**. *Trigger*: an actual business decision to market in
+- **Real i18n with next-intl**. _Trigger_: an actual business decision to market in
   Spanish. The `es.json` translation and `[locale]` scaffold are preserved by PLAN-008;
   wiring next-intl is ~2–3 days once wanted. Until then, do not wire it.
 - **Durable rate limiting** (Azure Table/Redis-backed, replacing in-memory Maps).
-  *Trigger*: observed abuse in App Insights, sustained multi-instance scale-out, or
+  _Trigger_: observed abuse in App Insights, sustained multi-instance scale-out, or
   Resend cost anomalies. PLAN-009's hardening is sufficient below that threshold.
 - **Queue-first contact pipeline** (decouple HubSpot/classification from the request
   path; today a HubSpot failure silently skips classification —
-  `api/src/functions/contact.ts:181-204`). *Trigger*: lead volume where a lost
+  `api/src/functions/contact.ts:181-204`). _Trigger_: lead volume where a lost
   classification matters, or a second consumer of the queue.
-- **Repo visibility decision** (public ↔ private). *Trigger*: operator decision — see
+- **Repo visibility decision** (public ↔ private). _Trigger_: operator decision — see
   escalations in the review. If it stays public: SARIF upload posture is already correct,
   but Phase R2 must be permanently cancelled for this repo.
 
@@ -63,7 +63,7 @@ happen under a working gate. 003 before 004 keeps the big deletion PR reviewable
 
 1. **Do NOT execute "Phase R2" (self-hosted runner) on this repo while it is public.**
    The TODOs at `security-scan.yml:43,140,232,325` predate the repo being public.
-   `STANDARDS.md` §8 requires deregistering self-hosted runners *before* going public;
+   `STANDARDS.md` §8 requires deregistering self-hosted runners _before_ going public;
    the same logic forbids adding one after. PLAN-012 removes the TODOs.
 2. **Do NOT wire next-intl or add French now.** i18n is decorative today; wiring it is
    real work with zero current business demand. Keep `es.json`; delete the `fr` promise.
@@ -71,8 +71,14 @@ happen under a working gate. 003 before 004 keeps the big deletion PR reviewable
    Upgrading on top of dead code and theater tests maximizes risk for zero user value.
    The freeze is currently a feature.
 4. **Do NOT rewrite git history to purge committed logs/SBOMs.** Nothing tracked is a
-   secret (verified: `.env` untracked). History rewrite on a public repo with branch
+   secret (re-verified 2026-07-27 with credential-shape patterns: no key of any provider
+   shape is tracked; `.env` untracked). History rewrite on a public repo with branch
    protection is high-ceremony, low-value. Delete at HEAD (PLAN-003) and move on.
+   Caveat on the original verification: it covered _secrets_, not _recon detail_, and the
+   private-IP sweep behind it used `\b` word boundaries, which are not POSIX ERE — so
+   `git grep -E` silently matched nothing. Two real items existed and are now removed at
+   HEAD (a LAN address in `dev-server.log`, two internal host addresses in a strategy
+   doc). They remain in history, which this entry deliberately accepts.
 5. **Do NOT chase a coverage percentage.** The 70%/30% numbers were fiction. PLAN-005
    sets thresholds to what the honest suite actually measures; ratchet up only from real
    baselines.

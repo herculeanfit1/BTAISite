@@ -61,3 +61,22 @@ api/staging/
 *.log
 .envrc
 _diag/
+
+# Generated reports and build artifacts (PLAN-003)
+# NOTE: *.log is already set above; these close the remaining classes.
+logs/
+github-logs/
+sbom*.json
+bom.json
+npm-audit.json
+security-audit.json
+audit-report.txt
+
+# Scratch and backup files (PLAN-003)
+commit_message*.txt
+commit_now.txt
+*.bak
+*.backup
+backups/
+temp/
+tmp/
