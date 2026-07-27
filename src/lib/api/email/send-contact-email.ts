@@ -5,6 +5,7 @@ import { getEmailProvider, isEmailTestMode } from "./provider";
 import { isRateLimited } from "../rate-limit";
 import { generateConfirmationEmail } from "./templates/contact-confirmation";
 import { generateAdminNotificationEmail } from "./templates/admin-notification";
+import { apiLog } from "../log";
 
 // In-memory rate limiting + circuit breaker. Best-effort and single-instance
 // (plan Q3 parity — the honeypot is the real spam defence); both reset on a
@@ -142,7 +143,9 @@ export async function sendContactEmail(
     recordSuccess();
     return { success: true, message: "Emails sent successfully" };
   } catch (error) {
-    console.error("Email sending failed:", error);
+    apiLog.error("email.send.failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     recordFailure();
     return {
       success: false,

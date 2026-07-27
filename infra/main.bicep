@@ -22,6 +22,12 @@ param environment string = 'prod'
 @description('Name of the existing SWA resource')
 param swaName string = 'bridgingtrust-website'
 
+@description('Address that receives operational alerts')
+param alertEmail string = 'admin@bridgingtrust.ai'
+
+@description('Public URL the availability tests probe')
+param publicSiteUrl string = 'https://bridgingtrust.ai'
+
 // ── Naming ──────────────────────────────────────────────────────────
 
 var prefix = 'btai-site'
@@ -254,6 +260,168 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   }
 }
 
+
+// ── Alerting ────────────────────────────────────────────────────────
+// Nothing alerted anyone when the lead pipeline broke: no action groups, no
+// alerts, no availability tests existed anywhere (verified against the live
+// resource group, not assumed).
+//
+// WHAT IS DELIBERATELY ABSENT: PLAN-010 also asked for an Http5xx metric alert
+// on the Functions app and an App Insights exceptions alert. Both would be
+// PERMANENTLY SILENT and are therefore worse than nothing, because they look
+// like coverage:
+//   - The Functions app has served no traffic since 2026-07-24, so its Http5xx
+//     metric is structurally always zero.
+//   - The live compute is the SWA managed backend, and the Static Web App holds
+//     only NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING — browser-side
+//     telemetry. Nothing server-side emits exceptions to App Insights at all.
+//
+// Availability tests are used instead: they probe from outside and depend on no
+// in-process instrumentation, so they work regardless of where the app runs.
+
+resource alertActions 'Microsoft.Insights/actionGroups@2023-01-01' = {
+  name: 'ag-${prefix}-${suffix}'
+  location: 'global'
+  properties: {
+    groupShortName: 'btaiprod'
+    enabled: true
+    emailReceivers: [
+      {
+        name: 'ops-email'
+        emailAddress: alertEmail
+        useCommonAlertSchema: true
+      }
+    ]
+  }
+}
+
+// Liveness: /api/health is the endpoint the post-deploy gate already trusts.
+resource healthTest 'Microsoft.Insights/webtests@2022-06-15' = {
+  name: 'wt-${prefix}-health'
+  location: location
+  tags: {
+    // Required, or the test is orphaned from the App Insights resource.
+    'hidden-link:${appInsights.id}': 'Resource'
+  }
+  properties: {
+    SyntheticMonitorId: 'wt-${prefix}-health'
+    Name: 'BTAI health endpoint'
+    Enabled: true
+    Frequency: 300
+    Timeout: 30
+    Kind: 'standard'
+    RetryEnabled: true
+    Locations: [
+      { Id: 'us-ca-sjc-azr' }
+      { Id: 'us-il-ch1-azr' }
+      { Id: 'us-va-ash-azr' }
+    ]
+    Request: {
+      RequestUrl: '${publicSiteUrl}/api/health'
+      HttpVerb: 'GET'
+    }
+    ValidationRules: {
+      ExpectedHttpStatusCode: 200
+      SSLCheck: true
+      SSLCertRemainingLifetimeCheck: 14
+      ContentValidation: {
+        ContentMatch: '"status"'
+        IgnoreCase: false
+        PassIfTextFound: true
+      }
+    }
+  }
+}
+
+// Lead path: POSTs a deliberately INVALID payload and requires a 400. Zod
+// rejects it before any email, CRM write or enqueue, so this exercises the real
+// contact handler continuously without ever creating a lead. A health check
+// alone cannot catch "the site is up but the form is broken", which is the
+// failure that actually costs money.
+resource contactTest 'Microsoft.Insights/webtests@2022-06-15' = {
+  name: 'wt-${prefix}-contact'
+  location: location
+  tags: {
+    'hidden-link:${appInsights.id}': 'Resource'
+  }
+  properties: {
+    SyntheticMonitorId: 'wt-${prefix}-contact'
+    Name: 'BTAI contact endpoint validates'
+    Enabled: true
+    Frequency: 900
+    Timeout: 30
+    Kind: 'standard'
+    RetryEnabled: true
+    Locations: [
+      { Id: 'us-ca-sjc-azr' }
+      { Id: 'us-va-ash-azr' }
+    ]
+    Request: {
+      RequestUrl: '${publicSiteUrl}/api/contact'
+      HttpVerb: 'POST'
+      Headers: [
+        { key: 'Content-Type', value: 'application/json' }
+      ]
+      RequestBody: base64('{"email":"not-an-email","message":""}')
+      ParseDependentRequests: false
+    }
+    ValidationRules: {
+      // 400 IS the healthy answer here — it proves the handler ran and
+      // validated. An HTML 200 would mean the request fell through to the
+      // static site instead of reaching the route handler.
+      ExpectedHttpStatusCode: 400
+      SSLCheck: true
+    }
+  }
+}
+
+// Webtest availability uses its own criteria type; the generic single-resource
+// criteria rejects the (webtest + component) scope pair these alerts require.
+resource healthAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-${prefix}-health-availability'
+  location: 'global'
+  properties: {
+    description: 'The public /api/health endpoint failed its availability test.'
+    severity: 1
+    enabled: true
+    scopes: [healthTest.id, appInsights.id]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria'
+      webTestId: healthTest.id
+      componentId: appInsights.id
+      failedLocationCount: 2
+    }
+    actions: [
+      { actionGroupId: alertActions.id }
+    ]
+  }
+}
+
+// The one that catches "site up, form broken" — the failure that costs money.
+resource contactAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-${prefix}-contact-availability'
+  location: 'global'
+  properties: {
+    description: 'POST /api/contact stopped returning its validation 400 — the lead path is broken.'
+    severity: 1
+    enabled: true
+    scopes: [contactTest.id, appInsights.id]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria'
+      webTestId: contactTest.id
+      componentId: appInsights.id
+      failedLocationCount: 1
+    }
+    actions: [
+      { actionGroupId: alertActions.id }
+    ]
+  }
+}
+
 // ── Outputs ─────────────────────────────────────────────────────────
 
 output functionsAppName string = functionsApp.name
@@ -263,6 +431,7 @@ output appInsightsName string = appInsights.name
 output keyVaultName string = keyVault.name
 output keyVaultUri string = keyVault.properties.vaultUri
 output swaDefaultHostname string = swa.properties.defaultHostname
+output actionGroupName string = alertActions.name
 
 // ── Post-Deployment Steps ───────────────────────────────────────────
 //

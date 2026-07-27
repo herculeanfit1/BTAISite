@@ -1,8 +1,73 @@
 # PLAN-010: Observability & alerting for the lead pipeline
-**Status**: Blocked (by PLAN-011)
+
+**Status**: Executed 2026-07-27 (IaC declared, **not deployed** — see "Execution notes")
 **Effort**: M · **Risk**: Low
 
+## Execution notes (2026-07-27)
+
+The premise is correct and was verified live, not assumed: the resource group contains
+**zero** metric alerts, action groups and webtests. Nothing alerts anyone when the lead
+pipeline breaks.
+
+### Two of the three proposed alerts would never have fired
+
+This is the finding that changes the plan. Both were checked against live state:
+
+| Proposed alert                                                            | Verdict                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `alert-func-5xx` — `Http5xx` on `Microsoft.Web/sites/func-btai-site-prod` | **Structurally always zero.** That app has served no traffic since 2026-07-24                                                                                                                                              |
+| `alert-func-exceptions` — App Insights `exceptions/count`                 | **Nothing server-side emits to App Insights.** The Static Web App holds only `NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING` — browser telemetry. CLAUDE.md says the managed backend's observability channel is stdout |
+| Availability webtest on `/api/health`                                     | **Works.** Probes from outside, depends on no in-process instrumentation                                                                                                                                                   |
+
+Shipping the first two would have been worse than shipping nothing: a permanently silent
+alert reads as coverage. They are deliberately absent, and `infra/main.bicep` records why
+so nobody "fixes" the omission later.
+
+### What was built instead
+
+- **Action group** `ag-btai-site-prod` (email), parameterised via `alertEmail`.
+- **`wt-btai-site-health`** — GET `/api/health` every 5 min from 3 regions, content-matching
+  `"status"` (the same string the deploy gate greps) with SSL expiry checking.
+- **`wt-btai-site-contact`** — the addition the plan did not have. It POSTs a deliberately
+  **invalid** payload and requires a **400**. Zod rejects it before any email, CRM write or
+  enqueue, so it exercises the real contact handler continuously **without ever creating a
+  lead**. A health check alone cannot catch "site up, form broken", which is the failure
+  that actually costs money.
+- **Two paired availability alerts**, severity 1, on the action group.
+
+`Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria` is required here — the
+generic single-resource criteria the plan implies rejects the (webtest + component) scope
+pair with `Scopes property is invalid`.
+
+### Steps that were moot
+
+- **`api/host.json` logging config (step 2)** — retired tree; nothing reads it.
+- **The `console.*` → `context.log` sweep (step 3)** targets `api/src/functions/*`. The
+  live equivalent is `apiLog` in `src/lib/api/`, and only **two** bare calls existed
+  (`hubspot.ts`, `send-contact-email.ts`). Both converted, and a static guard test now
+  fails if one reappears.
+- **The live-fire test (step 5)** proposes stopping the Function App. That would prove
+  nothing: the availability tests probe `bridgingtrust.ai`, which the Functions app has not
+  served since 2026-07-24.
+
+### PII
+
+The plan's line references are stale but the concern was real. `contact-handler.ts` logged
+the submitter's **full email address on every validated submission**, into a store with
+30-day retention. Now logs `interest` and `hasCompany` only. Raw IPs in the honeypot and
+oversize paths are reduced to `ipClass` — `resolved` or `unknown`. Both are covered by a
+test that fails if either value reappears.
+
+### Not deployed — deliberate
+
+`what-if` confirms the change is purely additive (5 Creates: action group, 2 webtests,
+2 alerts; no Delete). **Deployment is left for the owner** because it creates billable
+resources and configures email to a real inbox — an outward-facing action beyond "declare
+the IaC". Until it is applied, **the alerts protect nothing**. The command and the
+live-fire check are in the PR body.
+
 ## Context
+
 The contact pipeline is the business's revenue front door, and today **nothing alerts
 anyone when it breaks**. There are no metric alerts, availability tests, or action groups
 anywhere in IaC or scripts. A Resend outage, expired HubSpot token, or Key Vault
@@ -15,6 +80,7 @@ Blocked by PLAN-011 because both plans edit `infra/main.bicep`; land the IaC-com
 plan first so this one builds on an accurate baseline.
 
 ## Goal / Non-goals
+
 **Goal**: A human is notified within ~15 minutes when the API errors or goes
 unreachable; Functions logs are consistent, correlated, and PII-free.
 **Non-goals**: Dashboards/workbooks (nice-to-have, later); frontend RUM changes
@@ -22,6 +88,7 @@ unreachable; Functions logs are consistent, correlated, and PII-free.
 PLAN-004); SLOs; paging integration (email is sufficient at this scale).
 
 ## Current state
+
 - `infra/main.bicep` — Log Analytics (30-day retention, `:47`), workspace-based App
   Insights (`:51-60`), Functions app with `APPLICATIONINSIGHTS_CONNECTION_STRING`
   (`:121-123`). **Zero** `Microsoft.Insights/metricAlerts`, `actionGroups`, `webtests`,
@@ -36,10 +103,12 @@ PLAN-004); SLOs; paging integration (email is sufficient at this scale).
 - CLAUDE.md's `context.log` binding trap: never pass it bare; arrow-wrap.
 
 ## Target state
+
 Bicep declares an action group + three alerts; `host.json` configures sampling; all
 Functions logging goes through `context.log` with no raw PII.
 
 ## Steps
+
 1. Bicep additions (`infra/main.bicep`), parameterized:
    - `param alertEmail string` — add to `infra/parameters.prod.json` with value
      `admin@bridgingtrust.ai` (matches EMAIL_ADMIN convention in CLAUDE.md's env
@@ -75,10 +144,10 @@ Functions logging goes through `context.log` with no raw PII.
      `{contactIdPresent: bool, company: bool, interest, ipClass: "public"|"unknown"}` —
      never name/email/raw IP. `cspReport.ts` → drop user-agent (PLAN-009 also touches
      this; coordinate — whichever lands second rebases).
-   - `email.ts:118-122` test-mode logs of EMAIL_* env values: keep (not secrets, useful),
+   - `email.ts:118-122` test-mode logs of EMAIL\_\* env values: keep (not secrets, useful),
      but gate behind test mode only (verify it already is).
 4. Deploy: `az deployment group create --resource-group BTAI-RG1 --template-file
-   infra/main.bicep --parameters infra/parameters.prod.json` — run `what-if` FIRST and
+infra/main.bicep --parameters infra/parameters.prod.json` — run `what-if` FIRST and
    confirm only additions (see PLAN-011's baseline discipline).
 5. Fire a real alert once: temporarily stop the Function App
    (`az functionapp stop -n func-btai-site-prod -g BTAI-RG1`), wait for the
@@ -88,6 +157,7 @@ Functions logging goes through `context.log` with no raw PII.
    it alerts, then delete it.
 
 ## Security & compliance notes
+
 - Removing PII from logs is the material compliance win here (GDPR data-minimization;
   Log Analytics retains 30 days).
 - Alert emails contain resource names only — no lead data.
@@ -96,6 +166,7 @@ Functions logging goes through `context.log` with no raw PII.
   monitoring-control evidence.
 
 ## Validation
+
 ```bash
 az deployment group what-if -g BTAI-RG1 --template-file infra/main.bicep \
   --parameters infra/parameters.prod.json     # only Create entries, no Delete/Modify surprises
@@ -103,8 +174,10 @@ cd api && npm run typecheck && npm test       # logging refactor green
 grep -rn "console\." api/src/                 # → empty
 az monitor metrics alert list -g BTAI-RG1 -o table   # three alerts present
 ```
+
 Plus the live-fire test in step 5 — an alert that has never fired is theater.
 
 ## Rollback
+
 `az deployment group create` with the previous template revision (git revert first);
 alert resources delete cleanly. Logging changes revert with the Functions redeploy.

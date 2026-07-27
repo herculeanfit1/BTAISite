@@ -2,6 +2,7 @@
 // the Azure Functions lib (api/src/lib/hubspot.ts) — already fetch-based with a
 // 10s AbortController timeout, so it runs unchanged on the Next.js runtime.
 import { escapeHtml } from "./html";
+import { apiLog } from "./log";
 
 const BASE = "https://api.hubapi.com";
 const TIMEOUT = 10_000;
@@ -91,7 +92,7 @@ function buildProperties(
       : undefined;
 
   if (sub.interest && sub.interest !== "" && !INTEREST_TO_INQUIRY_TOPIC[sub.interest]) {
-    console.warn(`hubspot: unmapped interest value "${sub.interest}", defaulting to general_inquiry`);
+    apiLog.warn("hubspot.interest.unmapped", { interest: sub.interest });
   }
 
   const props: Record<string, string> = {
