@@ -102,9 +102,9 @@ section {
 }
 ```
 
-### Tailwind v4 — use `@import "tailwindcss"`, and ignore `tailwind.config.cjs`
+### Tailwind v4 — use `@import "tailwindcss"`, and there is no config file
 
-The v3 directives (`@tailwind base/utilities/components`) partially work but **silently skip every responsive variant** — zero `sm:`/`md:`/`lg:` rules get generated. `app/globals.css` correctly uses the unified `@import "tailwindcss"`; theme values live in its `@theme` block. `tailwind.config.cjs` at the repo root is **inert legacy** — v4 does not read it without an explicit `@config` directive, and there isn't one, so editing its colors/plugins has no effect.
+The v3 directives (`@tailwind base/utilities/components`) partially work but **silently skip every responsive variant** — zero `sm:`/`md:`/`lg:` rules get generated. `app/globals.css` correctly uses the unified `@import "tailwindcss"`; theme values live in its `@theme` block (e.g. `--color-primary`). A `tailwind.config.cjs` used to sit at the repo root duplicating those colours; it was **inert** — v4 reads a JS config only when an explicit `@config` directive points at it, and none existed — so it was deleted. Do not add one back expecting it to take effect: without `@config` it is decoration, and a second copy of the palette that silently disagrees with `@theme` is worse than none.
 
 ### Exactly one `<html>`/`<body>`, and inline-only error boundaries
 
