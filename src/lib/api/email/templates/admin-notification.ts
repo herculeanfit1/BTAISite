@@ -1,4 +1,5 @@
 import type { ContactFormData } from "../send-contact-email";
+import { escapeHtml } from "../../html";
 
 const INTEREST_LABELS: Record<string, string> = {
   // Current taxonomy (§7, 2026-07-25) — mirrors the form's option labels.
@@ -30,6 +31,20 @@ export function generateAdminNotificationEmail(
     minute: "2-digit",
     second: "2-digit",
   });
+
+  // Two-layer encoding for the reply button, in the order the browser decodes:
+  // percent-encode the query parameters for URL context, then HTML-escape the
+  // whole URL for attribute context. escapeHtml turns the `&` separators into
+  // `&amp;`, which is the correct attribute spelling and decodes back to `&`.
+  // Escaping both quote styles is what prevents attribute breakout out of the
+  // href — the sharpest edge here, since `data.email` reaches it directly.
+  const replySubject = encodeURIComponent("Re: Your inquiry to Bridging Trust AI");
+  const replyBody = encodeURIComponent(
+    `Dear ${data.firstName},\r\n\r\nThank you for reaching out to Bridging Trust AI...`,
+  );
+  const replyHref = escapeHtml(
+    `mailto:${data.email}?subject=${replySubject}&body=${replyBody}`,
+  );
 
   return `
 <!DOCTYPE html>
@@ -155,24 +170,24 @@ export function generateAdminNotificationEmail(
 
             <div class="detail-row">
                 <div class="detail-label">Name:</div>
-                <div class="detail-value"><strong>${data.firstName} ${data.lastName}</strong></div>
+                <div class="detail-value"><strong>${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)}</strong></div>
             </div>
 
             <div class="detail-row">
                 <div class="detail-label">Email:</div>
-                <div class="detail-value"><a href="mailto:${data.email}" style="color: #3b82f6;">${data.email}</a></div>
+                <div class="detail-value"><a href="mailto:${escapeHtml(data.email)}" style="color: #3b82f6;">${escapeHtml(data.email)}</a></div>
             </div>
 
             ${data.company ? `
             <div class="detail-row">
                 <div class="detail-label">Company:</div>
-                <div class="detail-value"><strong>${data.company}</strong></div>
+                <div class="detail-value"><strong>${escapeHtml(data.company)}</strong></div>
             </div>
             ` : ""}
 
             <div class="detail-row">
                 <div class="detail-label">Interest:</div>
-                <div class="detail-value"><strong>${interestLabel}</strong></div>
+                <div class="detail-value"><strong>${escapeHtml(interestLabel)}</strong></div>
             </div>
 
             <div class="detail-row">
@@ -183,7 +198,10 @@ export function generateAdminNotificationEmail(
 
         <div class="message-section">
             <div class="message-title">Message Content</div>
-            <div class="message-content">${data.message}</div>
+            <!-- escapeHtml, not escapeHtmlMultiline: .message-content is
+                 white-space: pre-wrap, so newlines already render. Adding
+                 <br /> here would double every line break. -->
+            <div class="message-content">${escapeHtml(data.message)}</div>
         </div>
 
         <div class="actions">
@@ -197,13 +215,16 @@ export function generateAdminNotificationEmail(
         </div>
 
         <div style="text-align: center; margin: 30px 0;">
-            <a href="mailto:${data.email}?subject=Re: Your inquiry to Bridging Trust AI&body=Dear ${data.firstName},%0D%0A%0D%0AThank you for reaching out to Bridging Trust AI..." class="btn">Reply to ${data.firstName}</a>
+            <a href="${replyHref}" class="btn">Reply to ${escapeHtml(data.firstName)}</a>
         </div>
 
         <div class="technical-info">
             <h3>Technical Details</h3>
-            <div class="tech-detail"><strong>IP Address:</strong> ${data.ipAddress || "Not available"}</div>
-            <div class="tech-detail"><strong>User Agent:</strong> ${data.userAgent || "Not available"}</div>
+            <!-- Both are request-header derived (x-forwarded-for / user-agent)
+                 and never pass through the Zod schema, so they are the most
+                 directly attacker-controlled strings in this template. -->
+            <div class="tech-detail"><strong>IP Address:</strong> ${escapeHtml(data.ipAddress || "Not available")}</div>
+            <div class="tech-detail"><strong>User Agent:</strong> ${escapeHtml(data.userAgent || "Not available")}</div>
             <div class="tech-detail"><strong>Form Source:</strong> Contact page (bridgingtrust.ai)</div>
             <div class="tech-detail"><strong>Submission ID:</strong> ${Date.now()}-${Math.random().toString(36).substr(2, 9)}</div>
         </div>

@@ -54,7 +54,7 @@ A vitest path filter matching **zero** files is silently ignored as long as anot
 
 Facts a fresh session cannot cheaply derive from the tree:
 
-- **`/api/*` is Next.js route handlers, not Azure Functions.** `app/api/{contact,health,status}/route.ts` are thin adapters over runtime-agnostic domain logic in **`src/lib/api/`** (`contact-handler.ts` is the orchestrator; also `contact-schema`, `cors`, `rate-limit`, `queue-client`, `classify-queue`, `email/`). Route handlers set `export const dynamic = "force-dynamic"`. `api_location: ""` in CI and there is **no linked backend**.
+- **`/api/*` is Next.js route handlers, not Azure Functions.** `app/api/{contact,health,status}/route.ts` are thin adapters over runtime-agnostic domain logic in **`src/lib/api/`** (`contact-handler.ts` is the orchestrator; also `contact-schema`, `cors`, `rate-limit`, `queue-client`, `classify-queue`, `html`, `email/`). Route handlers set `export const dynamic = "force-dynamic"`. `api_location: ""` in CI and there is **no linked backend**.
 - **`api/` (Azure Functions v4) is dead code awaiting teardown.** It is still tracked and still has its own tsconfig + esbuild, but nothing deploys it — the `deploy-functions` job was retired in #55. Do not "fix" bugs there or port changes into it; edit `src/lib/api/` instead. Deleting `api/` plus its Azure resources is the unfinished Phase 5 of `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
 - **Contact flow** (`src/lib/api/contact-handler.ts`): Zod validation → server-side anti-abuse checks (implementation and all tunables live only in the private runbook, never in this public file) → Resend dual delivery (submitter confirmation + admin notification). Non-blocking side-effects: HubSpot contact upsert + note (`src/lib/api/hubspot.ts`) and a versioned JSON message enqueued to an Azure Storage Queue for downstream classification (`src/lib/api/queue-client.ts`, encoded by `queue-encoding.ts`). The Functions output binding is gone — the queue is now reached with a queue-scoped, add-only SAS URL. Sole production caller: `app/components/home/ContactSection.tsx`.
 - **Security headers and CSP live in `next.config.js` `headers()`** — _not_ in `staticwebapp.config.json` (see Gotchas). Any CSP edit happens there.
@@ -109,6 +109,21 @@ The v3 directives (`@tailwind base/utilities/components`) partially work but **s
 ### Exactly one `<html>`/`<body>`, and inline-only error boundaries
 
 Only `app/layout.tsx` renders `<html>`/`<body>`. `app/[locale]/layout.tsx` **must** stay a pass-through (`<>{children}</>`) — nested HTML tags cause hydration failure that trips the error boundary and blanks the whole site. `app/error.tsx` and `app/[locale]/error.tsx` use **inline styles only**, never Tailwind classes, so they still render when CSS fails to load. That layout also pins `dynamicParams = false` and 404s unsupported locales: without it the `[locale]` segment matched any single path segment, serving the full homepage at `/banana` with a 200.
+
+### User input reaching HTML must be escaped at the sink (PLAN-001)
+
+Every user-controlled string in the two Resend templates and the HubSpot note body goes
+through `escapeHtml` from `src/lib/api/html.ts`. Do **not** move this into the Zod schema —
+input sanitization mangles legitimate messages and leaves the next sink unprotected.
+`ipAddress` and `userAgent` are header-derived and never touch Zod, so they are the most
+attacker-controlled values in the admin email.
+
+- `escapeHtmlMultiline` (adds `<br />`) belongs **only** in the confirmation template. The
+  admin template's `.message-content` is `white-space: pre-wrap`, so newlines already
+  render there and `<br />` would double every line break.
+- Do not assert `not.toContain("onerror=")` in a test — escaped payloads survive as inert
+  text and that assertion fails against a _correct_ fix. `__tests__/api/email-template-injection.test.ts`
+  parses the HTML and asserts structurally instead.
 
 ### Root tsconfig must exclude `api/` (PR #16)
 

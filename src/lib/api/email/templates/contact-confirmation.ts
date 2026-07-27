@@ -1,4 +1,5 @@
 import type { ContactFormData } from "../send-contact-email";
+import { escapeHtml, escapeHtmlMultiline } from "../../html";
 
 export function generateConfirmationEmail(data: ContactFormData): string {
   return `
@@ -114,13 +115,17 @@ export function generateConfirmationEmail(data: ContactFormData): string {
         </div>
 
         <div class="content">
-            <p>Dear ${data.firstName},</p>
+            <p>Dear ${escapeHtml(data.firstName)},</p>
 
             <p>Thank you for contacting Bridging Trust AI. We've received your message and appreciate your interest in our AI consulting and implementation services.</p>
 
             <div class="message-box">
                 <div class="message-title">Your Message:</div>
-                <div class="message-content">"${data.message}"</div>
+                <!-- escapeHtmlMultiline here, unlike the admin template: this
+                     .message-content has no white-space: pre-wrap, so newlines
+                     would otherwise collapse and the quote-back would read as
+                     one run-on paragraph. -->
+                <div class="message-content">"${escapeHtmlMultiline(data.message)}"</div>
             </div>
 
             <div class="next-steps">

@@ -1,6 +1,8 @@
 // HubSpot upsert + note-logging for contact submissions. Ported verbatim from
 // the Azure Functions lib (api/src/lib/hubspot.ts) — already fetch-based with a
 // 10s AbortController timeout, so it runs unchanged on the Next.js runtime.
+import { escapeHtml } from "./html";
+
 const BASE = "https://api.hubapi.com";
 const TIMEOUT = 10_000;
 
@@ -55,15 +57,6 @@ export const RETIRED_INQUIRY_TOPICS = [
 ] as const;
 
 type Logger = (msg: string, meta?: object) => void;
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 async function hubspotFetch(
   method: string,
