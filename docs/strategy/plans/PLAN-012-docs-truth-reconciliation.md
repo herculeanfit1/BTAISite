@@ -20,10 +20,18 @@ misleading agent sessions and the blocking plans had not moved.
 
 - Step 4, ADRs 0003–0005 (i18n deferral, deployment gating, public-repo/no-self-hosted-
   runner). 0005 needs the operator's repo-visibility confirmation first.
-- Step 5 — the `docs/` prune into `docs/archive/`. Untouched; `docs/` root still holds
-  ~70 loose files of mixed vintage. CLAUDE.md now states plainly that everything outside
-  `adr/` and `projects/` is a dated historical record, which blunts the harm but is not
-  the fix.
+
+**In progress:**
+
+- Step 5 — the `docs/` prune. **Batch one shipped in PR #69**: 48 of 75 root files moved
+  to `docs/archive/` via `git mv`, plus a `docs/archive/README.md` stating that nothing
+  there describes the current system. Three files this plan expected to survive were
+  archived after being verified stale (`techstack.md` pins Next 15.3.1;
+  `security-testing.md` documents the deleted `src/uitests`; `ci-cd-workflow.md` names six
+  workflows that do not exist). 27 files remain — the `azure-*` deployment guides,
+  `deployment.md`, `production-deployment.md`, `env-example.md`, and
+  `testing-requirements.md` need a closer read than a pattern match. This plan's "~5–8
+  living docs" target is not yet met.
 
 **This plan is itself now partly outdated.** It was written before the API consolidation
 (PRs #52–#57, 2026-07-24) and still assumes the linked Azure Functions backend and that
