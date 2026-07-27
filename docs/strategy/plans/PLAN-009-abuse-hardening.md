@@ -1,7 +1,80 @@
 # PLAN-009: Abuse hardening (IP trust, bounded stores, size caps, CORS tightening)
 
-**Status**: Blocked (by PLAN-007)
+**Status**: Executed 2026-07-27 — see "Execution notes"
 **Effort**: M · **Risk**: Med
+
+## Execution notes (2026-07-27)
+
+Executed against `src/lib/api/`; every path in the plan names the retired `api/` tree.
+Three of the four weaknesses were real. One target does not exist, and the CORS finding
+turned out to be worse than described.
+
+### The CORS rule was backwards in both directions
+
+The plan asks to "tighten" the wildcard `^https:\/\/[a-z0-9-]+\.azurestaticapps\.net$`.
+Measured against the live hostname, that rule was not merely loose — it was inverted:
+
+| Origin                                                                | Old rule                                                       |
+| --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `https://wonderful-bush-0e888f30f.6.azurestaticapps.net` (**ours**)   | **rejected** — the character class excludes the dot before `6` |
+| `https://evil-attacker-site.azurestaticapps.net` (**any stranger's**) | **allowed**                                                    |
+
+So it never once admitted the site it was written for, while granting cross-origin access
+to every other tenant's Static Web App. The plan's own step-6 hint was right: **removal
+beat tightening.** The form posts to the relative path `/api/contact`, which is
+same-origin on production and previews alike, so nothing needed the wildcard. Also changed
+the disallowed-origin branch to omit `Access-Control-Allow-Origin` instead of asserting
+`https://bridgingtrust.ai` — a header naming an origin that was not the caller's, which
+browsers reject anyway while making logs read as if the request had been authorised.
+
+### XFF: fixed, with the platform assumption stated honestly
+
+`getClientIp` took the **leftmost** entry — the one a client prefills — so rotating one
+header handed out a fresh rate-limit bucket per request and wrote attacker-chosen strings
+into `submission_ip` in both HubSpot and the classification queue. Now walks the chain
+from the right and returns the first public address.
+
+**The plan's stated topology is stale** ("SWA (edge) → linked backend → Functions"; there
+has been no linked backend since 2026-07-24), so its justification for rightmost parsing
+no longer holds as written. I did not verify empirically that this platform appends the
+client IP — doing so needs an endpoint that echoes headers, and the only way to observe the
+limiter in production is to send real submissions, which would generate real emails, CRM
+contacts and queue messages. **The change is safe regardless**, which is why it shipped:
+
+- platform appends → rightmost is the true client IP (better);
+- platform passes the chain through → rightmost is attacker-chosen, exactly as the
+  leftmost was (no worse);
+- platform replaces the header → one entry, both readings identical.
+
+Never worse than what it replaced, better whenever a hop appends. Verifying the append
+behaviour is follow-up work, noted in the transparency report.
+
+### Other findings
+
+- **Unbounded stores confirmed.** `send-contact-email.ts` kept a private `Map` with no
+  eviction of any kind. Since identity is header-derived, that was a cheap memory lever on
+  a metered plan. Both limiters now share one bounded store (cap + oldest-first eviction,
+  per-namespace). Fail-open on `"unknown"` is preserved and documented, so a
+  header-stripping proxy cannot lock out everyone behind it.
+- **No body-size cap** confirmed; added a 50 KB `content-length` guard returning 413
+  before the body is parsed.
+- **`cspReport` and `newsletter` do not exist in the live tree** (steps 4–5 partially, and
+  all of step 5, are moot). They exist only in `api/`.
+- **The plan's step 2 describes a `setInterval` cleanup to `.unref()`.** There is no
+  interval in the live `rate-limit.ts` — cleanup is now opportunistic on insert, which
+  needs no timer and cannot hold a process open.
+- **Test fixtures contained real IP addresses.** `__tests__/api/rate-limit-ip.test.ts`
+  used addresses captured from a production trace, one in a residential range. Real client
+  IPs are personal data and this repo is public; replaced with RFC 5737 documentation
+  ranges.
+
+### Verification
+
+Deliberate behaviour changes updated PLAN-007's locked tests rather than working around
+them — the two-step the plan describes, working as intended. Each hardening was
+mutation-tested: reverting XFF to leftmost failed 4 tests, removing the store cap failed
+2, restoring the CORS wildcard failed 1. **228 tests / 30 files green**; coverage
+30.55 → 31.39 lines.
 
 ## Context
 

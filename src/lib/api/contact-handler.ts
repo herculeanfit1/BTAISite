@@ -36,7 +36,7 @@ export interface ContactHandlerResult {
   status: number;
   /** JSON body to return, or null for an empty (OPTIONS) response. */
   body: unknown;
-  corsOrigin: string;
+  corsOrigin: string | null;
 }
 
 // Total wall-clock budget for the submission orchestration (plan Q4). Even if
@@ -70,7 +70,21 @@ function isNonProduction(headers: Headers): boolean {
   return fwd.endsWith(".azurestaticapps.net") && /-\d+\./.test(fwd);
 }
 
-function serviceUnavailable(corsOrigin: string): ContactHandlerResult {
+// The contact schema caps `message` at 2000 chars, so a legitimate submission is
+// a couple of KB at most. This rejects on the declared Content-Length BEFORE the
+// body is parsed, so an oversized payload costs a header read rather than a full
+// JSON parse. A body with no Content-Length is allowed through to the schema,
+// which bounds every field anyway.
+export const MAX_BODY_BYTES = 50_000;
+
+export function isBodyTooLarge(headers: Headers): boolean {
+  const raw = headers.get("content-length");
+  if (!raw) return false;
+  const len = Number(raw);
+  return Number.isFinite(len) && len > MAX_BODY_BYTES;
+}
+
+function serviceUnavailable(corsOrigin: string | null): ContactHandlerResult {
   return {
     status: 503,
     body: {
@@ -106,6 +120,15 @@ export async function handleContact(
     const rawUserAgent = input.headers.get("user-agent");
     const userAgent = rawUserAgent || "unknown";
     const submissionUrl = input.headers.get("referer");
+    if (isBodyTooLarge(input.headers)) {
+      apiLog.warn(`[contact ${cid}] payload too large`, { ipAddress });
+      return {
+        status: 413,
+        body: { success: false, message: "Payload too large" },
+        corsOrigin,
+      };
+    }
+
     const body = (await input.readBody()) as Record<string, unknown>;
 
     if (body._gotcha && String(body._gotcha).trim() !== "") {
