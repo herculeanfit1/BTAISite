@@ -129,9 +129,9 @@ attacker-controlled values in the admin email.
 
 ### E2E: never point it at a port you did not start (PLAN-013)
 
-`e2e/` holds **130 Playwright tests** across 2 specs and 5 browser projects, green as of
-2026-07-28 and run in CI by `Quality Gate / e2e` (chromium only, **advisory** — not a
-required check until it has a track record).
+`e2e/` holds **160 Playwright tests** across 3 specs (`basic`, `dark-mode`, `a11y`) and 5
+browser projects, green as of 2026-07-28 and run in CI by `Quality Gate / e2e` (chromium
+only — 32 tests — **advisory**, not a required check until it has a track record).
 
 The config takes two env knobs, both unset by default:
 
@@ -160,6 +160,19 @@ target-identity test that names the misconfiguration if it ever happens again.
 - NavBar's Contact link `preventDefault()`s and scrolls itself, so the URL fragment never
   changes; assert `toBeInViewport()`. Below `md` the links sit behind a "Toggle menu"
   button and are not rendered at all.
+
+### `server.js` reports a port it may not be listening on
+
+`HTTP_PORT` is what the startup banner prints (`Using HTTP port: 3100…`), but the HTTP-only
+branch — the one you get whenever SSL certificates are absent, and always under `dev:http`
+— calls `server.listen(port)`, where `port` comes from **`PORT`**. Set only `HTTP_PORT` and
+it announces 3100 while serving 3000. `HTTP_PORT`/`HTTPS_PORT` are read only by the
+dual-server branch that runs when certificates exist. **Set `PORT`**, and set all three if
+you want the log to agree with reality.
+
+Related: a stray 141-byte `package-lock.json` in `$HOME` makes Next.js infer the wrong
+workspace root (`⚠ Next.js inferred your workspace root… selected /Users/<you>/`). Harmless
+for `next dev`, but it governs `outputFileTracingRoot`. Delete it or set that option.
 
 ### The dev server needs `'unsafe-eval'`; production must never have it
 

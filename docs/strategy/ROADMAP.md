@@ -56,6 +56,8 @@ they are no longer open.
 | **Cloudflare costs the apex 18 perf and 26 best-practices points** vs the identical build on the SWA origin (79 vs 97)          | ⬜ Open — infrastructure, not code; the app meets its budget, the deployment does not                                                   |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
+| `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
+| Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
 
 ---
 
@@ -1130,3 +1132,64 @@ Two fixes:
 
 `__tests__/infra/lighthouse-config.test.ts` now fails if the chown is removed or if the
 "did it actually measure" reporting disappears.
+
+---
+
+## Running cost of what was built (2026-07-28)
+
+Recorded because nothing in this repo stated it, and one item is a real recurring charge
+that nobody had quantified.
+
+### The subscription is sponsored, which is why cost queries look empty
+
+`Sponsored_2016-01-01` ("BTAI 2026 sponsorship"), spending limit **off**. Azure Cost
+Management `ActualCost` returns **zero rows** for this subscription — not because usage is
+free, but because sponsorship credit absorbs it. Verified as a query-blindness problem
+rather than a genuine zero by widening the same query to subscription scope and still
+getting nothing; the API itself responds correctly with a valid schema.
+
+**Consequence**: `az consumption` / Cost Management cannot answer "what does this cost" here.
+The sponsorship balance lives at `microsoftazuresponsorships.com`, not in ARM. Charges below
+are computed from the **Azure retail prices API** (public, unauthenticated) against the
+deployed configuration.
+
+### The one meaningful recurring charge: availability monitoring
+
+From PLAN-010, deployed 2026-07-27. `Standard Web Test Execution` in `eastus2` is
+**$0.0005/execution** (retail API, 2026-07-28):
+
+| Resource | Interval | Locations | Executions/mo | USD/mo |
+| --- | --- | --- | --- | --- |
+| `wt-btai-site-health` | 5 min | 3 | 26,282 | **13.14** |
+| `wt-btai-site-contact` | 15 min | 2 | 5,840 | **2.92** |
+| 2 metric alert rules | — | — | — | 0.20 |
+| | | | **Total** | **≈ $16.26/mo (~$195/yr)** |
+
+**The health test is 81% of that**, purely from its 5-minute interval across 3 locations.
+Halving it to 10 minutes costs ~5 minutes of extra detection latency and saves ~$6.60/mo.
+Dropping to 2 locations would save more but weakens the alert: `failedLocationCount: 2` over
+3 locations tolerates one flaky probe, and over 2 locations it does not. **Not changed —
+that is an availability/cost tradeoff for the owner, not a cleanup.**
+
+Not included: App Insights / Log Analytics ingestion from those probes (90-day retention,
+likely inside the 5 GB/month free grant at this volume, unverified), and the pre-existing
+Static Web App Standard tier.
+
+### PLAN-013 added no Azure cost at all
+
+Every part of the front-end verification work runs in GitHub Actions. It created no Azure
+resource; it *removed* 10 orphaned staging environments. The Lighthouse step makes 3 HTTPS
+requests to a preview origin that already existed.
+
+### GitHub Actions is free here, and the reason is load-bearing
+
+**`BTAISite` is a public repository**, and GitHub Actions on standard runners is free for
+public repos. Every job across all workflows is `ubuntu-latest`; there are no larger runners
+and no self-hosted labels (three `TODO: switch to [self-hosted…]` comments exist and are not
+active). Added by PLAN-013: the `e2e` job (~2 min/run) and the Lighthouse step (~1 min).
+Artifacts are `playwright-report` (failure only) and `lighthouse-reports`, both 7-day
+retention.
+
+**If this repo is ever made private, that changes**: those ~3 extra minutes per push begin
+consuming the account's Actions allowance, and artifact storage starts counting. Anyone
+proposing to flip visibility should price the CI first.
