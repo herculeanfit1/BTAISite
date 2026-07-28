@@ -34,15 +34,25 @@ and per-plan detail in each plan's "Execution notes" block.
 | PLAN-012 docs truth reconciliation  | ✅ Executed — batch one #67–#72, remainder #82                               | #82       |
 | API-consolidation Phase 5 teardown  | ⬜ **Open** — delete `api/`, tear down orphaned Azure resources              | —         |
 
-**Found during execution, not in any plan** — the carried-forward list:
+**Found during execution, not in any plan** — the carried-forward list.
 
-| Item                                                                                                       | Status  |
-| ---------------------------------------------------------------------------------------------------------- | ------- |
-| Deploy the PLAN-010 alerting resources (billable; emails a real inbox)                                     | ⬜ Open |
-| Static Web App settings entirely undeclared in IaC — production reads settings no Bicep describes          | ⬜ Open |
-| Delete the unreachable `app/[locale]/` tree — needs preview verification of the Oryx prerender claim first | ⬜ Open |
-| Verify empirically whether the platform appends the client IP to `x-forwarded-for`                         | ⬜ Open |
-| Anti-abuse tunables still published as literals in `src/lib/api/email/send-contact-email.ts`               | ⬜ Open |
+Closed items are kept with their outcome rather than deleted; several of these were closed
+by discovering they were impossible or harmful, and that is worth more than the fact that
+they are no longer open.
+
+| Item                                                                                                                            | Status                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy the PLAN-010 alerting resources                                                                                          | ✅ **Done 2026-07-27** — live, and delivery to the owner's inbox confirmed 2026-07-28                                                  |
+| Fire a real alert once                                                                                                          | ✅ **Done 2026-07-28** — fired in ~40s; email received                                                                                 |
+| SWA settings undeclared in IaC                                                                                                  | ✅ **Contracted 2026-07-27** — deliberately _not_ a Bicep resource; declaring one would delete the secrets                             |
+| Move the 3 SWA secrets to Key Vault references                                                                                  | ❌ **Closed 2026-07-28 — impossible.** SWA's managed backend cannot resolve KV references; doing it would have broken the contact form |
+| Anti-abuse tunables published as literals                                                                                       | ✅ **Done 2026-07-28** — externalised; repo default deliberately stricter than production                                              |
+| Delete the unreachable `app/[locale]/` tree                                                                                     | ⬜ Open — needs preview verification of the Oryx prerender claim first                                                                 |
+| Verify whether the platform appends the client IP to `x-forwarded-for`                                                          | ⬜ Open — needs a header-echo endpoint                                                                                                 |
+| **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ⬜ Open — **largest remaining gap**                                                                                                    |
+| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open                                                                                                                                |
+| Accessibility never assessed                                                                                                    | ⬜ Open                                                                                                                                |
+| Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
 
 ---
 
@@ -606,12 +616,10 @@ webtest), and the resource group was re-checked: exactly the five real resources
 nothing named `DELETEME` survives. The real webtests still report 100% and both production
 alerts remain enabled. The site was unaffected throughout.
 
-**What this does not prove.** Azure fired the alert and handed it to the action group;
-whether the email arrived in the destination inbox is downstream of that and cannot be
-verified from here. The action group's receiver shows `Enabled`, which means the address
-was confirmed. **Terence should check for a Sev4 "TEMPORARY alerting live-fire test" mail
-around 13:25Z on 2026-07-28** — that is the last unverified hop, and if it did not arrive
-the alerting is not yet trustworthy despite everything above.
+**Delivery confirmed 2026-07-28.** The owner received the Sev4 "TEMPORARY alerting
+live-fire test" email. That closes the last hop: the chain is now verified end to end from
+a failing probe all the way to a human's inbox, not merely to the action group. The
+alerting is trustworthy.
 
 **Made repeatable rather than one-off.** `infra/alerting-firetest.bicep` is now in the
 repo with the full runbook in its header — deploy, confirm, delete. Alerting should be
@@ -660,3 +668,96 @@ discipline this effort has needed at least four times now.
 `const RATE_LIMIT_MAX_REQUESTS = 5;` — the real production number, committed to a public
 repo inside the suite meant to keep it out. Changed to an obviously-arbitrary `999`. Worth
 recording plainly: the fix and the leak were written in the same file, minutes apart.
+
+## Transparency report — alerting confirmed, and where the site is not yet complete (2026-07-28)
+
+**The alerting is trustworthy.** The owner confirmed receipt of the Sev4 live-fire email,
+closing the one hop that could not be verified from a shell. The chain is proven from a
+failing probe to a human's inbox.
+
+With the twelve plans and their follow-ups closed, the honest answer to "what is left" is
+that the **backend is in good shape and the front end is largely unverified**. Coverage
+tells the story plainly:
+
+| Area                          | Lines    |
+| ----------------------------- | -------- |
+| `src/lib/api` (the lead path) | **95%**  |
+| `app/api/*` route handlers    | **100%** |
+| `app/components`              | **27%**  |
+| `lib/`, `src/lib` (non-API)   | **0%**   |
+
+### The largest single gap: 90 E2E tests that run nowhere
+
+`e2e/` holds three specs — 90 tests across basic navigation, dark mode and responsive
+layout. They collect cleanly and are wired to a `webServer`. **No workflow runs them.**
+
+And they have rotted while disconnected: `vercel-safari.spec.ts` navigates to
+`/vercel-safari`, a page that **no longer exists**, so roughly a third of the suite would
+fail on the first run. That is almost certainly why it was never wired in — the suite was
+left disconnected rather than fixed, which let it rot further, which made wiring it in
+look harder. The same loop that produced everything else in this report.
+
+This matters more than the raw coverage number. The API is the part with tests; the part a
+visitor actually touches — the nav, the form, the theme toggle — is verified by nothing
+automated.
+
+### Two claims in CLAUDE.md were themselves stale
+
+Its "broken npm scripts" section warned that `test:e2e:dark-mode` "points at deleted files
+and exit 1" and "targets a path outside Playwright's `testDir`". **Both false**:
+`e2e/dark-mode.spec.ts` exists and `testDir` is `./e2e`. The `test:middleware*` entries it
+warns about are gone entirely. Corrected — a stale warning is as misleading as a stale
+instruction, and this one would have deterred someone from running a suite that works.
+
+### Not gaps, but decisions
+
+Performance budgets and accessibility are documented or assumed and measured by nothing.
+Neither is a defect today; both are unverified claims, which this effort has repeatedly
+shown is a different thing from a true one.
+
+### A note on how this tracker nearly lied (2026-07-28)
+
+Five rows in the carried-forward table above still read "Open" for work that had been
+finished and merged. The cause was **my own conflict resolution**: rebasing four PRs that
+each touched this file, I resolved every `ROADMAP.md` conflict by concatenating both sides.
+That preserved the prose addenda — which are additive and read correctly — while silently
+discarding the _in-place row edits_, which are not additive. Both sides "kept", one side
+lost.
+
+It surfaced only because a later edit printed the table and the rows contradicted reports
+written directly above them. Nothing failed; the file simply became untrue in the one place
+a reader looks first for status.
+
+The general shape, for the next person resolving a conflict in a status document:
+**concatenating both sides is safe for append-only prose and unsafe for tables and status
+fields.** For those, re-derive the state rather than merging the text.
+
+The table above is now rewritten from verified state rather than merged.
+
+## PLAN-013 — why the front end is the whole remaining surface (2026-07-28)
+
+With the twelve plans and their follow-ups closed, the imbalance is stark: the lead path is
+at ~95% with every behaviour mutation-tested, and **the part a visitor touches is verified
+by nothing automated**.
+
+`docs/strategy/plans/PLAN-013-frontend-verification.md` covers the three gaps. It is mostly
+about **connecting and repairing what already exists**, not writing tests from scratch —
+which is why the diagnosis matters more than the effort estimate:
+
+- **The Playwright suite cannot start.** `webServer.command` is `npm run dev`, which serves
+  **HTTPS**, while `webServer.url` is `http://localhost:3000`. Playwright waits for an
+  endpoint that never answers. Ninety tests were not "never wired in" out of neglect — they
+  were **unrunnable**, and that is a one-line fix.
+- **`vercel-safari.spec.ts` (20 tests) navigates to a deleted page**, so a fifth of the
+  suite fails regardless.
+- **Two configured Playwright projects match zero tests** — `visual-regression` and
+  `performance`. The second is a fossil of an earlier attempt at exactly the performance
+  budgets CLAUDE.md still publishes and nothing measures. A project matching zero tests is
+  indistinguishable from a passing one, which is this repo's signature failure.
+
+The plan carries two rules learned the hard way here. **Measure before asserting**: if the
+site does not currently meet CLAUDE.md's performance budgets, record the real baseline and
+ratchet, rather than shipping a gate that fails on day one or, worse, one that passes
+because it measures nothing. And **do not make the new E2E job a required check in the same
+PR** — a flaky new gate that blocks merges gets disabled permanently, so it runs advisory
+until it has earned the promotion, exactly as PLAN-002's gate did.
