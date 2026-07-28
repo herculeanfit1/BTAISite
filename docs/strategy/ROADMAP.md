@@ -29,10 +29,10 @@ and per-plan detail in each plan's "Execution notes" block.
 | PLAN-007 API test harness           | ✅ Executed                                                                  | #76       |
 | PLAN-008 route & locale unification | ✅ Executed — **steps 6/7 rejected as harmful** (redirect loop)              | #81       |
 | PLAN-009 abuse hardening            | ✅ Executed                                                                  | #79       |
-| PLAN-010 observability & alerting   | ◐ IaC merged, **awaiting deployment** — alerts protect nothing until applied | #80       |
+| PLAN-010 observability & alerting   | ✅ Executed — deployed 2026-07-27; both alerts live and enabled, delivery confirmed | #80, #84  |
 | PLAN-011 IaC completeness           | ✅ Executed                                                                  | #78       |
 | PLAN-012 docs truth reconciliation  | ✅ Executed — batch one #67–#72, remainder #82                               | #82       |
-| API-consolidation Phase 5 teardown  | ⬜ **Open** — delete `api/`, tear down orphaned Azure resources              | —         |
+| API-consolidation Phase 5 teardown  | ✅ Executed 2026-07-27 — `api/` deleted, Function App and plan torn down; guarded by `__tests__/infra/phase5-teardown.test.ts` | #84       |
 
 **Found during execution, not in any plan** — the carried-forward list.
 
@@ -49,10 +49,15 @@ they are no longer open.
 | Anti-abuse tunables published as literals                                                                                       | ✅ **Done 2026-07-28** — externalised; repo default deliberately stricter than production                                              |
 | Delete the unreachable `app/[locale]/` tree                                                                                     | ⬜ Open — needs preview verification of the Oryx prerender claim first                                                                 |
 | Verify whether the platform appends the client IP to `x-forwarded-for`                                                          | ⬜ Open — needs a header-echo endpoint                                                                                                 |
-| **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ⬜ Open — **largest remaining gap**                                                                                                    |
-| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open                                                                                                                                |
-| Accessibility never assessed                                                                                                    | ⬜ Open                                                                                                                                |
+| **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ✅ **Done 2026-07-28 (PLAN-013 Part 1)** — 130 tests green across 5 browsers; advisory `Quality Gate / e2e` job added                   |
+| Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
+| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
+| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
+| **Cloudflare costs the apex 18 perf and 26 best-practices points** vs the identical build on the SWA origin (79 vs 97)          | ⬜ Open — infrastructure, not code; the app meets its budget, the deployment does not                                                   |
+| Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
+| `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
+| Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
 
 ---
 
@@ -761,3 +766,430 @@ ratchet, rather than shipping a gate that fails on day one or, worse, one that p
 because it measures nothing. And **do not make the new E2E job a required check in the same
 PR** — a flaky new gate that blocks merges gets disabled permanently, so it runs advisory
 until it has earned the promotion, exactly as PLAN-002's gate did.
+
+---
+
+## Transparency report — PLAN-013 Part 1: E2E in CI (2026-07-28)
+
+**Outcome**: the E2E suite runs, in CI, and can fail. 130 tests green across five browsers
+in 1.2 minutes; `Quality Gate / e2e` added as an **advisory** check. Unit suite 293 → 297.
+
+### The plan's headline diagnosis was wrong, and it was written the same day
+
+PLAN-013 said `npm run dev` serves HTTPS while `webServer.url` is HTTP, so Playwright waits
+forever — "a one-line fix". That is false. `server.js` picks its protocol from whether SSL
+certificates exist: with none it logs *"No SSL certificates found, falling back to HTTP"*;
+with them it starts HTTPS **and** HTTP, the latter still on 3000. HTTP answers on 3000 in
+both cases. The one-line fix would have changed nothing.
+
+The claim came from reading `package.json` — `dev` sets no `SSL_CERT_ENV`, `dev:http` sets
+it to `none` — and inferring the runtime behaviour. Reasonable inference, wrong conclusion,
+never executed. Structurally identical to the Key Vault item closed three days earlier:
+true premises, plausible reasoning, nobody ran it. **The lesson is not "plans go stale".
+It is that a conclusion nobody executed is a hypothesis no matter how recently it was
+written, including one written ten minutes ago by someone who had just read the code.**
+
+### What was actually wrong — two failures, both silent
+
+**1. Playwright could not tell this site from any other.** `webServer` used `url:` with
+`reuseExistingServer: !process.env.CI`, which polls until *something* returns 200. Port 3000
+on this machine is held by an unrelated container. Replaying the old config verbatim
+produced:
+
+```
+Expected pattern: /Bridging Trust AI/
+Received string:  "Sign in | Langfuse"
+```
+
+A foreign application's login page, reported as a homepage-title regression. Every
+subsequent failure would have read as a DOM regression in this repo. This is the fourth
+distinct instance of the same family — a mechanism that reports confidently about something
+it never examined.
+
+Fixed by switching `url:` → `port:` (Playwright then *refuses to start* on an occupied
+port instead of polling it), `reuseExistingServer: false` unconditionally, and adding a
+**target-identity test** that asserts the origin under test is actually this site before
+anything else runs.
+
+**2. The dev server could not hydrate.** The CSP withholds `'unsafe-eval'`; Next's dev
+bundler wraps every module in `eval()`. The browser refused all of it, so `npm run dev`
+rendered its server HTML and stopped — theme toggle frozen at its pre-mount placeholder,
+hero absent, nothing interactive, one console line as the only symptom. **Local development
+of any client-side behaviour was impossible and had been for some time.**
+
+Production was checked before touching anything and is unaffected: the same diagnostic
+against `https://bridgingtrust.ai/` finds the `h1`, a mounted toggle, and no CSP violation
+beyond a Cloudflare beacon that is correctly blocked. Fixed with a relaxation gated on
+`NODE_ENV === "development"`.
+
+**A near-miss worth recording.** That gate was first written `!== "production"`. Vitest runs
+under `NODE_ENV=test`, so it would have handed the relaxation to the test environment — and
+the *existing* `never allows unsafe-eval` assertion would have gone on passing while
+guarding a policy no browser ever sees. Caught because the pre-existing test failed
+immediately. It is now `=== "development"`, with a guard asserting the test environment is
+excluded, and a mutation confirmed both fail when the gate is loosened.
+
+### The dark-mode suite was not stale. It was hollow
+
+The plan budgeted for 65 dark-mode tests "never run against the current DOM". The real
+problem was different: **five of the thirteen ended in `expect(typeof isDark).toBe("boolean")`**
+— true for every possible value, including `undefined`. They would have reported green
+against a toggle that did nothing at all. Others asserted Tailwind class strings
+(`dark:bg-gray-900/98`; the actual class is `dark:bg-gray-900`) and a two-icon DOM the
+component does not render, and one asserted `role="button"` as an *attribute* on a
+`<button>` — which carries that role implicitly and sets no such attribute, so it failed
+against correct markup.
+
+Rewritten to assert experience rather than implementation: the computed `background-color`
+changes, the choice survives a reload, `Enter`/`Space` operate the control, an explicit
+choice overrides the system preference. Nothing skipped.
+
+### CI tests the production build, not the dev server
+
+Because the two demonstrably differ — the CSP alone differs, and this repo has already
+shipped a defect (no security headers at all) that existed *only* in the deployed artifact.
+`playwright.config.ts` runs `npm run build && npm run start` when `CI` is set. Verified
+locally with `CI=true`: 26/26 green.
+
+### Found en route: preview deploys had been failing since the cap filled
+
+`deploy-pr-to-azure` was failing with *"already has the maximum number of staging
+environments"*. Ten environments, every one belonging to an **already-merged** PR.
+
+The `cleanup-pr` job fires correctly on `pull_request: closed` — and still leaks. On PR #75
+it ran 18:34:01–18:34:25 and reported success, while the in-flight deploy from the previous
+push ran until 18:35:02 and **created the environment at 18:34:37**, twelve seconds after
+its own cleanup finished. The cleanup runs before the thing it cleans up exists, exits
+green, and orphans it permanently.
+
+Orphans deleted (production `default` untouched, verified 200 before and after) and previews
+restored — #86's re-run went green. **The race itself is not fixed** and is tracked above;
+it will refill the cap in roughly ten merged PRs. Not fixed here because the robust
+options need Azure credentials the workflow does not currently have, and that is a separate
+change from this one.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | 297 passed, thresholds met |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors (22 pre-existing warnings) |
+| `npx playwright test` (5 browsers) | **130 passed** |
+| `CI=true npx playwright test --project=chromium` | 26 passed, against a production build |
+| Gate proven able to fail | `ThemeToggle` forced to its placeholder → 11 red; reverted → 26 green |
+| Guards proven able to fail | CSP gate loosened to `!== "production"` → 2 red, incl. the pre-existing one |
+| Production unaffected | homepage 200, `/api/health` `{"status":"ok"}`, `/api/contact` 400 |
+
+### Also corrected: the status table was still contradicting itself
+
+#86 rewrote the *carried-forward* table from verified state but left the **plan** table
+above it untouched. It asserted "all twelve plans are now closed" three rows above
+`PLAN-010 … ◐ awaiting deployment` and `Phase 5 teardown … ⬜ Open` — both of which were
+finished and merged days earlier. Verified against reality before editing: `api/` is
+absent and untracked, the Bicep declares no `serverfarms`, and `az monitor metrics alert
+list` shows both alerts live and `Enabled: True`. Rows corrected.
+
+The repair in #86 fixed the table someone had reported as wrong and did not re-derive its
+neighbour. Worth stating plainly, since the same session wrote the rule about not trusting
+in-place table edits: **a fix scoped to the reported symptom leaves the rest of the class
+in place.**
+
+### What is deliberately not done
+
+- **The `e2e` job is advisory, not required.** It gets promoted after several green runs.
+- **Five-browser runs stay local.** CI runs chromium only.
+- **No visual-regression snapshots.** Deleting the dead project is not a decision to adopt
+  snapshots; that needs its own justification.
+- **The staging-environment race**, above.
+
+---
+
+## Transparency report — PLAN-013 Part 3: accessibility (2026-07-28)
+
+**Outcome**: the site's first accessibility gate. `e2e/a11y.spec.ts` runs axe over the
+homepage, all four canonical legal pages, and the homepage in dark mode. **57 blocking
+nodes → 0 critical, 0 serious.** `@axe-core/playwright` pinned at 4.12.1.
+
+### The findings were one problem, not fifty
+
+The plan expected "contrast on the gradient headings and form-label associations". Form
+labels were **already correct** — every contact field has a real `htmlFor`. Every finding
+was colour, and they collapsed to four tokens repeated across the site:
+
+| Token | Was | Now | Where |
+| --- | --- | --- | --- |
+| brand `#5B90B0` as text on white | 3.46:1 | `#3A5F77` — 6.81:1 | nav links, footer links, small caps |
+| white text on the brand background | 3.46:1 | on `#3A5F77` — 6.81:1 | primary buttons |
+| `text-blue-500` `#2b7fff` | 3.76:1 | `text-blue-600` — 5.25:1 | inline links in legal prose |
+| `text-gray-400` `#99a1af` | 2.60:1 | `text-gray-500` — 4.84:1 | message character counter |
+
+Plus `link-in-text-block` on the three terms pages (colour-only link affordance → always
+underlined), a dark-mode Decline button at 3.96:1, and the contact form's invalid-state
+submit button at `opacity-60` → 2.75:1.
+
+**That submit button is the one worth reading twice.** It is styled `opacity-60
+cursor-not-allowed` when the form is invalid, but `disabled` is bound only to `isSubmitting`
+— so it is an **enabled, clickable control** that merely looks disabled, at 2.75:1. WCAG
+exempts genuinely inactive controls; this one did not qualify. Raised to `opacity-85`
+(4.74:1). The underlying disabled/enabled mismatch is left alone deliberately: changing the
+submit behaviour of the lead form is not a contrast fix.
+
+`#3A5F77` was already the codebase's hover tone for the same elements, so nothing new was
+invented — hovers moved down to `#2C4A5E` to stay distinguishable. Purely decorative accent
+bars carry no text, so contrast rules do not apply to them; the three that a blanket
+find-and-replace had swept up were **reverted**, keeping the diff tied to its stated purpose.
+
+### The flake taught the more useful lesson
+
+The dark-mode scan failed about one run in three, on a different browser each time, and
+passed on every isolated re-run. The captured message was the whole diagnosis:
+
+```
+foreground #192736 on background #1a2937 — 1.02:1
+```
+
+Two near-identical darks. At partial opacity, both an element's text and its background
+resolve to blends of whatever is behind them, so axe measured a pair that is shown to no
+user at any point they could act on.
+
+Two wrong turns before the right one, both recorded because each was a plausible theory that
+survived until it was tested:
+
+1. **`emulateMedia({ reducedMotion: "reduce" })`** — the component honours the preference, so
+   this looked sufficient. It is not: Framer Motion's `reducedMotion="user"` suppresses
+   *transform and layout* animations and deliberately keeps **opacity** fades, which are
+   considered vestibular-safe. Flake survived.
+2. **A CSS `transition: none !important` stylesheet** — correct for the theme-change
+   transition, useless here. Framer Motion writes inline `style="opacity: …"` from
+   requestAnimationFrame, and no stylesheet can stop a script assigning inline styles.
+
+The fix that worked waits for every **inline** opacity to settle to 0 or 1, then freezes
+what remains. Only inline opacity is polled, because the contact form's submit is now
+`opacity-85` — a permanent fractional opacity from a utility class, which a naive "wait until
+nothing is fractional" check would have waited on forever. Verified by **6 consecutive clean
+a11y runs (180 test executions)** and 3 clean full-suite runs, against a prior ~1-in-3
+failure rate.
+
+Generalisable: `networkidle` is not "the page has settled". It says the network is quiet, and
+says nothing about animation, hydration, or layout. Any visual assertion taken on
+`networkidle` alone is racing whatever the page does next.
+
+### Two unit tests were asserting the old colours
+
+`Footer.test.tsx` pinned `bg-[#5B90B0]` on a decorative underline and `hover:text-[#5B90B0]`
+on nav links. The first was reverted (decorative, no text, should never have changed); the
+second was updated with the reason recorded in the test — hovering used to move contrast from
+4.84:1 **down** to 3.46:1, which is the wrong direction for a focus cue.
+
+### Scope stated honestly
+
+axe detects roughly a third of WCAG issues. Green here means "no machine-detectable critical
+or serious violation", **not** "this site is accessible". Keyboard traps, focus order, and
+whether alt text is *meaningful* rather than merely present still need a human. The spec says
+so at the top so nobody cites it as more than it is.
+
+`moderate` and `minor` violations are printed in failure output but do not fail the run. A
+first gate nobody can get to green gets deleted; this one can be tightened once it has held.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | 297 passed, thresholds met |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| `npx playwright test` (5 browsers) | **160 passed**, 3 consecutive clean runs |
+| `CI=true --project=chromium` | 32 passed against a production build |
+| Gate proven able to fail | one colour reverted → homepage and dark-mode both red |
+
+---
+
+## Transparency report — PLAN-013 Part 2: performance budgets (2026-07-28)
+
+**Outcome**: Lighthouse CI runs against the PR preview URL with thresholds derived from
+measurement, all met today. A `lighthouserc.js` that had been in the repo since 2025-09 and
+could never load, never fail, and was misconfigured, is gone.
+
+### Measuring first is the whole story
+
+The plan's rule was "measure before asserting". It changed what got built.
+
+Same commit, same day, desktop preset, 3 runs each:
+
+| Target | Perf | A11y | Best prac. | SEO | LCP | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| local `npm run start` | **100** | 100 | 100 | 100 | 605 ms | **0 ms** |
+| SWA origin — same code as apex | **97** | 96 | 100 | 100 | 1301 ms | **0 ms** |
+| PR preview — with the Part 3 fixes | **97** | **100** | 100 | 100 | 1323 ms | 0 ms |
+| apex `bridgingtrust.ai` | **79** | 96 | **74** | **92** | 1526 ms | **360 ms** |
+
+**A localhost gate would have been worthless.** It reports a perfect 100 while real users
+get 79 — it would have passed forever and detected nothing. That is the fourth instance of
+this repo's signature failure, and the first one caught *before* shipping rather than after.
+`lighthouserc.json` pins no URL at all; a guard test fails if one is added or if it mentions
+localhost.
+
+### CLAUDE.md's "Perf ≥ 90" is met by the application and missed by the deployment
+
+97 on the SWA origin, 79 at the apex, **identical build**. Accessibility scores 96 on both,
+which is what establishes the code is the same and the gap is entirely the edge.
+
+The apex sits behind **Cloudflare** (`server: cloudflare`, `cf-ray` present; absent on the
+SWA origin). Verified mechanisms:
+
+- Cloudflare injects its Web Analytics beacon — +1297 bytes, **browser User-Agent only**, so
+  `curl` shows nothing and only a real browser reveals it. The CSP correctly refuses it
+  (`static.cloudflareinsights.com` is not allow-listed), and the resulting console error is
+  what drops best-practices from 100 to 74.
+- Cloudflare merges an AI-crawler policy into `robots.txt`. The site's own `Allow: /` and
+  `Sitemap:` survive inside the merged file, but Lighthouse rejects its syntax — SEO 100 → 92.
+- No Rocket Loader; checked.
+
+**What was not established**: the 360 ms TBT at the apex versus 0 ms on the origin. It
+correlates with the Cloudflare hop and the blocked beacon is too small to explain it. It is
+recorded as a correlation, and the roadmap item says so rather than asserting a cause I did
+not isolate. Naming the boundary of what was proven is the point — the Key Vault item that
+cost this effort a day was a plausible inference presented as a finding.
+
+**Nothing was changed about Cloudflare.** It is the owner's infrastructure, the AI-crawler
+policy may well be wanted, and "turn off the CDN" is not a conclusion that follows from a
+Lighthouse score. It is now a tracked, quantified item instead of an invisible one.
+
+### The Part 3 work is confirmed on a real deployment
+
+Accessibility 96 → 100 between the SWA origin and the PR preview, which differ only by the
+Part 3 commits. The axe result was not just a local phenomenon.
+
+### The config that was already there was dead three ways
+
+`lighthouserc.js`, tracked since 2025-09:
+
+1. `module.exports` in a `"type": "module"` package — **it could never load**, and the first
+   `lhci` invocation died with `ReferenceError: module is not defined`.
+2. **Every assertion was `"warn"`** — so even had it loaded, it would have exited 0 against
+   any measurement whatsoever.
+3. It set both `url` and `staticDistDir`, which conflict.
+
+Same family as the Playwright `performance` project deleted in Part 1: scaffolding that
+looks like a gate, reports success, and has never once run. `lighthouserc.json` replaces it
+in JSON so there is no module system to get wrong, and
+`__tests__/infra/lighthouse-config.test.ts` fails on each of those three shapes plus drift
+between the `@lhci/cli` pin in the workflow and the one in `package.json` — the workflow
+installs it via `npx` rather than `npm ci`, so the two can otherwise diverge silently.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **306 passed** (37 files) |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| `lhci autorun` against the preview | **passes**, all assertions met |
+| Gate proven able to fail | LCP threshold tightened to 100 ms → `✘ largest-contentful-paint failure`, exit 1 |
+| Guards proven able to fail | version pin and error-level both mutated → 2 red |
+| Both workflow YAMLs | parse; `deploy-pr-to-azure` has 5 steps, `quality-gate` has 2 jobs |
+
+### What is deliberately not done
+
+- **The Lighthouse step is `continue-on-error`** while it earns a track record, same staging
+  as the `e2e` job.
+- **The gate does not run against the apex.** Pointing it there would fail on day one for
+  reasons outside this repo. When the Cloudflare item is resolved, move it.
+- **No performance optimisation work.** The application already meets its published budget;
+  the deficit is at the edge.
+
+### Addendum — the new gate's first CI run measured nothing (2026-07-28)
+
+The Lighthouse step went green on its first run and had not executed. From the log:
+
+```
+❌  .lighthouseci/ directory not writable
+    ERROR: EACCES: permission denied, mkdir '/home/runner/work/BTAISite/BTAISite/.lighthouseci'
+Healthcheck failed!
+##[error]Process completed with exit code 1.
+```
+
+`Azure/static-web-apps-deploy` runs in a Docker container as **root** and leaves root-owned
+files in the workspace; the next step runs as `runner` and cannot create a directory there.
+`continue-on-error: true` — added deliberately so a budget breach would not fail a deploy —
+turned that into a passing check.
+
+Caught by reading the job log rather than trusting the green tick. **This is the same failure
+this entire effort has been about, produced by the gate built to prevent it, within minutes
+of adding it.** Worth stating plainly: knowing the pattern is not protection from it. Only
+checking is.
+
+Two fixes:
+
+1. `sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"` before invoking lhci.
+2. A step that distinguishes **"a budget was breached"** from **"the gate never ran"**. Both
+   were previously indistinguishable green. It counts `.lighthouseci/lhr-*.json` and emits a
+   PR annotation — `Lighthouse did not run … this is not a pass` — when there are none.
+
+`__tests__/infra/lighthouse-config.test.ts` now fails if the chown is removed or if the
+"did it actually measure" reporting disappears.
+
+---
+
+## Running cost of what was built (2026-07-28)
+
+Recorded because nothing in this repo stated it, and one item is a real recurring charge
+that nobody had quantified.
+
+### The subscription is sponsored, which is why cost queries look empty
+
+`Sponsored_2016-01-01` ("BTAI 2026 sponsorship"), spending limit **off**. Azure Cost
+Management `ActualCost` returns **zero rows** for this subscription — not because usage is
+free, but because sponsorship credit absorbs it. Verified as a query-blindness problem
+rather than a genuine zero by widening the same query to subscription scope and still
+getting nothing; the API itself responds correctly with a valid schema.
+
+**Consequence**: `az consumption` / Cost Management cannot answer "what does this cost" here.
+The sponsorship balance lives at `microsoftazuresponsorships.com`, not in ARM. Charges below
+are computed from the **Azure retail prices API** (public, unauthenticated) against the
+deployed configuration.
+
+### The one meaningful recurring charge: availability monitoring
+
+From PLAN-010, deployed 2026-07-27. `Standard Web Test Execution` in `eastus2` is
+**$0.0005/execution** (retail API, 2026-07-28):
+
+| Resource | Interval | Locations | Executions/mo | USD/mo |
+| --- | --- | --- | --- | --- |
+| `wt-btai-site-health` | 5 min | 3 | 26,282 | **13.14** |
+| `wt-btai-site-contact` | 15 min | 2 | 5,840 | **2.92** |
+| 2 metric alert rules | — | — | — | 0.20 |
+| | | | **Total** | **≈ $16.26/mo (~$195/yr)** |
+
+**The health test is 81% of that**, purely from its 5-minute interval across 3 locations.
+Halving it to 10 minutes costs ~5 minutes of extra detection latency and saves ~$6.60/mo.
+Dropping to 2 locations would save more but weakens the alert: `failedLocationCount: 2` over
+3 locations tolerates one flaky probe, and over 2 locations it does not. **Not changed —
+that is an availability/cost tradeoff for the owner, not a cleanup.**
+
+Not included: App Insights / Log Analytics ingestion from those probes (90-day retention,
+likely inside the 5 GB/month free grant at this volume, unverified), and the pre-existing
+Static Web App Standard tier.
+
+### PLAN-013 added no Azure cost at all
+
+Every part of the front-end verification work runs in GitHub Actions. It created no Azure
+resource; it *removed* 10 orphaned staging environments. The Lighthouse step makes 3 HTTPS
+requests to a preview origin that already existed.
+
+### GitHub Actions is free here, and the reason is load-bearing
+
+**`BTAISite` is a public repository**, and GitHub Actions on standard runners is free for
+public repos. Every job across all workflows is `ubuntu-latest`; there are no larger runners
+and no self-hosted labels (three `TODO: switch to [self-hosted…]` comments exist and are not
+active). Added by PLAN-013: the `e2e` job (~2 min/run) and the Lighthouse step (~1 min).
+Artifacts are `playwright-report` (failure only) and `lighthouse-reports`, both 7-day
+retention.
+
+**If this repo is ever made private, that changes**: those ~3 extra minutes per push begin
+consuming the account's Actions allowance, and artifact storage starts counting. Anyone
+proposing to flip visibility should price the CI first.

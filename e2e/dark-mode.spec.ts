@@ -1,265 +1,224 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from "@playwright/test";
 
-test.describe('Dark Mode E2E Tests', () => {
+/**
+ * Theme toggle behaviour.
+ *
+ * Rewritten 2026-07-28, on the suite's first actual execution. The previous
+ * version had never run -- Playwright's webServer could not reach the app --
+ * and it had drifted in two directions at once:
+ *
+ *   - Five tests ended in `expect(typeof isDark).toBe("boolean")`, which is
+ *     true for every possible value. They asserted nothing and would have
+ *     reported green against a toggle that did nothing at all.
+ *   - Others asserted Tailwind class strings (`dark:bg-gray-900/98`,
+ *     `transition-all`, `duration-200`, `opacity-100`) and a two-icon DOM that
+ *     `ThemeToggle` does not render -- it swaps a single `<svg>` via a ternary.
+ *     Those assert the implementation, break on any refactor, and still do not
+ *     tell you whether the page went dark.
+ *
+ * These test what a visitor experiences: the rendered colours change, the
+ * choice survives a reload, and the control is operable by keyboard.
+ *
+ * `defaultTheme` is "system" with `enableSystem`, so every test pins the
+ * colour scheme and clears persisted state first. Without that the starting
+ * theme depends on the machine running the tests.
+ */
+
+const TOGGLE = "dark-mode-toggle";
+
+async function startInLightMode(page: Page) {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  // ThemeToggle renders a placeholder div until mounted; wait for the real one.
+  await expect(page.getByTestId(TOGGLE)).toBeVisible();
+  await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+}
+
+test.describe("Theme toggle", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the homepage
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await startInLightMode(page);
   });
 
-  test('should toggle between light and dark modes', async ({ page }) => {
-    // Find the dark mode toggle
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    await expect(darkModeToggle).toBeVisible();
+  test("switches to dark and back", async ({ page }) => {
+    const toggle = page.getByTestId(TOGGLE);
 
-    // Check initial state (should be light mode)
-    const html = page.locator('html');
-    const initialHasDarkClass = await html.evaluate(el => el.classList.contains('dark'));
-    
-    // Click to toggle to dark mode
-    await darkModeToggle.click();
-    await page.waitForTimeout(500); // Wait for transition
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
-    // Verify dark mode is active
-    const afterToggleHasDarkClass = await html.evaluate(el => el.classList.contains('dark'));
-    expect(afterToggleHasDarkClass).not.toBe(initialHasDarkClass);
-
-    // Click again to toggle back
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
-
-    // Verify we're back to original state
-    const finalHasDarkClass = await html.evaluate(el => el.classList.contains('dark'));
-    expect(finalHasDarkClass).toBe(initialHasDarkClass);
+    await toggle.click();
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
   });
 
-  test('should show correct icons for each theme', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Check light mode icon (moon should be visible)
-    const moonIcon = darkModeToggle.locator('svg').nth(1);
-    const sunIcon = darkModeToggle.locator('svg').nth(0);
-    
-    await expect(moonIcon).toHaveClass(/opacity-100/);
-    await expect(sunIcon).toHaveClass(/opacity-0/);
+  test("actually changes the rendered page colours", async ({ page }) => {
+    // The point of the feature. A class on <html> that no stylesheet responds
+    // to would satisfy every other test in this file.
+    const body = page.locator("body");
+    const before = await body.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
 
-    // Toggle to dark mode
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
+    await page.getByTestId(TOGGLE).click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
-    // Check dark mode icon (sun should be visible)
-    await expect(sunIcon).toHaveClass(/opacity-100/);
-    await expect(moonIcon).toHaveClass(/opacity-0/);
+    const after = await body.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
+    expect(after, "body background did not change with the theme").not.toBe(
+      before,
+    );
   });
 
-  test('should have correct aria-labels', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Check initial aria-label
-    await expect(darkModeToggle).toHaveAttribute('aria-label', 'Switch to dark mode');
+  test("swaps the icon", async ({ page }) => {
+    const toggle = page.getByTestId(TOGGLE);
+    // One <svg> at a time, chosen by a ternary -- so identity is the path data.
+    const pathBefore = await toggle.locator("svg path").first().getAttribute("d");
 
-    // Toggle to dark mode
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
-    // Check updated aria-label
-    await expect(darkModeToggle).toHaveAttribute('aria-label', 'Switch to light mode');
+    const pathAfter = await toggle.locator("svg path").first().getAttribute("d");
+    expect(pathAfter, "icon did not change with the theme").not.toBe(pathBefore);
   });
 
-  test('should persist theme across page reloads', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Toggle to dark mode
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
+  test("keeps its accessible name in step with the current state", async ({
+    page,
+  }) => {
+    const toggle = page.getByTestId(TOGGLE);
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to dark mode");
 
-    // Verify dark mode is active
-    const html = page.locator('html');
-    const isDarkBeforeReload = await html.evaluate(el => el.classList.contains('dark'));
-    expect(isDarkBeforeReload).toBe(true);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-label", "Switch to light mode");
+  });
 
-    // Reload the page
+  test("persists the choice across a reload", async ({ page }) => {
+    await page.getByTestId(TOGGLE).click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
 
-    // Verify dark mode persists
-    const isDarkAfterReload = await html.evaluate(el => el.classList.contains('dark'));
-    expect(isDarkAfterReload).toBe(true);
+    await expect(
+      page.locator("html"),
+      "theme did not survive a reload",
+    ).toHaveClass(/\bdark\b/);
   });
 
-  test('should work with keyboard navigation', async ({ page }) => {
-    // Tab to the theme toggle
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab'); // May need multiple tabs to reach the toggle
+  test("is operable by keyboard", async ({ page }) => {
+    const toggle = page.getByTestId(TOGGLE);
+    await toggle.focus();
+    await expect(toggle).toBeFocused();
 
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Check if the toggle is focused (try different approaches)
-    const isFocused = await darkModeToggle.evaluate(el => document.activeElement === el);
-    
-    if (!isFocused) {
-      // If not focused, click to focus it first
-      await darkModeToggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.locator("html"),
+      "Enter on the focused toggle did not change the theme",
+    ).toHaveClass(/\bdark\b/);
+
+    await page.keyboard.press("Space");
+    await expect(
+      page.locator("html"),
+      "Space on the focused toggle did not change the theme",
+    ).not.toHaveClass(/\bdark\b/);
+  });
+
+  test("settles deterministically after rapid clicks", async ({ page }) => {
+    const toggle = page.getByTestId(TOGGLE);
+    // An even number of clicks from light must end light. The old version
+    // clicked four times and then asserted the result was a boolean.
+    for (let i = 0; i < 4; i++) {
+      await toggle.click();
     }
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
 
-    // Press Enter or Space to activate
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(500);
-
-    // Verify theme changed
-    const html = page.locator('html');
-    const isDark = await html.evaluate(el => el.classList.contains('dark'));
-    expect(typeof isDark).toBe('boolean');
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   });
 
-  test('should apply dark mode styles to navigation', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    const navigation = page.getByRole('navigation');
+  test("does not shift layout when toggled", async ({ page }) => {
+    const toggle = page.getByTestId(TOGGLE);
+    const before = await toggle.boundingBox();
 
-    // Toggle to dark mode
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
-    // Check that navigation has dark mode classes
-    await expect(navigation).toHaveClass(/dark:bg-gray-900\/98/);
+    const after = await toggle.boundingBox();
+    expect(after).toEqual(before);
   });
 
-  test('should work on mobile viewport', async ({ page }) => {
-    // Set mobile viewport
+  test("works on a mobile viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    
-    // Find mobile theme toggle
-    const mobileThemeToggle = page.getByTestId('dark-mode-toggle').first();
-    await expect(mobileThemeToggle).toBeVisible();
+    const toggle = page.getByTestId(TOGGLE).first();
+    await expect(toggle).toBeVisible();
 
-    // Test toggle functionality on mobile
-    await mobileThemeToggle.click();
-    await page.waitForTimeout(500);
-
-    const html = page.locator('html');
-    const isDark = await html.evaluate(el => el.classList.contains('dark'));
-    expect(typeof isDark).toBe('boolean');
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   });
+});
 
-  test('should handle rapid clicking gracefully', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Rapid clicks
-    await darkModeToggle.click();
-    await darkModeToggle.click();
-    await darkModeToggle.click();
-    await darkModeToggle.click();
-    
-    await page.waitForTimeout(1000);
-
-    // Should still be functional
-    const html = page.locator('html');
-    const isDark = await html.evaluate(el => el.classList.contains('dark'));
-    expect(typeof isDark).toBe('boolean');
-  });
-
-  test('should respect system theme preference', async ({ page, context }) => {
-    // Set system preference to dark
-    await context.addInitScript(() => {
-      Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        value: (query: string) => ({
-          matches: query === '(prefers-color-scheme: dark)',
-          media: query,
-          onchange: null,
-          addListener: () => {},
-          removeListener: () => {},
-          addEventListener: () => {},
-          removeEventListener: () => {},
-          dispatchEvent: () => {},
-        }),
-      });
-    });
-
-    // Reload to apply system preference
+test.describe("System colour-scheme preference", () => {
+  // `defaultTheme="system"` + `enableSystem`, so with nothing persisted the OS
+  // preference decides. Emulated rather than mocked: the old version replaced
+  // window.matchMedia wholesale, which next-themes reads before the init script
+  // could see it, and then asserted only that the result was a boolean.
+  test("starts dark when the browser prefers dark", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/");
+    await page.evaluate(() => window.localStorage.clear());
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState("networkidle");
 
-    // Check if system preference is respected
-    const html = page.locator('html');
-    const isDark = await html.evaluate(el => el.classList.contains('dark'));
-    
-    // The theme should respect system preference
-    expect(typeof isDark).toBe('boolean');
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   });
 
-  test('should maintain accessibility standards', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
+  test("starts light when the browser prefers light", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/");
+    await page.evaluate(() => window.localStorage.clear());
+    await page.reload();
+    await page.waitForLoadState("networkidle");
 
-    // Check for proper ARIA attributes
-    await expect(darkModeToggle).toHaveAttribute('aria-label');
-    await expect(darkModeToggle).toHaveAttribute('role', 'button');
-
-    // Check focus indicators
-    await darkModeToggle.focus();
-    
-    // Verify button is focusable
-    const isFocused = await darkModeToggle.evaluate(el => document.activeElement === el);
-    expect(isFocused).toBe(true);
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
   });
 
-  test('should work with different screen sizes', async ({ page }) => {
-    const sizes = [
-      { width: 320, height: 568 },  // Mobile
-      { width: 768, height: 1024 }, // Tablet
-      { width: 1920, height: 1080 } // Desktop
-    ];
+  test("an explicit choice overrides the system preference", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/");
+    await page.evaluate(() => window.localStorage.clear());
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
-    for (const size of sizes) {
-      await page.setViewportSize(size);
-      await page.waitForTimeout(300);
+    await page.getByTestId(TOGGLE).click();
+    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
 
-      const darkModeToggle = page.getByTestId('dark-mode-toggle').first();
-      await expect(darkModeToggle).toBeVisible();
-
-      // Test functionality at this size
-      await darkModeToggle.click();
-      await page.waitForTimeout(500);
-
-      const html = page.locator('html');
-      const isDark = await html.evaluate(el => el.classList.contains('dark'));
-      expect(typeof isDark).toBe('boolean');
-    }
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.locator("html"),
+      "explicit light choice was lost to the system preference",
+    ).not.toHaveClass(/\bdark\b/);
   });
+});
 
-  test('should not cause layout shifts', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Get initial layout
-    const initialBoundingBox = await darkModeToggle.boundingBox();
-    
-    // Toggle theme
-    await darkModeToggle.click();
-    await page.waitForTimeout(500);
-    
-    // Check layout hasn't shifted
-    const afterToggleBoundingBox = await darkModeToggle.boundingBox();
-    
-    expect(initialBoundingBox?.x).toBe(afterToggleBoundingBox?.x);
-    expect(initialBoundingBox?.y).toBe(afterToggleBoundingBox?.y);
-    expect(initialBoundingBox?.width).toBe(afterToggleBoundingBox?.width);
-    expect(initialBoundingBox?.height).toBe(afterToggleBoundingBox?.height);
-  });
+test.describe("Toggle accessibility", () => {
+  test("is a real button with an accessible name", async ({ page }) => {
+    await startInLightMode(page);
+    const toggle = page.getByTestId(TOGGLE);
 
-  test('should have smooth transitions', async ({ page }) => {
-    const darkModeToggle = page.getByTestId('dark-mode-toggle');
-    
-    // Check for transition classes
-    await expect(darkModeToggle).toHaveClass(/transition-all/);
-    await expect(darkModeToggle).toHaveClass(/duration-200/);
-    
-    // Test that transitions are applied to icons
-    const sunIcon = darkModeToggle.locator('svg').nth(0);
-    const moonIcon = darkModeToggle.locator('svg').nth(1);
-    
-    await expect(sunIcon).toHaveClass(/transition-all/);
-    await expect(moonIcon).toHaveClass(/transition-all/);
+    // The old version asserted `role="button"` as an *attribute*. <button>
+    // carries that role implicitly and sets no such attribute, so the test
+    // failed against correct markup. Query by role instead.
+    await expect(
+      page.getByRole("button", { name: "Switch to dark mode" }),
+    ).toBeVisible();
+
+    await expect(toggle).toBeEnabled();
+    await toggle.focus();
+    await expect(toggle).toBeFocused();
   });
-}); 
+});

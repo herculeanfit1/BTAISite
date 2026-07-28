@@ -1,12 +1,50 @@
 # PLAN-013: Front-end verification (E2E in CI, performance budgets, accessibility)
 
-**Status**: Ready
+**Status**: ✅ Complete — all three parts done 2026-07-28
 **Effort**: M · **Risk**: Low (test-only; no production behaviour changes)
 **Written**: 2026-07-28
 
 > Every claim in "Current state" was verified against the code on 2026-07-28 and the
 > command that produced it is shown. Treat the **Steps** as a hypothesis anyway — that is
 > the lesson of PLAN-001 through PLAN-012, and this plan is not exempt.
+
+## ⚠️ Correction — this plan's central diagnosis was wrong
+
+Written 2026-07-28, **before** Part 1 was executed. Executing it disproved the headline
+claim within the first ten minutes. Recorded here rather than silently edited, because the
+plan being wrong *in exactly the way it warned about* is the useful part.
+
+**The plan said**: `playwright.config.ts:113` runs `npm run dev`, which serves **HTTPS**,
+while `webServer.url` is HTTP — so Playwright waits for an endpoint that never answers.
+
+**What is actually true**: `server.js` chooses HTTP or HTTPS by whether SSL certificates
+happen to exist on the machine. With none present it logs *"No SSL certificates found,
+falling back to HTTP"* and serves HTTP on 3000. With certificates present it starts
+**both** — HTTPS on `HTTPS_PORT` and HTTP on `HTTP_PORT` (3000). Either way HTTP answers on
+3000, so the stated mismatch does not exist and the one-line fix would have fixed nothing.
+
+**What was actually wrong** — two things, both worse:
+
+1. **Playwright had no way to tell this site from any other.** `webServer` used `url:` with
+   `reuseExistingServer: !process.env.CI`, which polls until *something* returns 200. On the
+   machine this was run from, port 3000 is held by an unrelated container. The suite ran
+   against that application and reported `Expected /Bridging Trust AI/, Received "Sign in |
+   Langfuse"` — a foreign app's login page, presented as a homepage-title regression.
+   Demonstrated by replaying the old config verbatim, not inferred.
+2. **The dev server could not hydrate at all.** The CSP in `next.config.js` withholds
+   `'unsafe-eval'`; Next's dev bundler wraps every module in `eval()`. The browser refused
+   all of it, so `npm run dev` rendered server HTML and then stopped: no theme toggle
+   (frozen at its pre-mount placeholder), no hero, no interactivity, one console line as the
+   only symptom. **Production was verified unaffected** — same diagnostic against
+   `https://bridgingtrust.ai/` shows the `h1`, a mounted toggle and no CSP violation beyond
+   a Cloudflare beacon that is correctly blocked.
+
+Neither was visible by reading. Both took running the thing.
+
+**Method note**: the false claim came from reading `package.json` (`dev` has no
+`SSL_CERT_ENV`, `dev:http` sets it to `none`) and inferring the rest. The inference was
+reasonable and wrong, and it is the same shape as the Key Vault item in PLAN-012's
+transparency report — true premises, plausible reasoning, a conclusion nobody executed.
 
 ## Context
 
@@ -90,6 +128,35 @@ that are measured rather than aspirational.
    PRs first; a flaky new gate that blocks merges gets disabled, permanently. Add the
    context once it has been green across several runs — same discipline as PLAN-002.
 
+#### Part 1 as executed (2026-07-28) — done
+
+Steps 1–6 above are the hypothesis. What shipped:
+
+| Step | Planned | Actual |
+| --- | --- | --- |
+| 1 | `command: "npm run dev:http"` | Done, but **not** the fix. Added `E2E_PORT`/`E2E_BASE_URL`, switched `url:` → `port:` so an occupied port is a hard error instead of a silent wrong target, and set `reuseExistingServer: false` unconditionally. CI builds and serves **production**, not the dev server. |
+| 2 | Delete or port `vercel-safari.spec.ts` | Deleted (20 tests). Ported: responsive rendering at 3 viewports, and form-field interaction — both retargeted at the real homepage. Dropped: assertions on a newsletter section (deferred), a `© 2023` footer, and nav links that no longer exist. |
+| 3 | Delete the two zero-match projects | Done — `visual-regression` and `performance` removed with a comment saying why. |
+| 4 | Run the suite; fix or delete failures | Done. **130 tests pass across 5 browsers in 1.2 min.** No test skipped. |
+| 5 | Add an advisory `e2e` job | Done — chromium only, `needs:` absent so it runs beside `frontend`, HTML report uploaded on failure. |
+| 6 | Do not make it required | Held. |
+| — | *(not planned)* | **CSP fix**: `'unsafe-eval'` granted to the dev server only, gated on `NODE_ENV === "development"`, with 4 guard tests. |
+
+**The dark-mode suite was not "13 tests that had never run against the current DOM".** It
+was 13 tests of which **five ended in `expect(typeof isDark).toBe("boolean")`** — true for
+every possible value, including `undefined`. They would have reported green against a
+toggle that did nothing. Others asserted Tailwind class strings (`dark:bg-gray-900/98` —
+the class is `dark:bg-gray-900`, no `/98`) and a two-icon DOM the component does not render;
+one asserted `role="button"` as an *attribute* on a `<button>`, which carries that role
+implicitly and sets no such attribute, so it failed against correct markup.
+
+Rewritten to assert what a visitor experiences: the computed `background-color` changes,
+the choice survives a reload, `Enter`/`Space` operate the control, an explicit choice
+overrides the system preference. 26 tests per browser, up from 18.
+
+**Gate proven able to fail**: forcing `ThemeToggle` to never leave its pre-mount
+placeholder turned 11 chromium tests red; reverting restored 26 green.
+
 ### Part 2 — performance budgets
 
 7. **Measure before asserting.** Run Lighthouse against the PR preview URL and record the
@@ -103,6 +170,53 @@ that are measured rather than aspirational.
 9. If the numbers are already comfortably inside the budgets, assert CLAUDE.md's published
    values directly and delete the "measured by nothing" caveat from the roadmap.
 
+#### Part 2 as executed (2026-07-28) — done
+
+Step 7 said "measure before asserting". Measuring is what made this part worth doing, and it
+contradicted the plan's own step 8 assumption about what to gate.
+
+**Same commit, same day, desktop preset, 3 runs each:**
+
+| Target | Perf | A11y | Best prac. | SEO | LCP | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| local `npm run start` | **100** | 100 | 100 | 100 | 605 ms | **0 ms** |
+| SWA origin (same code as apex) | **97** | 96 | 100 | 100 | 1301 ms | **0 ms** |
+| PR preview (with the Part 3 fixes) | **97** | **100** | 100 | 100 | 1323 ms | 0 ms |
+| apex `bridgingtrust.ai` | **79** | 96 | **74** | **92** | 1526 ms | **360 ms** |
+
+Three things fall out of that table.
+
+**1. A localhost gate would have been worthless.** It scores a perfect 100 while real users
+get 79. Gating on it would pass forever and detect nothing — the failure mode this repo has
+now produced four times. `lighthouserc.json` therefore pins no URL at all, and a guard test
+fails if one is added or if it mentions localhost.
+
+**2. CLAUDE.md's "Perf ≥ 90" is met by the application and missed by the deployment.** The
+same build scores 97 on the SWA origin and 79 at the apex. Accessibility is identical (96 on
+both), which is what confirms the code is the same and the difference is entirely the edge.
+The apex sits behind **Cloudflare** (`server: cloudflare`, `cf-ray`); the SWA origin does
+not. Cloudflare injects its Web Analytics beacon (+1297 bytes, browser UA only — `curl` does
+not see it), the CSP correctly refuses it, and the console error costs the best-practices
+score. Cloudflare also merges an AI-crawler policy into `robots.txt`, which Lighthouse then
+rejects as invalid — the site's own `Allow: /` and `Sitemap:` survive inside it. No Rocket
+Loader. The 360 ms TBT correlates with the Cloudflare hop; **the mechanism for that
+specific number was not isolated** and it is recorded as a correlation, not a cause.
+
+**3. The Part 3 accessibility work is confirmed on a real deployment.** 96 → 100 between the
+SWA origin and the PR preview, which differ only by those commits.
+
+Thresholds are set from the **preview** measurement and every one is met today, so the gate
+is green on arrival rather than aspirational. It runs in `deploy-pr-to-azure` — the only job
+that knows the preview URL — with `continue-on-error: true` while it earns a track record,
+the same staging as the `e2e` job.
+
+**A dead config was found and replaced.** `lighthouserc.js`, tracked since 2025-09, was
+broken three ways at once: `module.exports` in a `"type": "module"` package so it could
+never load, **every assertion set to `warn`** so it could never fail, and both `url` and
+`staticDistDir` set. `__tests__/infra/lighthouse-config.test.ts` now fails on each of those
+shapes, and on drift between the `@lhci/cli` pin in the workflow and the one in
+`package.json`.
+
 ### Part 3 — accessibility
 
 10. Add `@axe-core/playwright`. One spec, `e2e/a11y.spec.ts`, running axe against the
@@ -113,6 +227,51 @@ that are measured rather than aspirational.
     If a violation needs a design decision, record it in the PR and exclude that specific
     rule with a comment naming the decision, never a blanket disable.
 12. Run a11y in the same `e2e` job (chromium only) — axe is fast and has no separate infra.
+
+#### Part 3 as executed (2026-07-28) — done
+
+`e2e/a11y.spec.ts` scans the homepage and all four canonical legal pages, plus the homepage
+in dark mode, with `@axe-core/playwright` 4.12.1 pinned. **Zero critical and zero serious
+violations**, from a starting point of 57 blocking nodes.
+
+The plan said "expect real findings — contrast on the gradient headings and form-label
+associations are the usual suspects." Half right. **Form labels were already correct** —
+every field has a real `htmlFor`. The findings were entirely colour, and they collapsed to
+four tokens rather than being scattered:
+
+| Token | Was | Now | Where |
+| --- | --- | --- | --- |
+| brand `#5B90B0` on white | 3.46:1 | `#3A5F77` — 6.81:1 | nav links, footer links, small caps |
+| white on brand background | 3.46:1 | on `#3A5F77` — 6.81:1 | primary buttons |
+| `text-blue-500` `#2b7fff` | 3.76:1 | `text-blue-600` — 5.25:1 | inline links in legal prose |
+| `text-gray-400` `#99a1af` | 2.60:1 | `text-gray-500` — 4.84:1 | the message character counter |
+
+Plus `link-in-text-block` on the three terms pages (links distinguished by colour alone →
+now always underlined, matching the footer idiom), a dark-mode Decline button at 3.96:1, and
+the contact form's invalid-state submit at `opacity-60` → 2.75:1, raised to `opacity-85` →
+4.74:1. That last one is worth noting: the button is styled to look disabled but is only
+actually `disabled` while submitting, so it was an **enabled** control nobody could read.
+
+`#3A5F77` was already in the codebase as the hover tone for the same elements, so no new
+colour was introduced; hovers moved down to `#2C4A5E` to stay distinguishable. Purely
+decorative accent bars (no text) were deliberately left on `#5B90B0` — contrast rules do not
+apply to them and changing them would have been restyling beyond the stated purpose.
+
+**The flake, and why it was not a threshold problem.** The dark-mode scan failed roughly one
+run in three, on a different browser each time, and passed on every isolated re-run. Captured
+message: `foreground #192736 on background #1a2937 — 1.02:1`. Two near-identical darks,
+because at partial opacity both the element's text and its background resolve to blends of
+the page behind it — a pair shown to no user. Cause: **Framer Motion writes inline
+`style="opacity"` from rAF**, which CSS cannot freeze, and Motion's `reducedMotion="user"`
+suppresses transform and layout animations but deliberately keeps opacity fades. Fixed by
+waiting for every *inline* opacity to settle before scanning, then injecting a
+transition/animation kill stylesheet. Only inline opacity is polled — the contact form's
+`opacity-85` submit is a permanent fractional opacity from a utility class and must not be
+mistaken for an animation in flight. **6 consecutive clean a11y runs (180 executions) and 3
+clean full-suite runs** after the fix.
+
+Gate proven able to fail: reverting the single character-counter colour turned both the
+homepage and dark-mode tests red.
 
 ## Security & compliance notes
 

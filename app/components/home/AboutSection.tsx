@@ -58,7 +58,7 @@ export const AboutSection = () => {
                 <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
                   Terence Kolstad
                 </h3>
-                <p className="text-blue-500 dark:text-blue-400 text-center mb-4">
+                <p className="text-blue-600 dark:text-blue-400 text-center mb-4">
                   Co-Founder
                 </p>
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">
@@ -87,7 +87,7 @@ export const AboutSection = () => {
                 <h3 className="text-2xl font-bold text-center mb-2 text-gray-900 dark:text-gray-100">
                   Bill Schneider
                 </h3>
-                <p className="text-blue-500 dark:text-blue-400 text-center mb-4">
+                <p className="text-blue-600 dark:text-blue-400 text-center mb-4">
                   Co-Founder
                 </p>
                 <p className="text-center leading-relaxed text-gray-600 dark:text-gray-400">

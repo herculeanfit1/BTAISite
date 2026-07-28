@@ -30,9 +30,37 @@ import { env } from "node:process";
  * deferred analytics work needs no CSP change when it lands. Neither service
  * currently loads.
  */
+
+/**
+ * `'unsafe-eval'`, development only.
+ *
+ * Next's dev bundler ships modules wrapped in eval() for hot reload. With the
+ * production CSP applied to the dev server the browser refuses all of it, so
+ * `npm run dev` served a page that rendered its server HTML and then never
+ * hydrated: no theme toggle, no hero, no interactivity, and a single console
+ * error as the only clue. Found 2026-07-28 on the E2E suite's first real run.
+ *
+ * Gated on NODE_ENV === "development", which only `next dev` sets. Anything
+ * else -- production builds, and the "test" value vitest runs under -- gets
+ * the unchanged policy, so `__tests__/security-headers.test.ts` still fails
+ * if 'unsafe-eval' ever reaches what ships. Deliberately not `!== "production"`:
+ * that would have quietly handed the relaxation to the test environment too,
+ * turning the guard green while it guarded nothing.
+ */
+const IS_DEV_SERVER = env.NODE_ENV === "development";
+
+const SCRIPT_SRC = [
+  "script-src 'self' 'unsafe-inline'",
+  IS_DEV_SERVER ? "'unsafe-eval'" : null,
+  "https://www.googletagmanager.com",
+  "https://www.google-analytics.com",
+]
+  .filter(Boolean)
+  .join(" ");
+
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+  SCRIPT_SRC,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",

@@ -58,3 +58,53 @@ jobs:
         run: npm run test:coverage
 
       - run: npm run build
+
+  # ===========================================================================
+  # E2E — ADVISORY, NOT REQUIRED
+  # ===========================================================================
+  # Deliberately NOT a required status check yet. A new gate that blocks merges
+  # before it has a track record gets switched off the first time it flakes, and
+  # then it is off permanently. Promote it to required once it has been green
+  # across several PRs — the same staging this repo used for the Quality Gate
+  # itself.
+  #
+  # Runs independently of `frontend` (no `needs:`), so a Playwright flake cannot
+  # mask a type or unit-test failure and both report in parallel.
+  #
+  # Chromium only. Five browser projects is five times the minutes for a
+  # marketing site, and the config still defines the other four for local runs.
+  e2e:
+    name: Quality Gate / e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # --with-deps installs the system libraries the browser needs on a bare
+      # runner. The Playwright version comes from package.json, so the browser
+      # build is pinned with it rather than floating.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts builds and serves a PRODUCTION bundle when CI is
+      # set, rather than the dev server used locally. The two are not
+      # equivalent: the CSP grants 'unsafe-eval' only to the dev server, and
+      # this repo has already shipped a defect (no security headers at all)
+      # that existed solely in the deployed artifact.
+      - name: E2E
+        run: npx playwright test --project=chromium
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

@@ -43,7 +43,7 @@ export const HeroSection = () => {
           </p>
           <a
             href="#contact"
-            className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] text-white"
+            className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#3A5F77] text-white"
           >
             Book an AI Opportunity Assessment &rarr;
           </a>

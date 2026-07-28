@@ -55,7 +55,7 @@ export const MethodologySection = () => {
               key={principle.number}
               className="p-6 bg-gray-800 dark:bg-gray-900 rounded-lg border border-gray-700"
             >
-              <div className="w-10 h-10 rounded-full bg-[#5B90B0]/20 flex items-center justify-center mb-4 text-[#7ECEC1] font-bold text-lg">
+              <div className="w-10 h-10 rounded-full bg-[#3A5F77]/20 flex items-center justify-center mb-4 text-[#7ECEC1] font-bold text-lg">
                 {principle.number}
               </div>
               <h3 className="text-xl font-bold mb-3 text-white">

@@ -87,7 +87,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
             {/* Solutions link with hover underline effect */}
             <Link
               href="/#solutions"
-              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
+              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#3A5F77] dark:text-[#9CAEB8] transition-colors hover:text-[#2C4A5E] dark:hover:text-[#5B90B0]"
             >
               <span className="relative z-10">Solutions</span>
               <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
@@ -96,7 +96,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
             {/* About link with hover underline effect */}
             <Link
               href="/#about"
-              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
+              className="group relative overflow-hidden inline-block px-4 py-2 font-semibold text-[1.05rem] text-[#3A5F77] dark:text-[#9CAEB8] transition-colors hover:text-[#2C4A5E] dark:hover:text-[#5B90B0]"
             >
               <span className="relative z-10">About</span>
               <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-[#5B90B0] dark:bg-[#9CAEB8] transition-all duration-300 group-hover:w-full"></span>
@@ -106,7 +106,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
             <a
               href="#contact"
               onClick={handleContactClick}
-              className="inline-block cursor-pointer rounded-lg bg-[#5B90B0] dark:bg-[#3A5F77] px-6 py-2.5 text-[1.05rem] font-semibold text-white shadow-sm transition-all hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] hover:shadow-md"
+              className="inline-block cursor-pointer rounded-lg bg-[#3A5F77] dark:bg-[#3A5F77] px-6 py-2.5 text-[1.05rem] font-semibold text-white shadow-sm transition-all hover:bg-[#2C4A5E] dark:hover:bg-[#5B90B0] hover:shadow-md"
             >
               Contact
             </a>
@@ -160,14 +160,14 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
             <div className="flex flex-col space-y-4">
               <Link
                 href="/#solutions"
-                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
+                className="py-2 font-semibold text-[#3A5F77] dark:text-[#9CAEB8] transition-colors hover:text-[#2C4A5E] dark:hover:text-[#5B90B0]"
                 onClick={() => setIsOpen(false)}
               >
                 Solutions
               </Link>
               <Link
                 href="/#about"
-                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0]"
+                className="py-2 font-semibold text-[#3A5F77] dark:text-[#9CAEB8] transition-colors hover:text-[#2C4A5E] dark:hover:text-[#5B90B0]"
                 onClick={() => setIsOpen(false)}
               >
                 About
@@ -178,7 +178,7 @@ export const NavBar = ({ locale: _locale }: NavBarProps) => {
                   handleContactClick(e);
                   setIsOpen(false);
                 }}
-                className="py-2 font-semibold text-[#5B90B0] dark:text-[#9CAEB8] transition-colors hover:text-[#3A5F77] dark:hover:text-[#5B90B0] cursor-pointer"
+                className="py-2 font-semibold text-[#3A5F77] dark:text-[#9CAEB8] transition-colors hover:text-[#2C4A5E] dark:hover:text-[#5B90B0] cursor-pointer"
               >
                 Contact
               </a>

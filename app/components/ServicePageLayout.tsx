@@ -94,7 +94,7 @@ export const ServicePageLayout = ({
                 className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4"
               >
                 <svg
-                  className="mt-0.5 h-5 w-5 shrink-0 text-[#5B90B0]"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-[#3A5F77]"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -132,7 +132,7 @@ export const ServicePageLayout = ({
         <div className="max-w-4xl mx-auto">
           <Link
             href="/"
-            className="inline-flex items-center text-lg font-medium text-blue-500 dark:text-[#7BA8C4] hover:underline"
+            className="inline-flex items-center text-lg font-medium text-blue-600 dark:text-[#7BA8C4] hover:underline"
           >
             <span className="mr-2">&larr;</span> Back to Home
           </Link>

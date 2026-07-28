@@ -153,7 +153,10 @@ describe('Footer', () => {
     render(<Footer />);
 
     const aboutLink = screen.getByRole('link', { name: 'About' });
-    expect(aboutLink).toHaveClass('text-gray-500', 'transition-colors', 'hover:text-[#5B90B0]');
+    // Hover darkens to #3A5F77 (6.81:1 on white), not the lighter #5B90B0
+    // (3.46:1). Hovering used to *reduce* contrast below the resting
+    // text-gray-500 (4.84:1), which is the wrong direction for a focus cue.
+    expect(aboutLink).toHaveClass('text-gray-500', 'transition-colors', 'hover:text-[#3A5F77]');
   });
 
   it('maintains proper accessibility with semantic HTML', () => {

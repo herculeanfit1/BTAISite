@@ -27,31 +27,31 @@ export const Footer = () => {
           <div className="mb-16 flex flex-row flex-wrap items-center justify-center gap-x-10 gap-y-4">
             <a
               href="/#about"
-              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#3A5F77]"
             >
               About
             </a>
             <a
               href="/privacy"
-              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#3A5F77]"
             >
               Privacy
             </a>
             <a
               href="/terms"
-              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#3A5F77]"
             >
               Terms
             </a>
             <a
               href="/engagement-terms"
-              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#3A5F77]"
             >
               Engagement Terms
             </a>
             <a
               href="/product-terms"
-              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#5B90B0]"
+              className="text-gray-500 dark:text-gray-400 transition-colors hover:text-[#3A5F77]"
             >
               Product Terms
             </a>

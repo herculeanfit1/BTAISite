@@ -69,7 +69,7 @@ export const EngagementTermsContent = () => {
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Productized solutions that we license into your environment are governed separately by our{" "}
-                <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link>, not by this section. Those solutions remain our property and are licensed, not assigned.
+                <Link href="/product-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Product License Terms</Link>, not by this section. Those solutions remain our property and are licensed, not assigned.
               </p>
             </div>
 
@@ -114,13 +114,13 @@ export const EngagementTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Related Documents</h2>
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-lg text-gray-600 dark:text-gray-400">
                 <li className="mb-4">
-                  <Link href="/terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Website Terms of Use</Link> &mdash; your use of this website
+                  <Link href="/terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Website Terms of Use</Link> &mdash; your use of this website
                 </li>
                 <li className="mb-4">
-                  <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link> &mdash; solutions we deploy into your environment
+                  <Link href="/product-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Product License Terms</Link> &mdash; solutions we deploy into your environment
                 </li>
                 <li className="mb-4">
-                  <Link href="/privacy" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Privacy Policy</Link> &mdash; how we handle personal information
+                  <Link href="/privacy" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Privacy Policy</Link> &mdash; how we handle personal information
                 </li>
               </ul>
             </div>
@@ -130,13 +130,13 @@ export const EngagementTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Contact Us</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Questions about these terms before an engagement are welcome and expected. Reach us through the{" "}
-                <Link href="/#contact" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">contact form</Link>.
+                <Link href="/#contact" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">contact form</Link>.
               </p>
             </div>
 
             {/* Back to Home Link */}
             <div>
-              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-500 dark:text-[#7BA8C4] hover:underline">
+              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">
                 <span className="mr-2">&larr;</span> Back to Home
               </Link>
             </div>
