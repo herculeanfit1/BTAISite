@@ -174,13 +174,33 @@ The gate must stay `=== "development"`, never `!== "production"`: vitest runs un
 `never allows unsafe-eval` assertion goes on passing against a policy no browser sees.
 `__tests__/security-headers.test.ts` asserts both directions.
 
-### Performance budgets and accessibility are unmeasured (PLAN-013 Parts 2–3)
+### Performance budgets are still unmeasured (PLAN-013 Part 2)
 
 The budgets below under Deployment (LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90) are
-**published commitments that nothing measures**, and accessibility has never been assessed.
-Treat both as unverified claims rather than facts. If you add a gate for either, measure
-the real baseline first and ratchet — asserting an aspirational number ships a gate that
-fails on day one, and asserting nothing ships one that passes because it measures nothing.
+**published commitments that nothing measures**. Treat them as unverified claims rather than
+facts. When you add the gate, measure the real baseline first and ratchet — asserting an
+aspirational number ships a gate that fails on day one, and asserting nothing ships one that
+passes because it measures nothing.
+
+### Accessibility: colours are load-bearing, and scans must wait for animation
+
+`e2e/a11y.spec.ts` runs axe over the homepage, the four canonical legal pages, and the
+homepage in dark mode. The bar is **zero `critical` and zero `serious`**; `moderate`/`minor`
+are printed on failure but do not fail the run. axe catches roughly a third of WCAG issues —
+green here is not "accessible", and the spec says so.
+
+- **Text contrast is why `#3A5F77` exists.** The brand `#5B90B0` is 3.46:1 on white and
+  fails AA, so `#3A5F77` (6.81:1) is the *text and button* tone and `#5B90B0` is kept for
+  decorative accents and dark-mode text, where it is fine. Hovers go to `#2C4A5E`. Do not
+  "restore the brand colour" on text without re-running the a11y spec.
+- **Never scan on `networkidle` alone.** It means the network is quiet, not that the page
+  settled. Framer Motion fades the hero in by writing inline `style="opacity"` from rAF,
+  so a scan can sample an element mid-fade where text and background both resolve to blends
+  of the page behind — a captured failure read `#192736 on #1a2937, 1.02:1`. Neither
+  `emulateMedia({ reducedMotion })` (Motion keeps opacity fades by design) nor a
+  `transition: none` stylesheet (cannot stop inline styles) fixes it. `settleAndFreeze()`
+  waits for every **inline** opacity to reach 0 or 1, then freezes. It polls inline opacity
+  only — the contact form's disabled submit is a permanent `opacity-85` from a class.
 
 ### PR preview deploys leak staging environments
 

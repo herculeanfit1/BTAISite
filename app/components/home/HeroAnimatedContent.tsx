@@ -115,7 +115,7 @@ export function HeroAnimatedContent() {
             <a
               href="#contact"
               onClick={handleCtaClick}
-              className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#5B90B0] dark:bg-[#7ECEC1] text-white dark:text-gray-900 transition-all duration-300 hover:bg-[#3A5F77] dark:hover:bg-[#5B90B0] dark:hover:text-white hover:shadow-[0_0_24px_rgba(91,144,176,0.4)]"
+              className="inline-block rounded-xl px-8 py-4 text-lg font-semibold bg-[#3A5F77] dark:bg-[#7ECEC1] text-white dark:text-gray-900 transition-all duration-300 hover:bg-[#2C4A5E] dark:hover:bg-[#5B90B0] dark:hover:text-white hover:shadow-[0_0_24px_rgba(91,144,176,0.4)]"
             >
               Book an AI Opportunity Assessment &rarr;
             </a>

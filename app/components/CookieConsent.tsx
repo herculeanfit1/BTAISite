@@ -43,7 +43,7 @@ export function CookieConsent() {
         <p className="text-sm text-gray-600 dark:text-gray-300 text-center sm:text-left">
           We use cookies and analytics to understand how visitors use our site and to improve your experience.
           See our{' '}
-          <a href="/privacy" className="text-[#5B90B0] dark:text-[#7BA8C4] underline hover:no-underline">
+          <a href="/privacy" className="text-[#3A5F77] dark:text-[#7BA8C4] underline hover:no-underline">
             Privacy Policy
           </a>{' '}
           for details.
@@ -51,13 +51,13 @@ export function CookieConsent() {
         <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={handleDecline}
-            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             Decline
           </button>
           <button
             onClick={handleAccept}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#5B90B0] rounded-lg hover:bg-[#3A5F77] transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-[#3A5F77] rounded-lg hover:bg-[#2C4A5E] transition-colors"
           >
             Accept
           </button>

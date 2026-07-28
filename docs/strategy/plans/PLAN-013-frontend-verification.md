@@ -1,6 +1,6 @@
 # PLAN-013: Front-end verification (E2E in CI, performance budgets, accessibility)
 
-**Status**: Part 1 done (2026-07-28) · Parts 2–3 open
+**Status**: Parts 1 and 3 done (2026-07-28) · Part 2 open
 **Effort**: M · **Risk**: Low (test-only; no production behaviour changes)
 **Written**: 2026-07-28
 
@@ -180,6 +180,51 @@ placeholder turned 11 chromium tests red; reverting restored 26 green.
     If a violation needs a design decision, record it in the PR and exclude that specific
     rule with a comment naming the decision, never a blanket disable.
 12. Run a11y in the same `e2e` job (chromium only) — axe is fast and has no separate infra.
+
+#### Part 3 as executed (2026-07-28) — done
+
+`e2e/a11y.spec.ts` scans the homepage and all four canonical legal pages, plus the homepage
+in dark mode, with `@axe-core/playwright` 4.12.1 pinned. **Zero critical and zero serious
+violations**, from a starting point of 57 blocking nodes.
+
+The plan said "expect real findings — contrast on the gradient headings and form-label
+associations are the usual suspects." Half right. **Form labels were already correct** —
+every field has a real `htmlFor`. The findings were entirely colour, and they collapsed to
+four tokens rather than being scattered:
+
+| Token | Was | Now | Where |
+| --- | --- | --- | --- |
+| brand `#5B90B0` on white | 3.46:1 | `#3A5F77` — 6.81:1 | nav links, footer links, small caps |
+| white on brand background | 3.46:1 | on `#3A5F77` — 6.81:1 | primary buttons |
+| `text-blue-500` `#2b7fff` | 3.76:1 | `text-blue-600` — 5.25:1 | inline links in legal prose |
+| `text-gray-400` `#99a1af` | 2.60:1 | `text-gray-500` — 4.84:1 | the message character counter |
+
+Plus `link-in-text-block` on the three terms pages (links distinguished by colour alone →
+now always underlined, matching the footer idiom), a dark-mode Decline button at 3.96:1, and
+the contact form's invalid-state submit at `opacity-60` → 2.75:1, raised to `opacity-85` →
+4.74:1. That last one is worth noting: the button is styled to look disabled but is only
+actually `disabled` while submitting, so it was an **enabled** control nobody could read.
+
+`#3A5F77` was already in the codebase as the hover tone for the same elements, so no new
+colour was introduced; hovers moved down to `#2C4A5E` to stay distinguishable. Purely
+decorative accent bars (no text) were deliberately left on `#5B90B0` — contrast rules do not
+apply to them and changing them would have been restyling beyond the stated purpose.
+
+**The flake, and why it was not a threshold problem.** The dark-mode scan failed roughly one
+run in three, on a different browser each time, and passed on every isolated re-run. Captured
+message: `foreground #192736 on background #1a2937 — 1.02:1`. Two near-identical darks,
+because at partial opacity both the element's text and its background resolve to blends of
+the page behind it — a pair shown to no user. Cause: **Framer Motion writes inline
+`style="opacity"` from rAF**, which CSS cannot freeze, and Motion's `reducedMotion="user"`
+suppresses transform and layout animations but deliberately keeps opacity fades. Fixed by
+waiting for every *inline* opacity to settle before scanning, then injecting a
+transition/animation kill stylesheet. Only inline opacity is polled — the contact form's
+`opacity-85` submit is a permanent fractional opacity from a utility class and must not be
+mistaken for an animation in flight. **6 consecutive clean a11y runs (180 executions) and 3
+clean full-suite runs** after the fix.
+
+Gate proven able to fail: reverting the single character-counter colour turned both the
+homepage and dark-mode tests red.
 
 ## Security & compliance notes
 

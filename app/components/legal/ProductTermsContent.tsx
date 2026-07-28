@@ -51,7 +51,7 @@ export const ProductTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Scope of This Document</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 These terms apply to <span className="font-semibold text-gray-900 dark:text-gray-100">productized solutions</span> that Bridging Trust AI licenses and deploys into a customer environment. They do not apply to bespoke development work, which is covered by our{" "}
-                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>.
+                <Link href="/engagement-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Engagement Terms</Link>.
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 This document is <span className="font-semibold text-gray-900 dark:text-gray-100">supplemental</span> and is not a complete agreement. Commercial terms &mdash; fees, term, acceptance, warranty, liability, indemnification and termination &mdash; are set out in the signed agreement covering the solution.
@@ -111,7 +111,7 @@ export const ProductTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">What You Should Know About AI Systems</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Where a solution uses AI, the same limitations described in our{" "}
-                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>{" "}
+                <Link href="/engagement-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Engagement Terms</Link>{" "}
                 apply: AI output is not deterministic, can be confidently wrong, and depends on third-party model providers who may change or deprecate models on their own schedule. Where output informs a consequential decision, the solution is designed to keep a person in the loop.
               </p>
             </div>
@@ -129,13 +129,13 @@ export const ProductTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Related Documents</h2>
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-lg text-gray-600 dark:text-gray-400">
                 <li className="mb-4">
-                  <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link> &mdash; custom development work
+                  <Link href="/engagement-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Engagement Terms</Link> &mdash; custom development work
                 </li>
                 <li className="mb-4">
-                  <Link href="/terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Website Terms of Use</Link> &mdash; your use of this website
+                  <Link href="/terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Website Terms of Use</Link> &mdash; your use of this website
                 </li>
                 <li className="mb-4">
-                  <Link href="/privacy" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Privacy Policy</Link> &mdash; how we handle personal information
+                  <Link href="/privacy" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Privacy Policy</Link> &mdash; how we handle personal information
                 </li>
               </ul>
             </div>
@@ -145,13 +145,13 @@ export const ProductTermsContent = () => {
               <h2 className="text-3xl font-bold mb-6 leading-tight text-gray-900 dark:text-gray-100">Contact Us</h2>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 Security review questions about a solution are welcome before deployment. Reach us through the{" "}
-                <Link href="/#contact" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">contact form</Link>.
+                <Link href="/#contact" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">contact form</Link>.
               </p>
             </div>
 
             {/* Back to Home Link */}
             <div>
-              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-500 dark:text-[#7BA8C4] hover:underline">
+              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">
                 <span className="mr-2">&larr;</span> Back to Home
               </Link>
             </div>

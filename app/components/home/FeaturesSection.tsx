@@ -24,10 +24,10 @@ export const FeaturesSection = () => {
               className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700"
             >
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 dark:text-blue-400 font-bold">
+                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
                   {feature.icon}
                 </div>
-                <span className="text-sm font-semibold uppercase tracking-wider text-[#5B90B0] dark:text-[#7ECEC1]">
+                <span className="text-sm font-semibold uppercase tracking-wider text-[#3A5F77] dark:text-[#7ECEC1]">
                   {feature.label}
                 </span>
               </div>

@@ -110,6 +110,7 @@
     "zod": "3.25.28"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@azure/static-web-apps-cli": "2.0.6",
     "@eslint/js": "9.26.0",
     "@next/bundle-analyzer": "15.3.2",

@@ -432,7 +432,7 @@ export const ContactSection = () => {
                         ? "text-red-600 dark:text-red-400"
                         : messageLength > 1800
                           ? "text-amber-600 dark:text-amber-400"
-                          : "text-gray-400 dark:text-gray-500"
+                          : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
                     {messageLength}/2000 characters
@@ -447,8 +447,8 @@ export const ContactSection = () => {
                   isSubmitting
                     ? "cursor-not-allowed bg-gray-400"
                     : !isFormValid
-                      ? "bg-[#5B90B0] opacity-60 cursor-not-allowed"
-                      : "bg-[#5B90B0] hover:bg-[#3A5F77] cursor-pointer"
+                      ? "bg-[#3A5F77] opacity-85 cursor-not-allowed"
+                      : "bg-[#3A5F77] hover:bg-[#2C4A5E] cursor-pointer"
                 }`}
               >
                 {isSubmitting ? "Sending Message..." : "Send Message"}

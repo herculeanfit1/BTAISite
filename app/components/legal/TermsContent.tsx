@@ -46,9 +46,9 @@ export const TermsContent = () => {
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 These Terms do <span className="font-semibold text-gray-900 dark:text-gray-100">not</span> govern client engagements. Work performed for clients is governed by a separate written agreement. See our{" "}
-                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>{" "}
+                <Link href="/engagement-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Engagement Terms</Link>{" "}
                 for custom development work and our{" "}
-                <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link>{" "}
+                <Link href="/product-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Product License Terms</Link>{" "}
                 for solutions deployed into a customer environment.
               </p>
             </div>
@@ -94,9 +94,9 @@ export const TermsContent = () => {
               </p>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
                 This section applies to this website only. Ownership and licensing of work product created during a client engagement are governed by our{" "}
-                <Link href="/engagement-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Engagement Terms</Link>{" "}
+                <Link href="/engagement-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Engagement Terms</Link>{" "}
                 and{" "}
-                <Link href="/product-terms" className="text-blue-500 dark:text-[#7BA8C4] hover:underline">Product License Terms</Link>, not by this section.
+                <Link href="/product-terms" className="text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">Product License Terms</Link>, not by this section.
               </p>
             </div>
 
@@ -175,7 +175,7 @@ export const TermsContent = () => {
 
             {/* Back to Home Link */}
             <div>
-              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-500 dark:text-[#7BA8C4] hover:underline">
+              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">
                 <span className="mr-2">&larr;</span> Back to Home
               </Link>
             </div>

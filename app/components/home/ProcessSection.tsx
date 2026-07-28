@@ -47,7 +47,7 @@ export const ProcessSection = () => {
               key={step.number}
               className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-700"
             >
-              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-500 dark:text-blue-400 font-bold text-lg">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400 font-bold text-lg">
                 {step.number}
               </div>
               <h3 className="text-xl font-bold mb-3 leading-tight text-gray-900 dark:text-gray-100">

@@ -53,7 +53,7 @@ they are no longer open.
 | Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open — PLAN-013 Part 2                                                                                                              |
-| Accessibility never assessed                                                                                                    | ⬜ Open — PLAN-013 Part 3                                                                                                              |
+| Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
 
 ---
@@ -900,3 +900,104 @@ in place.**
 - **No visual-regression snapshots.** Deleting the dead project is not a decision to adopt
   snapshots; that needs its own justification.
 - **The staging-environment race**, above.
+
+---
+
+## Transparency report — PLAN-013 Part 3: accessibility (2026-07-28)
+
+**Outcome**: the site's first accessibility gate. `e2e/a11y.spec.ts` runs axe over the
+homepage, all four canonical legal pages, and the homepage in dark mode. **57 blocking
+nodes → 0 critical, 0 serious.** `@axe-core/playwright` pinned at 4.12.1.
+
+### The findings were one problem, not fifty
+
+The plan expected "contrast on the gradient headings and form-label associations". Form
+labels were **already correct** — every contact field has a real `htmlFor`. Every finding
+was colour, and they collapsed to four tokens repeated across the site:
+
+| Token | Was | Now | Where |
+| --- | --- | --- | --- |
+| brand `#5B90B0` as text on white | 3.46:1 | `#3A5F77` — 6.81:1 | nav links, footer links, small caps |
+| white text on the brand background | 3.46:1 | on `#3A5F77` — 6.81:1 | primary buttons |
+| `text-blue-500` `#2b7fff` | 3.76:1 | `text-blue-600` — 5.25:1 | inline links in legal prose |
+| `text-gray-400` `#99a1af` | 2.60:1 | `text-gray-500` — 4.84:1 | message character counter |
+
+Plus `link-in-text-block` on the three terms pages (colour-only link affordance → always
+underlined), a dark-mode Decline button at 3.96:1, and the contact form's invalid-state
+submit button at `opacity-60` → 2.75:1.
+
+**That submit button is the one worth reading twice.** It is styled `opacity-60
+cursor-not-allowed` when the form is invalid, but `disabled` is bound only to `isSubmitting`
+— so it is an **enabled, clickable control** that merely looks disabled, at 2.75:1. WCAG
+exempts genuinely inactive controls; this one did not qualify. Raised to `opacity-85`
+(4.74:1). The underlying disabled/enabled mismatch is left alone deliberately: changing the
+submit behaviour of the lead form is not a contrast fix.
+
+`#3A5F77` was already the codebase's hover tone for the same elements, so nothing new was
+invented — hovers moved down to `#2C4A5E` to stay distinguishable. Purely decorative accent
+bars carry no text, so contrast rules do not apply to them; the three that a blanket
+find-and-replace had swept up were **reverted**, keeping the diff tied to its stated purpose.
+
+### The flake taught the more useful lesson
+
+The dark-mode scan failed about one run in three, on a different browser each time, and
+passed on every isolated re-run. The captured message was the whole diagnosis:
+
+```
+foreground #192736 on background #1a2937 — 1.02:1
+```
+
+Two near-identical darks. At partial opacity, both an element's text and its background
+resolve to blends of whatever is behind them, so axe measured a pair that is shown to no
+user at any point they could act on.
+
+Two wrong turns before the right one, both recorded because each was a plausible theory that
+survived until it was tested:
+
+1. **`emulateMedia({ reducedMotion: "reduce" })`** — the component honours the preference, so
+   this looked sufficient. It is not: Framer Motion's `reducedMotion="user"` suppresses
+   *transform and layout* animations and deliberately keeps **opacity** fades, which are
+   considered vestibular-safe. Flake survived.
+2. **A CSS `transition: none !important` stylesheet** — correct for the theme-change
+   transition, useless here. Framer Motion writes inline `style="opacity: …"` from
+   requestAnimationFrame, and no stylesheet can stop a script assigning inline styles.
+
+The fix that worked waits for every **inline** opacity to settle to 0 or 1, then freezes
+what remains. Only inline opacity is polled, because the contact form's submit is now
+`opacity-85` — a permanent fractional opacity from a utility class, which a naive "wait until
+nothing is fractional" check would have waited on forever. Verified by **6 consecutive clean
+a11y runs (180 test executions)** and 3 clean full-suite runs, against a prior ~1-in-3
+failure rate.
+
+Generalisable: `networkidle` is not "the page has settled". It says the network is quiet, and
+says nothing about animation, hydration, or layout. Any visual assertion taken on
+`networkidle` alone is racing whatever the page does next.
+
+### Two unit tests were asserting the old colours
+
+`Footer.test.tsx` pinned `bg-[#5B90B0]` on a decorative underline and `hover:text-[#5B90B0]`
+on nav links. The first was reverted (decorative, no text, should never have changed); the
+second was updated with the reason recorded in the test — hovering used to move contrast from
+4.84:1 **down** to 3.46:1, which is the wrong direction for a focus cue.
+
+### Scope stated honestly
+
+axe detects roughly a third of WCAG issues. Green here means "no machine-detectable critical
+or serious violation", **not** "this site is accessible". Keyboard traps, focus order, and
+whether alt text is *meaningful* rather than merely present still need a human. The spec says
+so at the top so nobody cites it as more than it is.
+
+`moderate` and `minor` violations are printed in failure output but do not fail the run. A
+first gate nobody can get to green gets deleted; this one can be tightened once it has held.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | 297 passed, thresholds met |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| `npx playwright test` (5 browsers) | **160 passed**, 3 consecutive clean runs |
+| `CI=true --project=chromium` | 32 passed against a production build |
+| Gate proven able to fail | one colour reverted → homepage and dark-mode both red |

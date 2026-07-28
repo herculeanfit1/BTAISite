@@ -214,7 +214,7 @@ export const PrivacyContent = () => {
 
             {/* Back to Home Link */}
             <div>
-              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-500 dark:text-[#7BA8C4] hover:underline">
+              <Link href="/" className="inline-flex items-center mt-8 text-lg font-medium text-blue-600 dark:text-[#7BA8C4] underline hover:no-underline">
                 <span className="mr-2">&larr;</span> Back to Home
               </Link>
             </div>
