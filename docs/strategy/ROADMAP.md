@@ -525,3 +525,60 @@ Three items; one of them, followed literally, would have broken production. That
 the others, it surfaced only by checking the mechanism rather than trusting the sentence.
 The check that caught it was reading what `staticSites/config` actually does before
 declaring one.
+
+---
+
+## Transparency report — Key Vault migration: closed as impossible (2026-07-28)
+
+The item was "move the three SWA secrets to Key Vault references." **It cannot be done on
+this platform, and attempting it would have broken the contact form.**
+
+### What was actually true
+
+Azure Static Web Apps support `@Microsoft.KeyVault()` references **only for custom
+authentication configuration**. The **managed backend** that serves `/api/*` does not.
+Microsoft's own documentation states that the serverless functions shipping with Static
+Web Apps "do not support direct Key Vault integration" and that Key Vault access must be
+implemented in application code instead. Three open Azure issues track exactly this:
+[#1090](https://github.com/Azure/static-web-apps/issues/1090),
+[#1091](https://github.com/Azure/static-web-apps/issues/1091),
+[#428](https://github.com/Azure/static-web-apps/issues/428).
+
+So setting `RESEND_API_KEY` to `@Microsoft.KeyVault(SecretUri=...)` would have delivered
+**that literal string** to `process.env` at runtime. The Resend client would have been
+constructed with it as an API key and every send would have failed — an outage of the lead
+path, reached while trying to improve its security.
+
+### The uncomfortable part
+
+**This item existed because of an inference in the previous session's report**, which
+reasoned "Standard tier + system-assigned identity, therefore Key Vault references are
+supported." Both premises were true. The conclusion was wrong, because the capability is
+scoped to a feature the site does not use.
+
+That is the same failure this whole effort has been cataloguing — and this time the source
+was the effort's own output, not a plan written three weeks earlier. Documented findings
+decay the same way plans do. The check that caught it was reading the platform
+documentation before touching production, rather than trusting a sentence that sounded
+authoritative.
+
+### What replaces it
+
+Key Vault is not a control here, so the controls are named explicitly instead of implied:
+
+- **Azure RBAC on the Static Web App** governs who can read the settings.
+- **`CLASSIFY_QUEUE_SAS_URL` is queue-scoped and add-only** — least privilege by
+  construction, so a leaked value cannot read or delete messages.
+- **Rotation** is the response to exposure; removal is not.
+- **Values never enter this repository**, in any form.
+
+`kv-btai-site-prod` is retained but reads by nothing. It was the retired Functions app's
+mechanism and died with it.
+
+### Guarded, not just corrected
+
+CLAUDE.md carried the false claim — _"Prod secrets: Azure Key Vault via system-assigned
+managed identity… never plain-text in app settings"_ — and CLAUDE.md is loaded into every
+session, so a false security claim there is read far more widely than one in `docs/`.
+`__tests__/docs/docs-manifest.test.ts` now fails if that wording returns, with the reason
+in the failure message. Mutation-verified by pasting the original sentence back.
