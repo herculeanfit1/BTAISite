@@ -402,3 +402,30 @@ Every one of those was verified by breaking the thing it guards and confirming t
 test failed. Two were rewritten after passing against both the fixed and unfixed code, and
 one mutation appeared to pass until the mutation itself was checked and found to have
 rewritten a comment instead of the code.
+
+### Addendum — alerting deployed (2026-07-27)
+
+The PLAN-010 alerting is **live**. Five resources in `BTAI-RG1`, alerting
+`terence@bridgingtrust.ai`, both availability alerts enabled at severity 1.
+
+**The first apply failed, and the lesson generalises.** `RoleAssignmentExists` on both role
+assignments: they already existed under hand-created GUIDs, Bicep names them with `guid()`,
+and **`what-if` cannot read role assignments** — so it reported them as `Create` and gave
+no warning. A clean `what-if` does not guarantee a clean apply. The alerts themselves had
+already been created when the failure hit, so nothing was lost, but the deployment was
+marked Failed.
+
+Fixed by removing both role assignments from the template. They granted storage and Key
+Vault access to `func-btai-site-prod`'s identity, and that app is being deleted in Phase 5;
+the live app uses neither, reaching the queue with a queue-scoped SAS and holding its own
+settings. Redeploy succeeded.
+
+**Verified functional, not merely present.** Both webtests report 100% availability, which
+confirms the subtle case: Azure accepts `ExpectedHttpStatusCode: 400`, so the contact
+probe's validation rejection counts as a pass. Had it not, the test would fail on every run
+and page a human every fifteen minutes until someone switched alerting off — which is how
+monitoring usually dies.
+
+**Stated plainly: no alert has actually fired.** The probes are green, so there has been
+nothing to fire on, and forcing one would mean breaking production or standing up a
+throwaway failing webtest. The wiring is verified end-to-end short of that last step.

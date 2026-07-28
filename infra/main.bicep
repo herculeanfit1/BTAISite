@@ -23,7 +23,7 @@ param environment string = 'prod'
 param swaName string = 'bridgingtrust-website'
 
 @description('Address that receives operational alerts')
-param alertEmail string = 'admin@bridgingtrust.ai'
+param alertEmail string = 'terence@bridgingtrust.ai'
 
 @description('Public URL the availability tests probe')
 param publicSiteUrl string = 'https://bridgingtrust.ai'
@@ -182,16 +182,20 @@ resource functionsApp 'Microsoft.Web/sites@2024-04-01' = {
   }
 }
 
-// Grant Functions app Storage Blob Data Owner on storage account
-resource storageBlobDataOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, functionsApp.id, 'StorageBlobDataOwner')
-  scope: storageAccount
-  properties: {
-    principalId: functionsApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
-  }
-}
+
+// NO role assignments for the Functions identity.
+//
+// Storage Blob Data Owner and Key Vault Secrets User already exist in Azure,
+// created by hand under different GUIDs. Bicep names role assignments with
+// guid(), so redeclaring them fails the whole deployment with
+// RoleAssignmentExists — and `what-if` cannot read role assignments, so it
+// reports them as Create and gives no warning. That combination failed the
+// 2026-07-27 alerting deployment after the alerts themselves had been created.
+//
+// They are not redeclared because both grant access to func-btai-site-prod's
+// managed identity, and that app is being deleted (API-consolidation Phase 5).
+// The live app reaches storage with a queue-scoped SAS and holds its own
+// settings; it uses neither role.
 
 // ── Key Vault ──────────────────────────────────────────────────────
 
@@ -212,17 +216,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// Grant Functions managed identity Key Vault Secrets User
-resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, functionsApp.id, 'KeyVaultSecretsUser')
-  scope: keyVault
-  properties: {
-    principalId: functionsApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    // Key Vault Secrets User
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
-  }
-}
 
 // ── Static Web App (reference existing) ────────────────────────────
 
