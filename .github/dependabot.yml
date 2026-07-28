@@ -1,9 +1,29 @@
-# Dependabot configuration for security updates
-# Updated as part of Node 20 LTS upgrade
+# Dependabot configuration.
+#
+# This file did not parse between 2025-05-25 and 2026-07-28, so NO Dependabot
+# update ever ran on this repository -- 0 Dependabot PRs against 88 total.
+# GitHub reported it on every commit that touched the file:
+#
+#   The property '#/updates/0/' contains additional properties
+#   ["security-updates-only"] outside of the schema when none are allowed
+#
+# `security-updates-only` is not a Dependabot key. A config that fails to parse
+# is ignored ENTIRELY -- not partially -- so the github-actions and docker
+# entries below never ran either, despite being individually valid.
+#
+# Two things to know before editing:
+#   - Validation is server-side, and the `.github/dependabot.yml` check only
+#     runs on commits that CHANGE this file. A broken config therefore shows one
+#     red check once and then looks clean forever. Watch that check on the PR
+#     that edits this file; there is no local validator.
+#   - Review assignment comes from .github/CODEOWNERS (`* @herculeanfit1`). The
+#     `reviewers` key that used to be here is deprecated and has been removed.
 
 version: 2
 updates:
-  # Enable npm security updates
+  # ---------------------------------------------------------------------------
+  # npm
+  # ---------------------------------------------------------------------------
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -14,23 +34,38 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "security"
-    # Focus on security updates
-    security-updates-only: false
-    # Version settings
     versioning-strategy: "lockfile-only"
     commit-message:
       prefix: "deps"
       include: "scope"
-    # Assign reviewers
-    reviewers:
-      - "bridgingtrustai-admin"
-    # Ignore major updates that would require more significant refactoring
+
+    # Grouping keeps a 14-month backlog from arriving as dozens of separate PRs
+    # the first Saturday this actually runs. Patch and minor bumps are low-risk
+    # and reviewed together; anything else still gets its own PR.
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      production-patches:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+
+    # Majors stay held back. The roadmap's trigger for taking them on (a real
+    # test gate exists) is now met -- Quality Gate runs type-check, the unit
+    # suite and a build, and the e2e job runs Playwright including accessibility
+    # -- but removing this line and working through the backlog it releases are
+    # separate pieces of work. Do that deliberately, not as a side effect of
+    # making the file parse.
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # Enable GitHub Actions updates
+  # ---------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -41,15 +76,28 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "github-actions" 
+      - "github-actions"
+    groups:
+      actions:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---------------------------------------------------------------------------
+  # Docker
+  # ---------------------------------------------------------------------------
+  # Watches the root `dockerfile`. Dependabot matches Dockerfiles by name within
+  # the given directory, so `Dockerfile.static` and `Dockerfile.test` are NOT
+  # covered here; each would need its own `directory` entry if its base image
+  # ever matters.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
       time: "10:00"
       timezone: "Etc/UTC"
-      day: "saturday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "automated"
+      - "docker"

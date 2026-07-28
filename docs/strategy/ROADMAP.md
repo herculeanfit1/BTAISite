@@ -57,7 +57,9 @@ they are no longer open.
 | **Cloudflare Bot Management costs ~15 performance points** — `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval, 396 ms long task | ⬜ Open — **CSP cannot fix this**; served same-origin, so only a Cloudflare dashboard setting can disable it                        |
 | Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
-| Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
+| **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
+| Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
+| 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ⬜ Open — removing `next-intl` resolves both; the other 67 are dev tooling that never ships                                             |
 | `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
 | Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
 
@@ -1265,3 +1267,123 @@ actually calls `gtag`/`dataLayer`.
 Cloudflare, and PR previews are served from `*.azurestaticapps.net`, which is **not** behind
 it — so this specific fix is unmeasurable until it reaches the apex. Re-measure after deploy;
 the expectation is best-practices 74 → ~100 with performance roughly unchanged.
+
+---
+
+## Transparency report — the Cloudflare CSP fix, measured (2026-07-28)
+
+The fix shipped in #89 and the apex was re-measured. **The prediction in that PR was wrong
+in both directions**, which is worth more than the fix itself.
+
+| | Before | Predicted | **Actual** |
+| --- | --- | --- | --- |
+| best-practices | 74 | ~100 | **81** |
+| performance | 81 | "roughly unchanged" | **86** (within noise) |
+| accessibility | 100 | — | 100 |
+| SEO | 92 | — | 92 |
+
+**What the fix did, exactly as intended**: the beacon now loads (`200`, 11,577 B) and reports
+(`204 /cdn-cgi/rum`, which confirms the `connect-src` addition was necessary, not decorative).
+**Console errors: none. Inspector issues: none.**
+
+**Why 81 and not 100**: one *unrelated* audit was already failing and I had not checked what
+else was red before predicting — `deprecations`, specifically
+`StorageType.persistent is deprecated`. It is not in this repo's source or its built bundle.
+Isolated the same way as before: the SWA origin, serving identical code without Cloudflare,
+scores **best-practices 100 with zero deprecations**. So the last 19 points are Cloudflare
+too — almost certainly the bot-detection script, though the literal API name does not appear
+in either Cloudflare bundle and both are obfuscated, so that attribution is inference and is
+labelled as such.
+
+**On the performance number**: 81 → 86 median, but the ranges overlap (78–87 before, 80–91
+after) and TBT ranges overlap too (173–341 before, 160–322 after). **This is run-to-run
+variance, not an improvement.** Claiming the CSP fix made the site faster would be reading
+noise as signal.
+
+Net: **everything still costing the apex points is Cloudflare's bot-detection script** — the
+~15 performance points *and* the last 19 best-practices points. Disabling JS Detections would
+take the apex to roughly 97/100 on the same code. That is a security tradeoff and remains the
+owner's call.
+
+---
+
+## Transparency report — Dependabot had never run (2026-07-28)
+
+**Fourteen months of nothing.** `.github/dependabot.yml` failed schema validation from the
+repository's first commit (2025-05-25) until today:
+
+```
+The property '#/updates/0/' contains additional properties
+["security-updates-only"] outside of the schema when none are allowed
+```
+
+`security-updates-only` is not a Dependabot key. **0 Dependabot pull requests against 88
+total** — verified as a real zero, not a query artefact, by running the same author filter
+for a known-present author and getting 88.
+
+### Why it survived so long
+
+Three compounding reasons, each worth remembering separately:
+
+1. **A config that fails to parse is ignored entirely, not partially.** The
+   `github-actions` and `docker` entries were individually valid and never ran either.
+2. **Validation is server-side and only runs on commits that CHANGE the file.** The red check
+   appeared once, on the commit that introduced it, and every commit since looked clean. It
+   was invisible unless someone went looking.
+3. **Two adjacent mechanisms looked like coverage.** `.github/workflows/dependabot-security.yml`
+   exists and is gated on `github.actor == 'dependabot[bot]'` — an actor that had never
+   opened a PR. `security-scan.yml` runs Trivy, which scans for vulnerabilities but does not
+   update anything. The repo looked like it had dependency security. It had none.
+
+### And the alerts were off entirely
+
+Separately from the config, `dependabot_security_updates` was `disabled` and the alerts API
+returned `403 Dependabot alerts are disabled for this repository`. So there were no version
+updates, no security updates, **and no vulnerability visibility at all**.
+
+Alerts are now enabled. The result:
+
+| Scope | Count |
+| --- | --- |
+| Total open alerts | **69** (3 critical, 36 high, 24 medium, 6 low) |
+| **Production / runtime scope** | **2** — both `next-intl`, medium, open redirect |
+
+**69 is the alarming number and 2 is the true one.** 67 of 69 are development-scope: vitest,
+happy-dom, the SWA CLI, lhci — tooling that never reaches a visitor. `npm audit --omit=dev`
+independently agrees: one moderate advisory in production.
+
+And `next-intl` is the package CLAUDE.md records as **installed but never wired up**. So the
+only production vulnerability is in a dependency the site does not use. Removing it resolves
+both alerts and deletes dead weight; that is tracked rather than done here, because removing
+a dependency is a change with its own blast radius and does not belong in a config fix.
+
+### The guard
+
+`__tests__/infra/dependabot-config.test.ts` parses the file and rejects any key outside
+Dependabot's documented schema, plus keys GitHub has removed (`reviewers` — the other stale
+key in this file; review assignment comes from `.github/CODEOWNERS`, which already has
+`* @herculeanfit1`). Its last test reconstructs the exact broken config and asserts the check
+fires, so the guard cannot pass vacuously.
+
+`js-yaml` was added as an explicit devDependency for it. It was already resolvable
+transitively, but a guard about dependency updates that depends on an undeclared transitive
+package is a guard waiting to disappear in a dependency update.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **318 passed** |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| Guard proven able to fail | rebuilds the broken config in-test and asserts it is caught |
+| Config validity | **server-side; watch the `.github/dependabot.yml` check on the PR** |
+
+### Still open, deliberately
+
+- **Automatic security update PRs** remain disabled — turning them on with 69 alerts
+  outstanding is a decision about review load, not a cleanup.
+- **`ignore: version-update:semver-major`** is retained. The roadmap's trigger for taking
+  majors on is met, but releasing fourteen months of majors is its own piece of work.
+- **Removing `next-intl`**, which would clear both production alerts.
