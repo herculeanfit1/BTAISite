@@ -27,7 +27,7 @@ npm run type-check     # tsc --noEmit
 npm run test           # vitest run — all of __tests__ except __tests__/e2e/
 npm run test:unit      # __tests__/components/   |   npm run test:api → __tests__/api/
 npm run test:integration   # separate config (vitest.integration.config.js)
-npm run test:e2e       # Playwright; testDir is ./e2e — needs a server on :3000
+npm run test:e2e       # Playwright; testDir is ./e2e. CURRENTLY CANNOT START — see Gotchas
 npm run test:docker    # run suites in Docker (test:docker:quick) — avoids Rollup platform issues
 npm run validate       # FULL pre-push gate → ci/g_master.sh
 ```
@@ -126,6 +126,35 @@ attacker-controlled values in the admin email.
 - Do not assert `not.toContain("onerror=")` in a test — escaped payloads survive as inert
   text and that assertion fails against a _correct_ fix. `__tests__/api/email-template-injection.test.ts`
   parses the HTML and asserts structurally instead.
+
+### The E2E suite cannot start, and has never run in CI (PLAN-013)
+
+`e2e/` holds **90 Playwright tests** across 3 specs and 5 browser projects. No workflow runs
+them, and running them locally does not work either:
+
+- **`playwright.config.ts:113` — `webServer.command` is `npm run dev`, which serves HTTPS
+  (`node server.js`), while `webServer.url` is `http://localhost:3000`.** Playwright waits
+  for an endpoint that never answers. The HTTP variant is `npm run dev:http`
+  (`SSL_CERT_ENV=none`). The suite was not neglected; it is **unrunnable**.
+- `reuseExistingServer: !process.env.CI` means a dev server you already had running masks
+  this. Test from a clean state or you verify nothing.
+- **`e2e/vercel-safari.spec.ts` (20 tests) navigates to `/vercel-safari`, a page that no
+  longer exists.**
+- **Two projects match zero tests**: `visual-regression` (`/visual.*\.spec\.ts/`) and
+  `performance` (`/__tests__/lighthouse.*\.test\.ts/` under `testDir: ./e2e`). A project
+  matching zero tests looks identical to a passing one.
+
+Fixing and wiring this is `docs/strategy/plans/PLAN-013-frontend-verification.md`. Until
+then, **do not cite the E2E suite as coverage** — the front end is verified by nothing
+automated (`app/components` 27% lines, root `lib/` 0%, against `src/lib/api` at ~95%).
+
+### Performance budgets and accessibility are unmeasured (PLAN-013)
+
+The budgets below under Deployment (LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90) are
+**published commitments that nothing measures**, and accessibility has never been assessed.
+Treat both as unverified claims rather than facts. If you add a gate for either, measure
+the real baseline first and ratchet — asserting an aspirational number ships a gate that
+fails on day one, and asserting nothing ships one that passes because it measures nothing.
 
 ### Testing route handlers: two harness traps (PLAN-007)
 

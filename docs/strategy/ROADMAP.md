@@ -733,3 +733,31 @@ The general shape, for the next person resolving a conflict in a status document
 fields.** For those, re-derive the state rather than merging the text.
 
 The table above is now rewritten from verified state rather than merged.
+
+## PLAN-013 — why the front end is the whole remaining surface (2026-07-28)
+
+With the twelve plans and their follow-ups closed, the imbalance is stark: the lead path is
+at ~95% with every behaviour mutation-tested, and **the part a visitor touches is verified
+by nothing automated**.
+
+`docs/strategy/plans/PLAN-013-frontend-verification.md` covers the three gaps. It is mostly
+about **connecting and repairing what already exists**, not writing tests from scratch —
+which is why the diagnosis matters more than the effort estimate:
+
+- **The Playwright suite cannot start.** `webServer.command` is `npm run dev`, which serves
+  **HTTPS**, while `webServer.url` is `http://localhost:3000`. Playwright waits for an
+  endpoint that never answers. Ninety tests were not "never wired in" out of neglect — they
+  were **unrunnable**, and that is a one-line fix.
+- **`vercel-safari.spec.ts` (20 tests) navigates to a deleted page**, so a fifth of the
+  suite fails regardless.
+- **Two configured Playwright projects match zero tests** — `visual-regression` and
+  `performance`. The second is a fossil of an earlier attempt at exactly the performance
+  budgets CLAUDE.md still publishes and nothing measures. A project matching zero tests is
+  indistinguishable from a passing one, which is this repo's signature failure.
+
+The plan carries two rules learned the hard way here. **Measure before asserting**: if the
+site does not currently meet CLAUDE.md's performance budgets, record the real baseline and
+ratchet, rather than shipping a gate that fails on day one or, worse, one that passes
+because it measures nothing. And **do not make the new E2E job a required check in the same
+PR** — a flaky new gate that blocks merges gets disabled permanently, so it runs advisory
+until it has earned the promotion, exactly as PLAN-002's gate did.
