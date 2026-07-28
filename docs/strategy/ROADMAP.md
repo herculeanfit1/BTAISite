@@ -402,3 +402,126 @@ Every one of those was verified by breaking the thing it guards and confirming t
 test failed. Two were rewritten after passing against both the fixed and unfixed code, and
 one mutation appeared to pass until the mutation itself was checked and found to have
 rewritten a comment instead of the code.
+
+### Addendum — alerting deployed (2026-07-27)
+
+The PLAN-010 alerting is **live**. Five resources in `BTAI-RG1`, alerting
+`terence@bridgingtrust.ai`, both availability alerts enabled at severity 1.
+
+**The first apply failed, and the lesson generalises.** `RoleAssignmentExists` on both role
+assignments: they already existed under hand-created GUIDs, Bicep names them with `guid()`,
+and **`what-if` cannot read role assignments** — so it reported them as `Create` and gave
+no warning. A clean `what-if` does not guarantee a clean apply. The alerts themselves had
+already been created when the failure hit, so nothing was lost, but the deployment was
+marked Failed.
+
+Fixed by removing both role assignments from the template. They granted storage and Key
+Vault access to `func-btai-site-prod`'s identity, and that app is being deleted in Phase 5;
+the live app uses neither, reaching the queue with a queue-scoped SAS and holding its own
+settings. Redeploy succeeded.
+
+**Verified functional, not merely present.** Both webtests report 100% availability, which
+confirms the subtle case: Azure accepts `ExpectedHttpStatusCode: 400`, so the contact
+probe's validation rejection counts as a pass. Had it not, the test would fail on every run
+and page a human every fifteen minutes until someone switched alerting off — which is how
+monitoring usually dies.
+
+**Stated plainly: no alert has actually fired.** The probes are green, so there has been
+nothing to fire on, and forcing one would mean breaking production or standing up a
+throwaway failing webtest. The wiring is verified end-to-end short of that last step.
+
+### Addendum — Phase 5 teardown (2026-07-27)
+
+`api/` is deleted from the repository, and `func-btai-site-prod` plus
+`plan-btai-site-prod` are deleted from Azure. The site was verified healthy immediately
+before and after: homepage 200, `/api/health` → `{"status":"ok"}`, invalid POST to
+`/api/contact` → JSON 400.
+
+**Scope was deliberately narrow, and the reasons matter more than the deletion.**
+`BTAI-RG1` is a **shared resource group** holding other projects' resources, so teardown
+is never "delete the group". Three things were kept that a broader sweep would have taken:
+
+- **The storage account** hosts `btai-lead-classify`, the **live** queue production writes
+  to on every lead. Deleting it breaks the pipeline.
+- **App Insights and Log Analytics** are now load-bearing — the availability alerting
+  deployed earlier today depends on them.
+- **Key Vault** is retained as the intended home for secrets even though nothing currently
+  reads it.
+
+**What the teardown removed was a decoy, not just dead weight.** `api/` was undeployed for
+a month, and in that window **six strategy plans were written against it as the live
+system** — PLAN-001 would have "fixed" a production vulnerability there while the real one
+kept running. A tree that looks authoritative and executes nowhere is worse than no tree.
+`__tests__/infra/phase5-teardown.test.ts` now fails if it returns.
+
+`scripts/wire-functions-settings.sh` went with it, as its own header instructed.
+
+**A correction to CLAUDE.md fell out of this.** It claimed "Prod secrets: Azure Key Vault
+via system-assigned managed identity, referenced with `@Microsoft.KeyVault()` — never
+plain-text in app settings." That is **false for the live application**: the Static Web
+App's 11 settings contain zero Key Vault references and every secret is a literal value.
+Key Vault + managed identity was the _Functions app's_ mechanism and died with it. The
+claim is corrected, and closing the gap is the next open item.
+
+---
+
+## Transparency report — the three follow-up items (2026-07-27)
+
+All three of the items listed after the twelve plans are now closed. Two shipped as built;
+the third shipped as the opposite of what was proposed, for a reason worth reading.
+
+### 1. Alerting deployed ✅
+
+Live in `BTAI-RG1`, alerting `terence@bridgingtrust.ai`. Detail in the addendum above. The
+finding that generalises: **`what-if` cannot read role assignments**, so it reported two
+pre-existing ones as `Create` and the apply failed with `RoleAssignmentExists` — after the
+alert resources had already been created. A clean `what-if` does not guarantee a clean
+apply.
+
+### 2. Phase 5 teardown ✅
+
+`api/` deleted; `func-btai-site-prod` and its plan deleted. Storage (the live queue), App
+Insights, Log Analytics and Key Vault deliberately kept. Detail in the addendum above.
+
+### 3. SWA settings in IaC — **inverted, and this is the important one**
+
+The item was "declare the Static Web App's settings in Bicep." **Doing that would have
+taken production down.**
+
+`Microsoft.Web/staticSites/config` **replaces the entire settings collection** on every
+deploy. Of the eleven live settings, three are secrets that cannot live in a public repo.
+Declaring the eight safe ones deletes the other three, and the next apply breaks the site:
+no `RESEND_API_KEY` means the contact form answers 503, no `CLASSIFY_QUEUE_SAS_URL` means
+every lead enqueue throws. Declaring all eleven behind `@secure()` parameters is worse
+still — any deploy that omits them blanks the secrets silently, with no error.
+
+So the settings stay operator-managed, and what was actually missing — a written,
+enforceable contract — was built instead:
+
+- `infra/swa-settings.contract.json` — the authoritative list. Names, classification, and
+  the file that consumes each. No values.
+- `__tests__/infra/swa-settings.test.ts` — cross-checks it against the code's real
+  `process.env` usage **in both directions**: a variable the code reads that nobody
+  provisions, and a setting provisioned that no code reads. Runs offline. Mutation-verified
+  both ways.
+- `scripts/check-swa-settings.sh` — the live half. Read-only, names only. Run against
+  production: **11 settings, names match exactly.**
+- `infra/main.bicep` records why the resource is absent, so the omission is not "fixed"
+  later by someone who sees a gap.
+
+**A security correction fell out of this.** CLAUDE.md claimed "Prod secrets: Azure Key
+Vault via system-assigned managed identity, referenced with `@Microsoft.KeyVault()` — never
+plain-text in app settings." That is **false for the live application**: zero of the three
+secrets are Key Vault references; all are literal values. Key Vault + managed identity was
+the _Functions app's_ mechanism and died with it. The Static Web App is Standard tier with
+a system-assigned identity, so Key Vault references **are** supported — the literals are
+historical, not a platform limit. Migrating them is now a tracked item, currently blocked
+on the vault's network ACLs, which deny access from outside its allowed ranges.
+
+### The pattern, one more time
+
+Three items; one of them, followed literally, would have broken production. That is now
+**nine** instructions across this effort that were wrong against the code — and as with all
+the others, it surfaced only by checking the mechanism rather than trusting the sentence.
+The check that caught it was reading what `staticSites/config` actually does before
+declaring one.

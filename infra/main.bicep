@@ -1,6 +1,6 @@
 // ── BTAI-Site Infrastructure ────────────────────────────────────────
-// Provisions: Functions (Flex Consumption), Storage, App Insights,
-//             Key Vault, SWA linked backend.
+// Provisions: Storage (incl. the lead-classification queue), App Insights,
+//             Log Analytics, Key Vault, and the lead-pipeline alerting.
 // Deploy:
 //   az deployment group create \
 //     --resource-group BTAI-RG1 \
@@ -23,7 +23,7 @@ param environment string = 'prod'
 param swaName string = 'bridgingtrust-website'
 
 @description('Address that receives operational alerts')
-param alertEmail string = 'admin@bridgingtrust.ai'
+param alertEmail string = 'terence@bridgingtrust.ai'
 
 @description('Public URL the availability tests probe')
 param publicSiteUrl string = 'https://bridgingtrust.ai'
@@ -112,86 +112,42 @@ resource classifyQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2
   name: 'btai-lead-classify'
 }
 
-// ── Functions App (Flex Consumption) ────────────────────────────────
+// ── NO Functions App ────────────────────────────────────────────────
+//
+// func-btai-site-prod and its Flex Consumption plan were deleted 2026-07-27
+// (API-consolidation Phase 5). They had served no traffic since 2026-07-24,
+// when /api/* moved to App Router route handlers inside the Next.js app.
+//
+// What deliberately REMAINS in this file, and why:
+//   - Storage account: hosts btai-lead-classify, the LIVE queue production
+//     writes to on every lead. Deleting it breaks the pipeline.
+//   - App Insights + Log Analytics: the deployed availability alerting depends
+//     on them.
+//   - Key Vault: retained as the intended home for secrets. Nothing reads it
+//     today — the Static Web App's settings are literal values, not
+//     @Microsoft.KeyVault() references — which is a gap tracked in the roadmap,
+//     not a reason to delete the vault.
+//
+// BTAI-RG1 is a SHARED resource group containing other projects' resources.
+// Never tear down the group.
 
-resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: names.plan
-  location: location
-  kind: 'functionapp'
-  sku: {
-    tier: 'FlexConsumption'
-    name: 'FC1'
-  }
-  properties: {
-    reserved: true
-  }
-}
 
-resource functionsApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: names.functions
-  location: location
-  kind: 'functionapp,linux'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: plan.id
-    httpsOnly: true
-    siteConfig: {
-      minTlsVersion: '1.2'
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage__accountName'
-          value: storageAccount.name
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsights.properties.ConnectionString
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-      ]
-    }
-    functionAppConfig: {
-      runtime: {
-        name: 'node'
-        version: '22'
-      }
-      deployment: {
-        storage: {
-          type: 'blobContainer'
-          value: '${storageAccount.properties.primaryEndpoints.blob}deploymentpackages'
-          authentication: {
-            type: 'SystemAssignedIdentity'
-          }
-        }
-      }
-      scaleAndConcurrency: {
-        maximumInstanceCount: 10
-        instanceMemoryMB: 2048
-        alwaysReady: [
-          {
-            name: 'http'
-            instanceCount: 1
-          }
-        ]
-      }
-    }
-  }
-}
 
-// Grant Functions app Storage Blob Data Owner on storage account
-resource storageBlobDataOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, functionsApp.id, 'StorageBlobDataOwner')
-  scope: storageAccount
-  properties: {
-    principalId: functionsApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b')
-  }
-}
+
+
+// NO role assignments for the Functions identity.
+//
+// Storage Blob Data Owner and Key Vault Secrets User already exist in Azure,
+// created by hand under different GUIDs. Bicep names role assignments with
+// guid(), so redeclaring them fails the whole deployment with
+// RoleAssignmentExists — and `what-if` cannot read role assignments, so it
+// reports them as Create and gives no warning. That combination failed the
+// 2026-07-27 alerting deployment after the alerts themselves had been created.
+//
+// They are not redeclared because both grant access to func-btai-site-prod's
+// managed identity, and that app is being deleted (API-consolidation Phase 5).
+// The live app reaches storage with a queue-scoped SAS and holds its own
+// settings; it uses neither role.
 
 // ── Key Vault ──────────────────────────────────────────────────────
 
@@ -212,17 +168,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-// Grant Functions managed identity Key Vault Secrets User
-resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, functionsApp.id, 'KeyVaultSecretsUser')
-  scope: keyVault
-  properties: {
-    principalId: functionsApp.identity.principalId
-    principalType: 'ServicePrincipal'
-    // Key Vault Secrets User
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
-  }
-}
 
 // ── Static Web App (reference existing) ────────────────────────────
 
@@ -247,18 +192,6 @@ resource swa 'Microsoft.Web/staticSites@2024-04-01' existing = {
 
 // ── Auth: allow anonymous — CORS handled in function code ──────────
 
-resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
-  parent: functionsApp
-  name: 'authsettingsV2'
-  properties: {
-    platform: {
-      enabled: false
-    }
-    globalValidation: {
-      unauthenticatedClientAction: 'AllowAnonymous'
-    }
-  }
-}
 
 
 // ── Alerting ────────────────────────────────────────────────────────
@@ -422,10 +355,29 @@ resource contactAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   }
 }
 
+// ── Static Web App settings: deliberately NOT declared here ─────────
+//
+// Microsoft.Web/staticSites/config REPLACES the entire settings collection on
+// every deploy. Declaring the eight non-secret values would DELETE the three
+// secrets, and production fails on the next apply: no RESEND_API_KEY means the
+// contact form answers 503, no CLASSIFY_QUEUE_SAS_URL means every lead enqueue
+// throws. Declaring all eleven with @secure() parameters is worse — any deploy
+// that forgot to pass them blanks the secrets silently.
+//
+// So the settings stay operator-managed, and the contract is made explicit and
+// testable instead of tribal:
+//   infra/swa-settings.contract.json    — the authoritative list, names only
+//   __tests__/infra/swa-settings.test.ts — offline cross-check against the
+//                                          code's process.env usage, both ways
+//   scripts/check-swa-settings.sh        — live diff (read-only, names only)
+//
+// The SWA is Standard tier with a system-assigned identity, so Key Vault
+// references ARE supported: the literal values are historical, not a platform
+// limitation. Migrating them is tracked in docs/strategy/ROADMAP.md and is
+// currently blocked on the vault's network ACLs.
+
 // ── Outputs ─────────────────────────────────────────────────────────
 
-output functionsAppName string = functionsApp.name
-output functionsIdentityPrincipalId string = functionsApp.identity.principalId
 output storageAccountName string = storageAccount.name
 output appInsightsName string = appInsights.name
 output keyVaultName string = keyVault.name

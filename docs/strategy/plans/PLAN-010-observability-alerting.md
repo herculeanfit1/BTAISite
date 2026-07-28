@@ -1,6 +1,6 @@
 # PLAN-010: Observability & alerting for the lead pipeline
 
-**Status**: Executed 2026-07-27 (IaC declared, **not deployed** — see "Execution notes")
+**Status**: Executed and **deployed** 2026-07-27 — see "Execution notes"
 **Effort**: M · **Risk**: Low
 
 ## Execution notes (2026-07-27)
@@ -58,7 +58,42 @@ the submitter's **full email address on every validated submission**, into a sto
 oversize paths are reduced to `ipClass` — `resolved` or `unknown`. Both are covered by a
 test that fails if either value reappears.
 
-### Not deployed — deliberate
+### Deployed 2026-07-27
+
+Applied to `BTAI-RG1` with `alertEmail=terence@bridgingtrust.ai` on owner approval. All
+five resources exist: action group `ag-btai-site-prod`, webtests `wt-btai-site-health` and
+`wt-btai-site-contact`, and both severity-1 availability alerts (enabled, PT15M window,
+PT5M frequency).
+
+**The first apply FAILED**, and the reason is worth recording: `RoleAssignmentExists` on
+both role assignments. They already existed in Azure under hand-created GUIDs, and Bicep
+names role assignments with `guid()`, so redeclaring them is a conflict.
+**`what-if` cannot read role assignments**, so it reported them as `Create` and gave no
+warning — a clean `what-if` does not guarantee a clean apply. The alerting resources had
+already been created by the time the role assignments failed, so the practical damage was
+zero, but the deployment was marked Failed.
+
+Resolved by removing both role assignments from the template. They granted Storage Blob
+Data Owner and Key Vault Secrets User to `func-btai-site-prod`'s managed identity, and
+that app is being deleted in Phase 5. The live app uses neither: it reaches the queue with
+a queue-scoped SAS and holds its own settings. The redeploy succeeded.
+
+**Verified functional, not merely present.** Both webtests report **100% availability**,
+which confirms the subtle case: Azure accepts `ExpectedHttpStatusCode: 400` and treats the
+contact endpoint's validation rejection as a _pass_. Had it not, the test would fail every
+run and page a human every 15 minutes until someone disabled alerting — the way monitoring
+usually dies.
+
+**No alert has actually fired.** The probes are green, so there has been nothing to fire
+on. Forcing one would mean breaking production or standing up a throwaway failing webtest;
+neither was in scope. The wiring is verified end-to-end short of that final step, and this
+is stated rather than glossed.
+
+`__tests__/infra/alerting.test.ts` guards the configuration — in particular that the
+contact webtest keeps expecting 400, and that the two permanently-silent alerts stay
+absent.
+
+### Previously: not deployed — deliberate
 
 `what-if` confirms the change is purely additive (5 Creates: action group, 2 webtests,
 2 alerts; no Delete). **Deployment is left for the owner** because it creates billable
