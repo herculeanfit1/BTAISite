@@ -8,7 +8,7 @@ Bridging Trust AI marketing/consulting site — Next.js 15.5 (App Router) + Reac
 
 **Identity**: `BTAI-Site` — the public marketing and consulting website for Bridging Trust AI (bridgingtrust.ai). A single Next.js application; one deployable.
 
-**Scope**: the website itself, its `/api/*` route handlers (`app/api/` over `src/lib/api/`), and the Azure infrastructure that hosts them (`infra/main.bicep`). **Out of scope**: the downstream lead-classification pipeline that consumes the queue this site writes to, client engagement material, and the retired `api/` Functions project (dead code pending teardown — do not edit).
+**Scope**: the website itself, its `/api/*` route handlers (`app/api/` over `src/lib/api/`), and the Azure infrastructure that hosts them (`infra/main.bicep`). **Out of scope**: the downstream lead-classification pipeline that consumes the queue this site writes to, client engagement material, and the downstream pipeline's own repo. The retired `api/` Functions project was **deleted 2026-07-27** (API-consolidation Phase 5) — if you see it referenced in a plan or doc, that document predates the teardown.
 
 ## Commands
 
@@ -23,7 +23,7 @@ npm run build          # next build
 npm run build:static   # build skipping dynamic routes (NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES=true)
 
 npm run lint           # next lint  (the CI gate runs `npx eslint . --no-cache`; lint:fix auto-fixes)
-npm run type-check     # tsc --noEmit — root project only; `api/` is excluded
+npm run type-check     # tsc --noEmit
 npm run test           # vitest run — all of __tests__ except __tests__/e2e/
 npm run test:unit      # __tests__/components/   |   npm run test:api → __tests__/api/
 npm run test:integration   # separate config (vitest.integration.config.js)
@@ -57,7 +57,7 @@ A vitest path filter matching **zero** files is silently ignored as long as anot
 Facts a fresh session cannot cheaply derive from the tree:
 
 - **`/api/*` is Next.js route handlers, not Azure Functions.** `app/api/{contact,health,status}/route.ts` are thin adapters over runtime-agnostic domain logic in **`src/lib/api/`** (`contact-handler.ts` is the orchestrator; also `contact-schema`, `cors`, `rate-limit`, `queue-client`, `classify-queue`, `html`, `email/`). Route handlers set `export const dynamic = "force-dynamic"`. `api_location: ""` in CI and there is **no linked backend**.
-- **`api/` (Azure Functions v4) is dead code awaiting teardown.** It is still tracked and still has its own tsconfig + esbuild, but nothing deploys it — the `deploy-functions` job was retired in #55. Do not "fix" bugs there or port changes into it; edit `src/lib/api/` instead. Deleting `api/` plus its Azure resources is the unfinished Phase 5 of `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`.
+- **`api/` is gone.** The Azure Functions v4 tree, `func-btai-site-prod` and its plan were all deleted on 2026-07-27, completing Phase 5 of `docs/projects/API-CONSOLIDATION-PLAN-2026-07-24.md`. It had served no traffic since 2026-07-24. **Six of the strategy plans still describe it as the live system** — any document naming `api/src/...` predates the teardown and is describing something that no longer exists. `__tests__/infra/phase5-teardown.test.ts` fails if it returns.
 - **Contact flow** (`src/lib/api/contact-handler.ts`): Zod validation → server-side anti-abuse checks (implementation and all tunables live only in the private runbook, never in this public file) → Resend dual delivery (submitter confirmation + admin notification). Non-blocking side-effects: HubSpot contact upsert + note (`src/lib/api/hubspot.ts`) and a versioned JSON message enqueued to an Azure Storage Queue for downstream classification (`src/lib/api/queue-client.ts`, encoded by `queue-encoding.ts`). The Functions output binding is gone — the queue is now reached with a queue-scoped, add-only SAS URL. Sole production caller: `app/components/home/ContactSection.tsx`.
 - **Security headers and CSP live in `next.config.js` `headers()`** — _not_ in `staticwebapp.config.json` (see Gotchas). Any CSP edit happens there.
 - **Active components live in `app/components/`.** The legacy `src/` component tree was deleted in #60; `src/` now holds **only** `src/lib/` (`api/`, `validation.ts`, `telemetry.ts`, `use-consent.ts`).
@@ -132,10 +132,6 @@ attacker-controlled values in the admin email.
 - `vitest.setup.js` mocks `next/server`. It used to share **one** module-scope `Map` across every response, ignore `init.headers`, and expose `NextResponse` without a constructor — so header assertions read an empty Map and `new NextResponse(...)` could not be built. It is now faithful (per-instance `Headers`, honoured `init`, `json`/`text`). If you extend it, keep it per-instance.
 - `origin` is a **forbidden header name**: `new Request(url, { headers: { origin } })` silently drops it, so CORS assertions read `null` no matter what the handler does. Build a request stub (`{ method, headers: new Headers(...), json: async () => body }`) instead — route handlers only touch those.
 
-### Root tsconfig must exclude `api/` (PR #16)
-
-`api/` is a separate TS project. If it is missing from the root `exclude` array, `next build` tries to type-check Azure Functions code and fails on missing `@azure/functions` types.
-
 ### `context.log` binding trap (PR #13)
 
 Never pass a logger method as a bare callback into another module — the `this`-binding is lost and calls throw silently inside non-blocking try/catch. Arrow-wrap it: `(msg, meta) => context.log(msg, meta)`. Originally an Azure Functions `context.log` incident; the same hazard applies to any method passed by reference across the API seam.
@@ -157,7 +153,7 @@ Concurrency groups must key on **both** `${{ github.workflow }}` and `${{ github
 - Pages that must be statically prerendered live under `app/[locale]/` and get `generateStaticParams` treatment; the canonical legal pages are also top-level routes.
 - **Infra is owned by `infra/main.bicep`** (+ `infra/parameters.prod.json`) — do not restate the topology here; read the Bicep. Storage, Key Vault and the Function App still exist pending Phase 5 teardown.
 - **On withholding Azure resource names**: this file does not name them, but that is convention, not a control. `infra/main.bicep` and two `scripts/*.sh` name them by construction in this **public** repo, so the topology is already published and scrubbing prose would be theatre. Treat resource names as public and rely on the actual controls — Key Vault + managed identity, and a queue-scoped add-only SAS. What must **never** land here: credential values, Key Vault secret _values_, 1Password vault/item names, private LAN addresses, and anti-abuse thresholds.
-- **Prod secrets**: Azure Key Vault via system-assigned managed identity, referenced with `@Microsoft.KeyVault()` — never plain-text in app settings.
+- **Prod secrets: the documented control is NOT the live one.** Key Vault (`kv-btai-site-prod`) exists and is the intended home, but the Static Web App's 11 app settings contain **zero** `@Microsoft.KeyVault()` references — every secret is a literal value. Key Vault + managed identity was the _Functions app's_ mechanism and died with it. Verified 2026-07-27 by testing whether each value starts with `@Microsoft.KeyVault` and printing only a count. Closing this gap is tracked in `docs/strategy/ROADMAP.md`; until then, do not repeat the old claim.
 - **Performance budgets** (no regression vs `main` for changed pages): LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90. Check bundle size with `ANALYZE=true npm run build`.
 
 ## Environment variables

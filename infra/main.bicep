@@ -1,6 +1,6 @@
 // ── BTAI-Site Infrastructure ────────────────────────────────────────
-// Provisions: Functions (Flex Consumption), Storage, App Insights,
-//             Key Vault, SWA linked backend.
+// Provisions: Storage (incl. the lead-classification queue), App Insights,
+//             Log Analytics, Key Vault, and the lead-pipeline alerting.
 // Deploy:
 //   az deployment group create \
 //     --resource-group BTAI-RG1 \
@@ -112,75 +112,27 @@ resource classifyQueue 'Microsoft.Storage/storageAccounts/queueServices/queues@2
   name: 'btai-lead-classify'
 }
 
-// ── Functions App (Flex Consumption) ────────────────────────────────
+// ── NO Functions App ────────────────────────────────────────────────
+//
+// func-btai-site-prod and its Flex Consumption plan were deleted 2026-07-27
+// (API-consolidation Phase 5). They had served no traffic since 2026-07-24,
+// when /api/* moved to App Router route handlers inside the Next.js app.
+//
+// What deliberately REMAINS in this file, and why:
+//   - Storage account: hosts btai-lead-classify, the LIVE queue production
+//     writes to on every lead. Deleting it breaks the pipeline.
+//   - App Insights + Log Analytics: the deployed availability alerting depends
+//     on them.
+//   - Key Vault: retained as the intended home for secrets. Nothing reads it
+//     today — the Static Web App's settings are literal values, not
+//     @Microsoft.KeyVault() references — which is a gap tracked in the roadmap,
+//     not a reason to delete the vault.
+//
+// BTAI-RG1 is a SHARED resource group containing other projects' resources.
+// Never tear down the group.
 
-resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: names.plan
-  location: location
-  kind: 'functionapp'
-  sku: {
-    tier: 'FlexConsumption'
-    name: 'FC1'
-  }
-  properties: {
-    reserved: true
-  }
-}
 
-resource functionsApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: names.functions
-  location: location
-  kind: 'functionapp,linux'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: plan.id
-    httpsOnly: true
-    siteConfig: {
-      minTlsVersion: '1.2'
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage__accountName'
-          value: storageAccount.name
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsights.properties.ConnectionString
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-      ]
-    }
-    functionAppConfig: {
-      runtime: {
-        name: 'node'
-        version: '22'
-      }
-      deployment: {
-        storage: {
-          type: 'blobContainer'
-          value: '${storageAccount.properties.primaryEndpoints.blob}deploymentpackages'
-          authentication: {
-            type: 'SystemAssignedIdentity'
-          }
-        }
-      }
-      scaleAndConcurrency: {
-        maximumInstanceCount: 10
-        instanceMemoryMB: 2048
-        alwaysReady: [
-          {
-            name: 'http'
-            instanceCount: 1
-          }
-        ]
-      }
-    }
-  }
-}
+
 
 
 // NO role assignments for the Functions identity.
@@ -240,18 +192,6 @@ resource swa 'Microsoft.Web/staticSites@2024-04-01' existing = {
 
 // ── Auth: allow anonymous — CORS handled in function code ──────────
 
-resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
-  parent: functionsApp
-  name: 'authsettingsV2'
-  properties: {
-    platform: {
-      enabled: false
-    }
-    globalValidation: {
-      unauthenticatedClientAction: 'AllowAnonymous'
-    }
-  }
-}
 
 
 // ── Alerting ────────────────────────────────────────────────────────
@@ -417,8 +357,6 @@ resource contactAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
 
 // ── Outputs ─────────────────────────────────────────────────────────
 
-output functionsAppName string = functionsApp.name
-output functionsIdentityPrincipalId string = functionsApp.identity.principalId
 output storageAccountName string = storageAccount.name
 output appInsightsName string = appInsights.name
 output keyVaultName string = keyVault.name

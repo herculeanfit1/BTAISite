@@ -429,3 +429,36 @@ monitoring usually dies.
 **Stated plainly: no alert has actually fired.** The probes are green, so there has been
 nothing to fire on, and forcing one would mean breaking production or standing up a
 throwaway failing webtest. The wiring is verified end-to-end short of that last step.
+
+### Addendum — Phase 5 teardown (2026-07-27)
+
+`api/` is deleted from the repository, and `func-btai-site-prod` plus
+`plan-btai-site-prod` are deleted from Azure. The site was verified healthy immediately
+before and after: homepage 200, `/api/health` → `{"status":"ok"}`, invalid POST to
+`/api/contact` → JSON 400.
+
+**Scope was deliberately narrow, and the reasons matter more than the deletion.**
+`BTAI-RG1` is a **shared resource group** holding other projects' resources, so teardown
+is never "delete the group". Three things were kept that a broader sweep would have taken:
+
+- **The storage account** hosts `btai-lead-classify`, the **live** queue production writes
+  to on every lead. Deleting it breaks the pipeline.
+- **App Insights and Log Analytics** are now load-bearing — the availability alerting
+  deployed earlier today depends on them.
+- **Key Vault** is retained as the intended home for secrets even though nothing currently
+  reads it.
+
+**What the teardown removed was a decoy, not just dead weight.** `api/` was undeployed for
+a month, and in that window **six strategy plans were written against it as the live
+system** — PLAN-001 would have "fixed" a production vulnerability there while the real one
+kept running. A tree that looks authoritative and executes nowhere is worse than no tree.
+`__tests__/infra/phase5-teardown.test.ts` now fails if it returns.
+
+`scripts/wire-functions-settings.sh` went with it, as its own header instructed.
+
+**A correction to CLAUDE.md fell out of this.** It claimed "Prod secrets: Azure Key Vault
+via system-assigned managed identity, referenced with `@Microsoft.KeyVault()` — never
+plain-text in app settings." That is **false for the live application**: the Static Web
+App's 11 settings contain zero Key Vault references and every secret is a literal value.
+Key Vault + managed identity was the _Functions app's_ mechanism and died with it. The
+claim is corrected, and closing the gap is the next open item.
