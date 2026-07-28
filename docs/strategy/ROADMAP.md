@@ -582,3 +582,40 @@ managed identity… never plain-text in app settings"_ — and CLAUDE.md is load
 session, so a false security claim there is read far more widely than one in `docs/`.
 `__tests__/docs/docs-manifest.test.ts` now fails if that wording returns, with the reason
 in the failure message. Mutation-verified by pasting the original sentence back.
+
+## Transparency report — alerting live-fired (2026-07-28)
+
+An alert that has never fired is theater, so one was made to fire.
+
+A throwaway webtest was deployed against `https://bridgingtrust.ai/__alerting-live-fire-does-not-exist`
+(confirmed 404 first, so it fails by construction) with a paired Sev4 alert on the **real**
+action group. It fired in **~40 seconds**:
+
+```
+rule:       alert-btai-firetest-DELETEME
+condition:  Fired
+severity:   Sev4
+fired at:   2026-07-28T13:25:10Z
+```
+
+That proves the chain end to end — webtest → App Insights → metric alert rule → action
+group — using the same action group the production alerts use.
+
+Both throwaway resources were deleted immediately (alert first, since it references the
+webtest), and the resource group was re-checked: exactly the five real resources remain,
+nothing named `DELETEME` survives. The real webtests still report 100% and both production
+alerts remain enabled. The site was unaffected throughout.
+
+**What this does not prove.** Azure fired the alert and handed it to the action group;
+whether the email arrived in the destination inbox is downstream of that and cannot be
+verified from here. The action group's receiver shows `Enabled`, which means the address
+was confirmed. **Terence should check for a Sev4 "TEMPORARY alerting live-fire test" mail
+around 13:25Z on 2026-07-28** — that is the last unverified hop, and if it did not arrive
+the alerting is not yet trustworthy despite everything above.
+
+**Made repeatable rather than one-off.** `infra/alerting-firetest.bicep` is now in the
+repo with the full runbook in its header — deploy, confirm, delete. Alerting should be
+re-verified periodically, and re-deriving this each time invites skipping it.
+`__tests__/infra/alerting.test.ts` asserts the template stays quarantined: never referenced
+by `main.bicep`, resources named `DELETEME`, deletion commands documented, and the probe
+URL pointing at a path that cannot exist.
