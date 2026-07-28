@@ -29,6 +29,22 @@ import { env } from "node:process";
  * The Google Analytics and Application Insights hosts are pre-allowed so the
  * deferred analytics work needs no CSP change when it lands. Neither service
  * currently loads.
+ *
+ * Cloudflare Web Analytics IS live. The apex sits behind Cloudflare, which
+ * injects `static.cloudflareinsights.com/beacon.min.js` into every HTML
+ * response for browser User-Agents (curl does not see it). Until 2026-07-28 the
+ * CSP refused it, and the resulting console error was the *entire* reason
+ * Lighthouse scored best-practices 74 at the apex versus 100 on the SWA origin
+ * serving the identical build.
+ *
+ * What allowing it does NOT fix: the ~15-point performance gap. That is
+ * Cloudflare Bot Management's JS detection --
+ * `/cdn-cgi/challenge-platform/scripts/jsd/main.js`, 793ms of script evaluation
+ * including one 396ms long task, measured 2026-07-28. It is served from this
+ * site's OWN origin, so `script-src 'self'` already permits it and no CSP
+ * change can affect it; only a Cloudflare dashboard setting can. The blocked
+ * beacon itself contributed 0ms and 0 bytes -- Lighthouse's third-party summary
+ * attributes literally nothing to it, because a refused script does not run.
  */
 
 /**
@@ -52,6 +68,8 @@ const IS_DEV_SERVER = env.NODE_ENV === "development";
 const SCRIPT_SRC = [
   "script-src 'self' 'unsafe-inline'",
   IS_DEV_SERVER ? "'unsafe-eval'" : null,
+  // Cloudflare Web Analytics beacon, injected at the edge. See above.
+  "https://static.cloudflareinsights.com",
   "https://www.googletagmanager.com",
   "https://www.google-analytics.com",
 ]
@@ -64,7 +82,10 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.applicationinsights.azure.com https://*.monitor.azure.com",
+  // cloudflareinsights.com is where the beacon POSTs its RUM payload
+  // (/cdn-cgi/rum) -- allowing the script without this leaves it loading and
+  // then silently failing to report.
+  "connect-src 'self' https://cloudflareinsights.com https://www.google-analytics.com https://*.google-analytics.com https://*.applicationinsights.azure.com https://*.monitor.azure.com",
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",

@@ -59,6 +59,22 @@ describe("security headers", () => {
     const headers = await getHeaders();
     expect(headers["Strict-Transport-Security"]).toBeUndefined();
   });
+
+  it("allows the Cloudflare Web Analytics beacon to load and to report", async () => {
+    // The apex is behind Cloudflare, which injects the beacon into every HTML
+    // response for browser User-Agents. Refusing it produced one console error
+    // that was the entire reason Lighthouse scored best-practices 74 at the
+    // apex versus 100 on the SWA origin serving the identical build.
+    //
+    // Both directives are needed: script-src to load beacon.min.js, connect-src
+    // for the /cdn-cgi/rum POST. Allowing only the first leaves the script
+    // running and silently failing to report.
+    const csp = (await getHeaders())["Content-Security-Policy"];
+    const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src"));
+    const connectSrc = csp.split(";").find((d) => d.trim().startsWith("connect-src"));
+    expect(scriptSrc).toContain("https://static.cloudflareinsights.com");
+    expect(connectSrc).toContain("https://cloudflareinsights.com");
+  });
 });
 
 /**

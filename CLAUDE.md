@@ -161,6 +161,25 @@ target-identity test that names the misconfiguration if it ever happens again.
   changes; assert `toBeInViewport()`. Below `md` the links sit behind a "Toggle menu"
   button and are not rendered at all.
 
+### Published legal copy must match what actually loads
+
+The privacy policy claimed "We use Google Analytics" and listed it as a third-party service.
+**Nothing had loaded Google Analytics for some time**, while Cloudflare — which serves every
+apex request and injects an analytics beacon — went unmentioned. Wrong in both directions at
+once; the under-disclosure is the half that matters.
+
+`__tests__/privacy-disclosure.test.ts` uses the CSP as the machine-readable answer to "who
+may receive data from this page" and fails if the prose disagrees: naming Cloudflare is
+required while the beacon is allow-listed, and claiming Google Analytics is forbidden while
+no code calls `gtag`/`dataLayer`. A CSP *allowance* is permission, not usage — the GA hosts
+stay allow-listed as pre-approval for deferred work, and that alone is not evidence of use.
+
+### `next dev` and `next build` share `.next`
+
+Running the E2E suite locally (which starts `dev:http`) replaces the production build id, so
+a later `npm run start` dies with *"Could not find a production build"*. Rebuild before
+serving production locally.
+
 ### `server.js` reports a port it may not be listening on
 
 `HTTP_PORT` is what the startup banner prints (`Using HTTP port: 3100…`), but the HTTP-only
@@ -200,13 +219,22 @@ knows the preview URL). Measured 2026-07-28, one commit, desktop preset, 3 runs 
 
 - **A localhost gate is worthless here** — perfect 100 while real users get 79. The config
   pins no URL and a guard test fails if one is added.
-- **The app meets "Perf ≥ 90"; the deployment does not.** Same build, 97 vs 79; accessibility
-  is 96 on both, which is what proves the code is identical and the gap is the edge. The apex
-  is behind **Cloudflare**, which injects a Web Analytics beacon the CSP correctly blocks
-  (browser UA only — `curl` will not show you), costing best-practices, and merges an
-  AI-crawler policy into `robots.txt` that Lighthouse rejects, costing SEO. The 360 ms TBT
-  correlates with the Cloudflare hop; the mechanism is **not** established. Tracked in
-  `docs/strategy/ROADMAP.md`; do not point the gate at the apex until it is resolved.
+- **The app meets "Perf ≥ 90"; the deployment does not.** Same build, 97 vs 79. The apex is
+  behind **Cloudflare**; the SWA origin is not. Two separate costs, and they have different
+  fixes:
+  - **best-practices 74** was one console error — the Web Analytics beacon
+    (`static.cloudflareinsights.com`, injected at the edge for browser UAs only, so `curl`
+    will not show you) being refused by the CSP. **Fixed 2026-07-28** by allow-listing it in
+    `script-src` plus `cloudflareinsights.com` in `connect-src` for its `/cdn-cgi/rum` POST.
+  - **The ~15 performance points are `/cdn-cgi/challenge-platform/scripts/jsd/main.js`** —
+    Cloudflare Bot Management's JS detection: 793 ms of script evaluation including a single
+    396 ms long task. It is served from **this site's own origin**, so `script-src 'self'`
+    already permits it and **no CSP change can affect it**; only a Cloudflare dashboard
+    setting can. The blocked beacon contributed 0 ms and 0 bytes — a refused script does not
+    run, so it never cost performance, only the error.
+  - SEO 92 is Cloudflare merging an AI-crawler policy into `robots.txt` that Lighthouse
+    rejects as invalid. Your own `Allow: /` and `Sitemap:` survive inside it.
+  Tracked in `docs/strategy/ROADMAP.md`; do not point the gate at the apex until resolved.
 - The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
   it could not load, every assertion `"warn"` so it could not fail, and `url` plus
   `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and

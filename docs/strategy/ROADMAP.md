@@ -53,7 +53,9 @@ they are no longer open.
 | Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
-| **Cloudflare costs the apex 18 perf and 26 best-practices points** vs the identical build on the SWA origin (79 vs 97)          | ⬜ Open — infrastructure, not code; the app meets its budget, the deployment does not                                                   |
+| Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
+| **Cloudflare Bot Management costs ~15 performance points** — `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval, 396 ms long task | ⬜ Open — **CSP cannot fix this**; served same-origin, so only a Cloudflare dashboard setting can disable it                        |
+| Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
 | `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
@@ -1193,3 +1195,73 @@ retention.
 **If this repo is ever made private, that changes**: those ~3 extra minutes per push begin
 consuming the account's Actions allowance, and artifact storage starts counting. Anyone
 proposing to flip visibility should price the CI first.
+
+---
+
+## Transparency report — the Cloudflare CSP fix (2026-07-28)
+
+**Outcome**: the Web Analytics beacon is allow-listed and the privacy policy now describes
+what actually runs. The performance half of the Cloudflare gap is **not** fixed, cannot be
+fixed from this repo, and the reason is now known precisely.
+
+### The two costs had been conflated, and only one was a CSP problem
+
+Earlier today this was recorded as "Cloudflare costs 18 performance and 26 best-practices
+points" with the mechanism explicitly unproven. Lighthouse's own attribution settles it —
+these are two unrelated causes:
+
+| | Cost | Cause | Fixable here? |
+| --- | --- | --- | --- |
+| best-practices 100 → 74 | one console error | CSP refusing `static.cloudflareinsights.com/beacon.min.js` | **Yes** — done |
+| performance ~15 pts | 793 ms script eval, one 396 ms long task | `/cdn-cgi/challenge-platform/scripts/jsd/main.js` — Cloudflare **Bot Management** JS detection | **No** |
+| SEO 100 → 92 | invalid `robots.txt` | Cloudflare merging an AI-crawler policy | No (dashboard) |
+
+The blocked beacon showed **`blockingTime 0 ms, transferSize 0 B`** in Lighthouse's
+third-party summary. A refused script does not execute, so it never cost performance at all —
+only the error. The earlier note that the TBT "correlates with the Cloudflare hop" was right
+to stop short of naming a cause; the actual cause was a *different* Cloudflare feature
+entirely, invisible until the per-script bootup-time breakdown was read.
+
+**The bot-detection script is served from this site's own origin** (`bridgingtrust.ai/cdn-cgi/…`),
+so `script-src 'self'` already permits it. No CSP edit can touch it. Disabling it means
+turning off Bot Management / JS Detections in the Cloudflare dashboard — which is a security
+tradeoff, not a cleanup, and is the owner's call.
+
+### Allowing the beacon created a disclosure obligation, and exposed an existing false one
+
+Permitting the beacon means analytics **actually starts collecting**. Checking the privacy
+policy first found it wrong in both directions:
+
+- It stated *"We use Google Analytics to understand how visitors use our site"* and listed
+  Google Analytics under third-party services. **No code loads Google Analytics.**
+  Over-disclosure — low risk, but a published legal document asserting something untrue.
+- It said **nothing about Cloudflare**, which serves every apex request and injects the
+  beacon. Under-disclosure, which is the half that matters, and it was already true before
+  this change.
+
+Both corrected. Cloudflare Web Analytics is cookieless and does not fingerprint, so this is
+disclosure rather than a consent question; the cookie banner manages only the site's own
+`btai_consent` cookie and needed no change.
+
+`__tests__/privacy-disclosure.test.ts` now treats the CSP as the machine-readable answer to
+"who may receive data from this page" and fails when the prose disagrees — in either
+direction. A CSP *allowance* is permission, not usage, so the still-allow-listed Google
+Analytics hosts are correctly not treated as evidence of use; the test keys on whether code
+actually calls `gtag`/`dataLayer`.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **313 passed** |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| `npx playwright test` (5 browsers) | **160 passed** |
+| CSP emitted by a real production build | `script-src … https://static.cloudflareinsights.com`, `connect-src … https://cloudflareinsights.com`, no `unsafe-eval` |
+| Guards proven able to fail | beacon removed from `script-src` → red; false GA claim reinstated → red |
+
+**Not yet verified**: the best-practices recovery itself. The beacon only exists behind
+Cloudflare, and PR previews are served from `*.azurestaticapps.net`, which is **not** behind
+it — so this specific fix is unmeasurable until it reaches the apex. Re-measure after deploy;
+the expectation is best-practices 74 → ~100 with performance roughly unchanged.
