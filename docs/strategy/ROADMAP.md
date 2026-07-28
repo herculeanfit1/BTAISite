@@ -29,10 +29,10 @@ and per-plan detail in each plan's "Execution notes" block.
 | PLAN-007 API test harness           | ✅ Executed                                                                  | #76       |
 | PLAN-008 route & locale unification | ✅ Executed — **steps 6/7 rejected as harmful** (redirect loop)              | #81       |
 | PLAN-009 abuse hardening            | ✅ Executed                                                                  | #79       |
-| PLAN-010 observability & alerting   | ◐ IaC merged, **awaiting deployment** — alerts protect nothing until applied | #80       |
+| PLAN-010 observability & alerting   | ✅ Executed — deployed 2026-07-27; both alerts live and enabled, delivery confirmed | #80, #84  |
 | PLAN-011 IaC completeness           | ✅ Executed                                                                  | #78       |
 | PLAN-012 docs truth reconciliation  | ✅ Executed — batch one #67–#72, remainder #82                               | #82       |
-| API-consolidation Phase 5 teardown  | ⬜ **Open** — delete `api/`, tear down orphaned Azure resources              | —         |
+| API-consolidation Phase 5 teardown  | ✅ Executed 2026-07-27 — `api/` deleted, Function App and plan torn down; guarded by `__tests__/infra/phase5-teardown.test.ts` | #84       |
 
 **Found during execution, not in any plan** — the carried-forward list.
 
@@ -49,9 +49,11 @@ they are no longer open.
 | Anti-abuse tunables published as literals                                                                                       | ✅ **Done 2026-07-28** — externalised; repo default deliberately stricter than production                                              |
 | Delete the unreachable `app/[locale]/` tree                                                                                     | ⬜ Open — needs preview verification of the Oryx prerender claim first                                                                 |
 | Verify whether the platform appends the client IP to `x-forwarded-for`                                                          | ⬜ Open — needs a header-echo endpoint                                                                                                 |
-| **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ⬜ Open — **largest remaining gap**                                                                                                    |
-| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open                                                                                                                                |
-| Accessibility never assessed                                                                                                    | ⬜ Open                                                                                                                                |
+| **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ✅ **Done 2026-07-28 (PLAN-013 Part 1)** — 130 tests green across 5 browsers; advisory `Quality Gate / e2e` job added                   |
+| Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
+| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
+| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open — PLAN-013 Part 2                                                                                                              |
+| Accessibility never assessed                                                                                                    | ⬜ Open — PLAN-013 Part 3                                                                                                              |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
 
 ---
@@ -761,3 +763,140 @@ ratchet, rather than shipping a gate that fails on day one or, worse, one that p
 because it measures nothing. And **do not make the new E2E job a required check in the same
 PR** — a flaky new gate that blocks merges gets disabled permanently, so it runs advisory
 until it has earned the promotion, exactly as PLAN-002's gate did.
+
+---
+
+## Transparency report — PLAN-013 Part 1: E2E in CI (2026-07-28)
+
+**Outcome**: the E2E suite runs, in CI, and can fail. 130 tests green across five browsers
+in 1.2 minutes; `Quality Gate / e2e` added as an **advisory** check. Unit suite 293 → 297.
+
+### The plan's headline diagnosis was wrong, and it was written the same day
+
+PLAN-013 said `npm run dev` serves HTTPS while `webServer.url` is HTTP, so Playwright waits
+forever — "a one-line fix". That is false. `server.js` picks its protocol from whether SSL
+certificates exist: with none it logs *"No SSL certificates found, falling back to HTTP"*;
+with them it starts HTTPS **and** HTTP, the latter still on 3000. HTTP answers on 3000 in
+both cases. The one-line fix would have changed nothing.
+
+The claim came from reading `package.json` — `dev` sets no `SSL_CERT_ENV`, `dev:http` sets
+it to `none` — and inferring the runtime behaviour. Reasonable inference, wrong conclusion,
+never executed. Structurally identical to the Key Vault item closed three days earlier:
+true premises, plausible reasoning, nobody ran it. **The lesson is not "plans go stale".
+It is that a conclusion nobody executed is a hypothesis no matter how recently it was
+written, including one written ten minutes ago by someone who had just read the code.**
+
+### What was actually wrong — two failures, both silent
+
+**1. Playwright could not tell this site from any other.** `webServer` used `url:` with
+`reuseExistingServer: !process.env.CI`, which polls until *something* returns 200. Port 3000
+on this machine is held by an unrelated container. Replaying the old config verbatim
+produced:
+
+```
+Expected pattern: /Bridging Trust AI/
+Received string:  "Sign in | Langfuse"
+```
+
+A foreign application's login page, reported as a homepage-title regression. Every
+subsequent failure would have read as a DOM regression in this repo. This is the fourth
+distinct instance of the same family — a mechanism that reports confidently about something
+it never examined.
+
+Fixed by switching `url:` → `port:` (Playwright then *refuses to start* on an occupied
+port instead of polling it), `reuseExistingServer: false` unconditionally, and adding a
+**target-identity test** that asserts the origin under test is actually this site before
+anything else runs.
+
+**2. The dev server could not hydrate.** The CSP withholds `'unsafe-eval'`; Next's dev
+bundler wraps every module in `eval()`. The browser refused all of it, so `npm run dev`
+rendered its server HTML and stopped — theme toggle frozen at its pre-mount placeholder,
+hero absent, nothing interactive, one console line as the only symptom. **Local development
+of any client-side behaviour was impossible and had been for some time.**
+
+Production was checked before touching anything and is unaffected: the same diagnostic
+against `https://bridgingtrust.ai/` finds the `h1`, a mounted toggle, and no CSP violation
+beyond a Cloudflare beacon that is correctly blocked. Fixed with a relaxation gated on
+`NODE_ENV === "development"`.
+
+**A near-miss worth recording.** That gate was first written `!== "production"`. Vitest runs
+under `NODE_ENV=test`, so it would have handed the relaxation to the test environment — and
+the *existing* `never allows unsafe-eval` assertion would have gone on passing while
+guarding a policy no browser ever sees. Caught because the pre-existing test failed
+immediately. It is now `=== "development"`, with a guard asserting the test environment is
+excluded, and a mutation confirmed both fail when the gate is loosened.
+
+### The dark-mode suite was not stale. It was hollow
+
+The plan budgeted for 65 dark-mode tests "never run against the current DOM". The real
+problem was different: **five of the thirteen ended in `expect(typeof isDark).toBe("boolean")`**
+— true for every possible value, including `undefined`. They would have reported green
+against a toggle that did nothing at all. Others asserted Tailwind class strings
+(`dark:bg-gray-900/98`; the actual class is `dark:bg-gray-900`) and a two-icon DOM the
+component does not render, and one asserted `role="button"` as an *attribute* on a
+`<button>` — which carries that role implicitly and sets no such attribute, so it failed
+against correct markup.
+
+Rewritten to assert experience rather than implementation: the computed `background-color`
+changes, the choice survives a reload, `Enter`/`Space` operate the control, an explicit
+choice overrides the system preference. Nothing skipped.
+
+### CI tests the production build, not the dev server
+
+Because the two demonstrably differ — the CSP alone differs, and this repo has already
+shipped a defect (no security headers at all) that existed *only* in the deployed artifact.
+`playwright.config.ts` runs `npm run build && npm run start` when `CI` is set. Verified
+locally with `CI=true`: 26/26 green.
+
+### Found en route: preview deploys had been failing since the cap filled
+
+`deploy-pr-to-azure` was failing with *"already has the maximum number of staging
+environments"*. Ten environments, every one belonging to an **already-merged** PR.
+
+The `cleanup-pr` job fires correctly on `pull_request: closed` — and still leaks. On PR #75
+it ran 18:34:01–18:34:25 and reported success, while the in-flight deploy from the previous
+push ran until 18:35:02 and **created the environment at 18:34:37**, twelve seconds after
+its own cleanup finished. The cleanup runs before the thing it cleans up exists, exits
+green, and orphans it permanently.
+
+Orphans deleted (production `default` untouched, verified 200 before and after) and previews
+restored — #86's re-run went green. **The race itself is not fixed** and is tracked above;
+it will refill the cap in roughly ten merged PRs. Not fixed here because the robust
+options need Azure credentials the workflow does not currently have, and that is a separate
+change from this one.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | 297 passed, thresholds met |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors (22 pre-existing warnings) |
+| `npx playwright test` (5 browsers) | **130 passed** |
+| `CI=true npx playwright test --project=chromium` | 26 passed, against a production build |
+| Gate proven able to fail | `ThemeToggle` forced to its placeholder → 11 red; reverted → 26 green |
+| Guards proven able to fail | CSP gate loosened to `!== "production"` → 2 red, incl. the pre-existing one |
+| Production unaffected | homepage 200, `/api/health` `{"status":"ok"}`, `/api/contact` 400 |
+
+### Also corrected: the status table was still contradicting itself
+
+#86 rewrote the *carried-forward* table from verified state but left the **plan** table
+above it untouched. It asserted "all twelve plans are now closed" three rows above
+`PLAN-010 … ◐ awaiting deployment` and `Phase 5 teardown … ⬜ Open` — both of which were
+finished and merged days earlier. Verified against reality before editing: `api/` is
+absent and untracked, the Bicep declares no `serverfarms`, and `az monitor metrics alert
+list` shows both alerts live and `Enabled: True`. Rows corrected.
+
+The repair in #86 fixed the table someone had reported as wrong and did not re-derive its
+neighbour. Worth stating plainly, since the same session wrote the rule about not trusting
+in-place table edits: **a fix scoped to the reported symptom leaves the rest of the class
+in place.**
+
+### What is deliberately not done
+
+- **The `e2e` job is advisory, not required.** It gets promoted after several green runs.
+- **Five-browser runs stay local.** CI runs chromium only.
+- **No visual-regression snapshots.** Deleting the dead project is not a decision to adopt
+  snapshots; that needs its own justification.
+- **The staging-environment race**, above.

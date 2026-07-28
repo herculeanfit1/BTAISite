@@ -27,7 +27,7 @@ npm run type-check     # tsc --noEmit
 npm run test           # vitest run — all of __tests__ except __tests__/e2e/
 npm run test:unit      # __tests__/components/   |   npm run test:api → __tests__/api/
 npm run test:integration   # separate config (vitest.integration.config.js)
-npm run test:e2e       # Playwright; testDir is ./e2e. CURRENTLY CANNOT START — see Gotchas
+npm run test:e2e       # Playwright; testDir is ./e2e. Starts its own server — see Gotchas
 npm run test:docker    # run suites in Docker (test:docker:quick) — avoids Rollup platform issues
 npm run validate       # FULL pre-push gate → ci/g_master.sh
 ```
@@ -45,7 +45,7 @@ A vitest path filter matching **zero** files is silently ignored as long as anot
 
 `dev`/`dev:http`/`start` run a **custom `server.js`**, not `next dev`. `ci/g_master.sh` runs build → type-check → lint → test → security → deploy-check; skip tests with `./ci/g_master.sh --skip-tests`.
 
-**Cloud CI gates correctness as of PLAN-002.** `.github/workflows/quality-gate.yml` (repo-owned, not a canonical fleet file) runs type-check → `npm run test:coverage` → `next build` on every PR and is a **required status check**. It deliberately runs the whole suite rather than a pinned path list, because a vitest filter matching zero files is silently ignored. Still _not_ covered in cloud: Playwright/E2E, the security scripts, and deploy-check — `npm run validate` locally remains the broader gate.
+**Cloud CI gates correctness as of PLAN-002.** `.github/workflows/quality-gate.yml` (repo-owned, not a canonical fleet file) runs type-check → `npm run test:coverage` → `next build` on every PR and is a **required status check**. It deliberately runs the whole suite rather than a pinned path list, because a vitest filter matching zero files is silently ignored. A second job, `Quality Gate / e2e`, runs Playwright against a production build — **advisory, not required** (PLAN-013 Part 1). Still _not_ covered in cloud: the security scripts and deploy-check — `npm run validate` locally remains the broader gate.
 
 ### Broken/misleading npm scripts (verified — don't trust them)
 
@@ -127,34 +127,71 @@ attacker-controlled values in the admin email.
   text and that assertion fails against a _correct_ fix. `__tests__/api/email-template-injection.test.ts`
   parses the HTML and asserts structurally instead.
 
-### The E2E suite cannot start, and has never run in CI (PLAN-013)
+### E2E: never point it at a port you did not start (PLAN-013)
 
-`e2e/` holds **90 Playwright tests** across 3 specs and 5 browser projects. No workflow runs
-them, and running them locally does not work either:
+`e2e/` holds **130 Playwright tests** across 2 specs and 5 browser projects, green as of
+2026-07-28 and run in CI by `Quality Gate / e2e` (chromium only, **advisory** — not a
+required check until it has a track record).
 
-- **`playwright.config.ts:113` — `webServer.command` is `npm run dev`, which serves HTTPS
-  (`node server.js`), while `webServer.url` is `http://localhost:3000`.** Playwright waits
-  for an endpoint that never answers. The HTTP variant is `npm run dev:http`
-  (`SSL_CERT_ENV=none`). The suite was not neglected; it is **unrunnable**.
-- `reuseExistingServer: !process.env.CI` means a dev server you already had running masks
-  this. Test from a clean state or you verify nothing.
-- **`e2e/vercel-safari.spec.ts` (20 tests) navigates to `/vercel-safari`, a page that no
-  longer exists.**
-- **Two projects match zero tests**: `visual-regression` (`/visual.*\.spec\.ts/`) and
-  `performance` (`/__tests__/lighthouse.*\.test\.ts/` under `testDir: ./e2e`). A project
-  matching zero tests looks identical to a passing one.
+The config takes two env knobs, both unset by default:
 
-Fixing and wiring this is `docs/strategy/plans/PLAN-013-frontend-verification.md`. Until
-then, **do not cite the E2E suite as coverage** — the front end is verified by nothing
-automated (`app/components` 27% lines, root `lib/` 0%, against `src/lib/api` at ~95%).
+```bash
+npx playwright test                       # 5 browsers, dev server on :3000
+E2E_PORT=3100 npx playwright test         # when :3000 is taken (it often is)
+E2E_BASE_URL=https://… npx playwright test  # a deployed origin; starts no server
+```
 
-### Performance budgets and accessibility are unmeasured (PLAN-013)
+**Why the port is a knob and `reuseExistingServer` is hard-`false`.** The old config used
+`url:` + `reuseExistingServer: !process.env.CI`, which polls until *anything* returns 200.
+On a machine where port 3000 belonged to an unrelated container, the whole suite ran
+against that application and reported `Expected /Bridging Trust AI/, Received "Sign in |
+Langfuse"` — a foreign login page, presented as a homepage regression. It now uses `port:`,
+so Playwright **refuses to start** on an occupied port, and `e2e/basic.spec.ts` opens with a
+target-identity test that names the misconfiguration if it ever happens again.
+
+- **CI builds and serves production** (`npm run build && npm run start`); locally it is the
+  dev server. Not interchangeable — see the CSP note below.
+- Assert behaviour, not Tailwind class strings. The old dark-mode spec asserted
+  `dark:bg-gray-900/98` (the class is `dark:bg-gray-900`) and a two-icon DOM `ThemeToggle`
+  does not render — it swaps one `<svg>` via a ternary. Five of its tests also ended in
+  `expect(typeof isDark).toBe("boolean")`, which is true for every value.
+- The hero animates word by word, so its `h1` has **no whitespace between words** in the
+  DOM. Compare with spaces stripped.
+- NavBar's Contact link `preventDefault()`s and scrolls itself, so the URL fragment never
+  changes; assert `toBeInViewport()`. Below `md` the links sit behind a "Toggle menu"
+  button and are not rendered at all.
+
+### The dev server needs `'unsafe-eval'`; production must never have it
+
+Next's dev bundler wraps modules in `eval()`. Under the shipped CSP the browser refuses all
+of it, and `npm run dev` renders server HTML and then **never hydrates** — theme toggle
+stuck on its pre-mount placeholder, hero absent, nothing interactive, one console line as
+the only symptom. `next.config.js` therefore grants `'unsafe-eval'` when
+`NODE_ENV === "development"`.
+
+The gate must stay `=== "development"`, never `!== "production"`: vitest runs under
+`NODE_ENV=test`, so the looser form hands the relaxation to the test environment and the
+`never allows unsafe-eval` assertion goes on passing against a policy no browser sees.
+`__tests__/security-headers.test.ts` asserts both directions.
+
+### Performance budgets and accessibility are unmeasured (PLAN-013 Parts 2–3)
 
 The budgets below under Deployment (LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90) are
 **published commitments that nothing measures**, and accessibility has never been assessed.
 Treat both as unverified claims rather than facts. If you add a gate for either, measure
 the real baseline first and ratchet — asserting an aspirational number ships a gate that
 fails on day one, and asserting nothing ships one that passes because it measures nothing.
+
+### PR preview deploys leak staging environments
+
+`deploy-pr-to-azure` fails with *"already has the maximum number of staging environments"*
+once ~10 accumulate, and they accumulate because `cleanup-pr` **races the deploy it is
+cleaning up after**: on a merge the `closed` event's cleanup can finish before the
+still-in-flight push deploy creates the environment, so it is orphaned and the cleanup
+reports success. Symptom is a red preview deploy on an unrelated PR, usually docs-only.
+
+Clear it with `az staticwebapp environment list/delete` (the environment name is the PR
+number; **never delete `default`** — that is production). Tracked in `docs/strategy/ROADMAP.md`.
 
 ### Testing route handlers: two harness traps (PLAN-007)
 
