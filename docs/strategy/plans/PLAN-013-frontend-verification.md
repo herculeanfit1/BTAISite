@@ -1,6 +1,6 @@
 # PLAN-013: Front-end verification (E2E in CI, performance budgets, accessibility)
 
-**Status**: Parts 1 and 3 done (2026-07-28) · Part 2 open
+**Status**: ✅ Complete — all three parts done 2026-07-28
 **Effort**: M · **Risk**: Low (test-only; no production behaviour changes)
 **Written**: 2026-07-28
 
@@ -169,6 +169,53 @@ placeholder turned 11 chromium tests red; reverting restored 26 green.
    a dev-server measurement is meaningless for LCP.
 9. If the numbers are already comfortably inside the budgets, assert CLAUDE.md's published
    values directly and delete the "measured by nothing" caveat from the roadmap.
+
+#### Part 2 as executed (2026-07-28) — done
+
+Step 7 said "measure before asserting". Measuring is what made this part worth doing, and it
+contradicted the plan's own step 8 assumption about what to gate.
+
+**Same commit, same day, desktop preset, 3 runs each:**
+
+| Target | Perf | A11y | Best prac. | SEO | LCP | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| local `npm run start` | **100** | 100 | 100 | 100 | 605 ms | **0 ms** |
+| SWA origin (same code as apex) | **97** | 96 | 100 | 100 | 1301 ms | **0 ms** |
+| PR preview (with the Part 3 fixes) | **97** | **100** | 100 | 100 | 1323 ms | 0 ms |
+| apex `bridgingtrust.ai` | **79** | 96 | **74** | **92** | 1526 ms | **360 ms** |
+
+Three things fall out of that table.
+
+**1. A localhost gate would have been worthless.** It scores a perfect 100 while real users
+get 79. Gating on it would pass forever and detect nothing — the failure mode this repo has
+now produced four times. `lighthouserc.json` therefore pins no URL at all, and a guard test
+fails if one is added or if it mentions localhost.
+
+**2. CLAUDE.md's "Perf ≥ 90" is met by the application and missed by the deployment.** The
+same build scores 97 on the SWA origin and 79 at the apex. Accessibility is identical (96 on
+both), which is what confirms the code is the same and the difference is entirely the edge.
+The apex sits behind **Cloudflare** (`server: cloudflare`, `cf-ray`); the SWA origin does
+not. Cloudflare injects its Web Analytics beacon (+1297 bytes, browser UA only — `curl` does
+not see it), the CSP correctly refuses it, and the console error costs the best-practices
+score. Cloudflare also merges an AI-crawler policy into `robots.txt`, which Lighthouse then
+rejects as invalid — the site's own `Allow: /` and `Sitemap:` survive inside it. No Rocket
+Loader. The 360 ms TBT correlates with the Cloudflare hop; **the mechanism for that
+specific number was not isolated** and it is recorded as a correlation, not a cause.
+
+**3. The Part 3 accessibility work is confirmed on a real deployment.** 96 → 100 between the
+SWA origin and the PR preview, which differ only by those commits.
+
+Thresholds are set from the **preview** measurement and every one is met today, so the gate
+is green on arrival rather than aspirational. It runs in `deploy-pr-to-azure` — the only job
+that knows the preview URL — with `continue-on-error: true` while it earns a track record,
+the same staging as the `e2e` job.
+
+**A dead config was found and replaced.** `lighthouserc.js`, tracked since 2025-09, was
+broken three ways at once: `module.exports` in a `"type": "module"` package so it could
+never load, **every assertion set to `warn`** so it could never fail, and both `url` and
+`staticDistDir` set. `__tests__/infra/lighthouse-config.test.ts` now fails on each of those
+shapes, and on drift between the `@lhci/cli` pin in the workflow and the one in
+`package.json`.
 
 ### Part 3 — accessibility
 

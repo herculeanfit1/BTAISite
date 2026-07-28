@@ -52,7 +52,8 @@ they are no longer open.
 | **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ✅ **Done 2026-07-28 (PLAN-013 Part 1)** — 130 tests green across 5 browsers; advisory `Quality Gate / e2e` job added                   |
 | Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
-| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ⬜ Open — PLAN-013 Part 2                                                                                                              |
+| Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
+| **Cloudflare costs the apex 18 perf and 26 best-practices points** vs the identical build on the SWA origin (79 vs 97)          | ⬜ Open — infrastructure, not code; the app meets its budget, the deployment does not                                                   |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open                                                                                                                                |
 
@@ -1001,3 +1002,100 @@ first gate nobody can get to green gets deleted; this one can be tightened once 
 | `npx playwright test` (5 browsers) | **160 passed**, 3 consecutive clean runs |
 | `CI=true --project=chromium` | 32 passed against a production build |
 | Gate proven able to fail | one colour reverted → homepage and dark-mode both red |
+
+---
+
+## Transparency report — PLAN-013 Part 2: performance budgets (2026-07-28)
+
+**Outcome**: Lighthouse CI runs against the PR preview URL with thresholds derived from
+measurement, all met today. A `lighthouserc.js` that had been in the repo since 2025-09 and
+could never load, never fail, and was misconfigured, is gone.
+
+### Measuring first is the whole story
+
+The plan's rule was "measure before asserting". It changed what got built.
+
+Same commit, same day, desktop preset, 3 runs each:
+
+| Target | Perf | A11y | Best prac. | SEO | LCP | TBT |
+| --- | --- | --- | --- | --- | --- | --- |
+| local `npm run start` | **100** | 100 | 100 | 100 | 605 ms | **0 ms** |
+| SWA origin — same code as apex | **97** | 96 | 100 | 100 | 1301 ms | **0 ms** |
+| PR preview — with the Part 3 fixes | **97** | **100** | 100 | 100 | 1323 ms | 0 ms |
+| apex `bridgingtrust.ai` | **79** | 96 | **74** | **92** | 1526 ms | **360 ms** |
+
+**A localhost gate would have been worthless.** It reports a perfect 100 while real users
+get 79 — it would have passed forever and detected nothing. That is the fourth instance of
+this repo's signature failure, and the first one caught *before* shipping rather than after.
+`lighthouserc.json` pins no URL at all; a guard test fails if one is added or if it mentions
+localhost.
+
+### CLAUDE.md's "Perf ≥ 90" is met by the application and missed by the deployment
+
+97 on the SWA origin, 79 at the apex, **identical build**. Accessibility scores 96 on both,
+which is what establishes the code is the same and the gap is entirely the edge.
+
+The apex sits behind **Cloudflare** (`server: cloudflare`, `cf-ray` present; absent on the
+SWA origin). Verified mechanisms:
+
+- Cloudflare injects its Web Analytics beacon — +1297 bytes, **browser User-Agent only**, so
+  `curl` shows nothing and only a real browser reveals it. The CSP correctly refuses it
+  (`static.cloudflareinsights.com` is not allow-listed), and the resulting console error is
+  what drops best-practices from 100 to 74.
+- Cloudflare merges an AI-crawler policy into `robots.txt`. The site's own `Allow: /` and
+  `Sitemap:` survive inside the merged file, but Lighthouse rejects its syntax — SEO 100 → 92.
+- No Rocket Loader; checked.
+
+**What was not established**: the 360 ms TBT at the apex versus 0 ms on the origin. It
+correlates with the Cloudflare hop and the blocked beacon is too small to explain it. It is
+recorded as a correlation, and the roadmap item says so rather than asserting a cause I did
+not isolate. Naming the boundary of what was proven is the point — the Key Vault item that
+cost this effort a day was a plausible inference presented as a finding.
+
+**Nothing was changed about Cloudflare.** It is the owner's infrastructure, the AI-crawler
+policy may well be wanted, and "turn off the CDN" is not a conclusion that follows from a
+Lighthouse score. It is now a tracked, quantified item instead of an invisible one.
+
+### The Part 3 work is confirmed on a real deployment
+
+Accessibility 96 → 100 between the SWA origin and the PR preview, which differ only by the
+Part 3 commits. The axe result was not just a local phenomenon.
+
+### The config that was already there was dead three ways
+
+`lighthouserc.js`, tracked since 2025-09:
+
+1. `module.exports` in a `"type": "module"` package — **it could never load**, and the first
+   `lhci` invocation died with `ReferenceError: module is not defined`.
+2. **Every assertion was `"warn"`** — so even had it loaded, it would have exited 0 against
+   any measurement whatsoever.
+3. It set both `url` and `staticDistDir`, which conflict.
+
+Same family as the Playwright `performance` project deleted in Part 1: scaffolding that
+looks like a gate, reports success, and has never once run. `lighthouserc.json` replaces it
+in JSON so there is no module system to get wrong, and
+`__tests__/infra/lighthouse-config.test.ts` fails on each of those three shapes plus drift
+between the `@lhci/cli` pin in the workflow and the one in `package.json` — the workflow
+installs it via `npx` rather than `npm ci`, so the two can otherwise diverge silently.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **306 passed** (37 files) |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| `lhci autorun` against the preview | **passes**, all assertions met |
+| Gate proven able to fail | LCP threshold tightened to 100 ms → `✘ largest-contentful-paint failure`, exit 1 |
+| Guards proven able to fail | version pin and error-level both mutated → 2 red |
+| Both workflow YAMLs | parse; `deploy-pr-to-azure` has 5 steps, `quality-gate` has 2 jobs |
+
+### What is deliberately not done
+
+- **The Lighthouse step is `continue-on-error`** while it earns a track record, same staging
+  as the `e2e` job.
+- **The gate does not run against the apex.** Pointing it there would fail on day one for
+  reasons outside this repo. When the Cloudflare item is resolved, move it.
+- **No performance optimisation work.** The application already meets its published budget;
+  the deficit is at the edge.

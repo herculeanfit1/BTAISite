@@ -167,6 +167,7 @@ jobs:
           lfs: false
 
       - name: Deploy PR to Azure Static Web Apps
+        id: deploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRIDGINGTRUST_WEBSITE }}
@@ -179,6 +180,47 @@ jobs:
           NODE_VERSION: "20.19.1"
           # Marks this as a preview build so /api/contact skips real side effects.
           PREVIEW_BUILD: "true"
+
+      # -----------------------------------------------------------------------
+      # PERFORMANCE BUDGETS -- ADVISORY (PLAN-013 Part 2)
+      # -----------------------------------------------------------------------
+      # Lives here, not in quality-gate.yml, because this is the only job that
+      # knows the preview URL, and the measurement is worthless anywhere else:
+      # measured 2026-07-28 on the same commit, desktop preset, 3 runs --
+      #   local `npm run start`  perf 100, TBT   0ms
+      #   SWA preview origin     perf  97, TBT   0ms
+      #   apex bridgingtrust.ai  perf  79, TBT 360ms
+      # A localhost gate reports a perfect 100 while real users get 79. It
+      # would pass forever and detect nothing.
+      #
+      # continue-on-error while it earns a track record, same staging as the
+      # e2e job. Thresholds live in lighthouserc.json and are all met today.
+      - name: Setup Node
+        if: steps.deploy.outputs.static_web_app_url != ''
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Lighthouse budgets against the preview
+        if: steps.deploy.outputs.static_web_app_url != ''
+        continue-on-error: true
+        # Version pinned inline rather than via `npm ci`: this job only needs
+        # lhci, and installing the full devDependency tree here would pull
+        # Playwright and its browsers to run a Lighthouse check.
+        # Keep in step with the @lhci/cli pin in package.json.
+        # Chrome is auto-detected -- the runner image ships one, and hard-coding
+        # a path breaks silently when the image moves it.
+        run: npx --yes @lhci/cli@0.15.1 autorun --collect.url="${{ steps.deploy.outputs.static_web_app_url }}"
+
+      - name: Upload Lighthouse reports
+        if: always() && steps.deploy.outputs.static_web_app_url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 7
+          if-no-files-found: ignore
 
   # =============================================================================
   # CLEANUP JOB (for PRs)

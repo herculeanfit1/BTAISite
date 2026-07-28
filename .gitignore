@@ -80,3 +80,6 @@ commit_now.txt
 backups/
 temp/
 tmp/
+
+# Lighthouse CI run output (reports are uploaded as CI artifacts, not committed)
+.lighthouseci/

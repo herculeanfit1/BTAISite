@@ -174,13 +174,30 @@ The gate must stay `=== "development"`, never `!== "production"`: vitest runs un
 `never allows unsafe-eval` assertion goes on passing against a policy no browser sees.
 `__tests__/security-headers.test.ts` asserts both directions.
 
-### Performance budgets are still unmeasured (PLAN-013 Part 2)
+### Performance: measure a deployed origin, never localhost
 
-The budgets below under Deployment (LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90) are
-**published commitments that nothing measures**. Treat them as unverified claims rather than
-facts. When you add the gate, measure the real baseline first and ratchet — asserting an
-aspirational number ships a gate that fails on day one, and asserting nothing ships one that
-passes because it measures nothing.
+`lighthouserc.json` + an advisory `lhci` step in `deploy-pr-to-azure` (the only job that
+knows the preview URL). Measured 2026-07-28, one commit, desktop preset, 3 runs each:
+
+| Target | Perf | Best prac. | SEO | TBT |
+| --- | --- | --- | --- | --- |
+| local `npm run start` | **100** | 100 | 100 | 0 ms |
+| SWA origin (same code as apex) | **97** | 100 | 100 | 0 ms |
+| apex `bridgingtrust.ai` | **79** | **74** | **92** | **360 ms** |
+
+- **A localhost gate is worthless here** — perfect 100 while real users get 79. The config
+  pins no URL and a guard test fails if one is added.
+- **The app meets "Perf ≥ 90"; the deployment does not.** Same build, 97 vs 79; accessibility
+  is 96 on both, which is what proves the code is identical and the gap is the edge. The apex
+  is behind **Cloudflare**, which injects a Web Analytics beacon the CSP correctly blocks
+  (browser UA only — `curl` will not show you), costing best-practices, and merges an
+  AI-crawler policy into `robots.txt` that Lighthouse rejects, costing SEO. The 360 ms TBT
+  correlates with the Cloudflare hop; the mechanism is **not** established. Tracked in
+  `docs/strategy/ROADMAP.md`; do not point the gate at the apex until it is resolved.
+- The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
+  it could not load, every assertion `"warn"` so it could not fail, and `url` plus
+  `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and
+  the `@lhci/cli` version pinned in two places.
 
 ### Accessibility: colours are load-bearing, and scans must wait for animation
 
