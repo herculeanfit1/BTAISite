@@ -86,3 +86,29 @@ describe("alerts that would be permanently silent are not declared", () => {
     );
   });
 });
+
+describe("the live-fire template stays quarantined", () => {
+  // An alert that has never fired is theater, so infra/alerting-firetest.bicep
+  // exists to prove the chain periodically. It must never be deployable by
+  // accident: it creates a permanently-failing webtest whose whole purpose is
+  // to page a human.
+  const firetest = readFileSync("infra/alerting-firetest.bicep", "utf8");
+
+  it("is never referenced by the main template", () => {
+    expect(bicep).not.toContain("alerting-firetest");
+    expect(bicep).not.toContain("firetest");
+  });
+
+  it("names its resources so they cannot be mistaken for permanent ones", () => {
+    expect(firetest).toContain("DELETEME");
+  });
+
+  it("documents the deletion commands, since the whole point is to remove it", () => {
+    expect(firetest).toContain("az monitor metrics alert delete");
+    expect(firetest).toContain("az resource delete");
+  });
+
+  it("probes a path that does not exist, so it fails by construction", () => {
+    expect(firetest).toMatch(/RequestUrl:.*does-not-exist/);
+  });
+});

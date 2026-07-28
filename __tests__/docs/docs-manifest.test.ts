@@ -73,6 +73,32 @@ describe("living docs do not restate retired architecture", () => {
     }
     expect(offenders, offenders.join("; ")).toEqual([]);
   });
+
+  // CLAUDE.md is loaded into every session, so a false claim there is read far
+  // more widely than one in docs/. This specific claim asserted a security
+  // control that does not exist, and acting on it would have broken the contact
+  // form — the strongest reason to keep it from coming back.
+  it("does not reassert that production secrets come from Key Vault", () => {
+    const claim =
+      /secrets[^.]{0,60}Key Vault[^.]{0,80}(managed identity|@Microsoft\.KeyVault)[^.]{0,60}never plain-?text/i;
+    const text = readFileSync("CLAUDE.md", "utf8");
+    expect(
+      claim.test(text),
+      "CLAUDE.md claims prod secrets come from Key Vault. They do not: SWA's " +
+        "managed backend cannot resolve Key Vault references at all. See " +
+        "infra/swa-settings.contract.json.",
+    ).toBe(false);
+  });
+
+  it("proves that claim pattern matches the wording it guards against", () => {
+    const claim =
+      /secrets[^.]{0,60}Key Vault[^.]{0,80}(managed identity|@Microsoft\.KeyVault)[^.]{0,60}never plain-?text/i;
+    expect(
+      claim.test(
+        "Prod secrets: Azure Key Vault via system-assigned managed identity, referenced with @Microsoft.KeyVault() — never plain-text in app settings",
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("ADRs", () => {

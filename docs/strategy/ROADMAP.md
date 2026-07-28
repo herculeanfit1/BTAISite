@@ -525,3 +525,138 @@ Three items; one of them, followed literally, would have broken production. That
 the others, it surfaced only by checking the mechanism rather than trusting the sentence.
 The check that caught it was reading what `staticSites/config` actually does before
 declaring one.
+
+---
+
+## Transparency report — Key Vault migration: closed as impossible (2026-07-28)
+
+The item was "move the three SWA secrets to Key Vault references." **It cannot be done on
+this platform, and attempting it would have broken the contact form.**
+
+### What was actually true
+
+Azure Static Web Apps support `@Microsoft.KeyVault()` references **only for custom
+authentication configuration**. The **managed backend** that serves `/api/*` does not.
+Microsoft's own documentation states that the serverless functions shipping with Static
+Web Apps "do not support direct Key Vault integration" and that Key Vault access must be
+implemented in application code instead. Three open Azure issues track exactly this:
+[#1090](https://github.com/Azure/static-web-apps/issues/1090),
+[#1091](https://github.com/Azure/static-web-apps/issues/1091),
+[#428](https://github.com/Azure/static-web-apps/issues/428).
+
+So setting `RESEND_API_KEY` to `@Microsoft.KeyVault(SecretUri=...)` would have delivered
+**that literal string** to `process.env` at runtime. The Resend client would have been
+constructed with it as an API key and every send would have failed — an outage of the lead
+path, reached while trying to improve its security.
+
+### The uncomfortable part
+
+**This item existed because of an inference in the previous session's report**, which
+reasoned "Standard tier + system-assigned identity, therefore Key Vault references are
+supported." Both premises were true. The conclusion was wrong, because the capability is
+scoped to a feature the site does not use.
+
+That is the same failure this whole effort has been cataloguing — and this time the source
+was the effort's own output, not a plan written three weeks earlier. Documented findings
+decay the same way plans do. The check that caught it was reading the platform
+documentation before touching production, rather than trusting a sentence that sounded
+authoritative.
+
+### What replaces it
+
+Key Vault is not a control here, so the controls are named explicitly instead of implied:
+
+- **Azure RBAC on the Static Web App** governs who can read the settings.
+- **`CLASSIFY_QUEUE_SAS_URL` is queue-scoped and add-only** — least privilege by
+  construction, so a leaked value cannot read or delete messages.
+- **Rotation** is the response to exposure; removal is not.
+- **Values never enter this repository**, in any form.
+
+`kv-btai-site-prod` is retained but reads by nothing. It was the retired Functions app's
+mechanism and died with it.
+
+### Guarded, not just corrected
+
+CLAUDE.md carried the false claim — _"Prod secrets: Azure Key Vault via system-assigned
+managed identity… never plain-text in app settings"_ — and CLAUDE.md is loaded into every
+session, so a false security claim there is read far more widely than one in `docs/`.
+`__tests__/docs/docs-manifest.test.ts` now fails if that wording returns, with the reason
+in the failure message. Mutation-verified by pasting the original sentence back.
+
+## Transparency report — alerting live-fired (2026-07-28)
+
+An alert that has never fired is theater, so one was made to fire.
+
+A throwaway webtest was deployed against `https://bridgingtrust.ai/__alerting-live-fire-does-not-exist`
+(confirmed 404 first, so it fails by construction) with a paired Sev4 alert on the **real**
+action group. It fired in **~40 seconds**:
+
+```
+rule:       alert-btai-firetest-DELETEME
+condition:  Fired
+severity:   Sev4
+fired at:   2026-07-28T13:25:10Z
+```
+
+That proves the chain end to end — webtest → App Insights → metric alert rule → action
+group — using the same action group the production alerts use.
+
+Both throwaway resources were deleted immediately (alert first, since it references the
+webtest), and the resource group was re-checked: exactly the five real resources remain,
+nothing named `DELETEME` survives. The real webtests still report 100% and both production
+alerts remain enabled. The site was unaffected throughout.
+
+**What this does not prove.** Azure fired the alert and handed it to the action group;
+whether the email arrived in the destination inbox is downstream of that and cannot be
+verified from here. The action group's receiver shows `Enabled`, which means the address
+was confirmed. **Terence should check for a Sev4 "TEMPORARY alerting live-fire test" mail
+around 13:25Z on 2026-07-28** — that is the last unverified hop, and if it did not arrive
+the alerting is not yet trustworthy despite everything above.
+
+**Made repeatable rather than one-off.** `infra/alerting-firetest.bicep` is now in the
+repo with the full runbook in its header — deploy, confirm, delete. Alerting should be
+re-verified periodically, and re-deriving this each time invites skipping it.
+`__tests__/infra/alerting.test.ts` asserts the template stays quarantined: never referenced
+by `main.bicep`, resources named `DELETEME`, deletion commands documented, and the probe
+URL pointing at a path that cannot exist.
+
+## Transparency report — anti-abuse tunables externalised (2026-07-28)
+
+CLAUDE.md has said since the start that anti-abuse tunables belong only in the private
+runbook. The contact rate limit was nonetheless sitting in `send-contact-email.ts` as two
+literals in a **public** repository, telling anyone exactly how to stay under it.
+
+Both now come from Static Web App settings. Two details make this more than a move:
+
+**The repo default is deliberately stricter than production.** Any default in a public repo
+publishes _a_ number, so the number published is one that fails **safe**: an environment
+that forgets to configure the limit gets a tighter limit, not a looser one. The code says
+so, to stop a future reader "correcting" the gap.
+
+**Garbage input falls back rather than disabling the limiter.** `""`, `"0"`, `"-1"`,
+`"abc"` and `"5.5"` all resolve to the safe default. A typo in an app setting must not
+silently switch anti-abuse off — and that is asserted, not assumed.
+
+Circuit-breaker values stay in code deliberately. They protect against a failing email
+provider, not a human, and knowing them enables no evasion: an attacker cannot make Resend
+fail on demand.
+
+### Verified before touching production
+
+`az staticwebapp appsettings set` documents itself as "add to or change", but CLI docs have
+been wrong before, and a replace would have wiped the three secrets. It was **tested
+empirically** with a throwaway setting nothing reads: 11 → 12 → 11. Merge confirmed, then
+the real values were set: **11 → 13, with all three secrets still present**, and the
+contract script reports 13 settings matching exactly.
+
+### Two things this exercise caught in its own work
+
+**A scrub that reported "clean" while erroring.** `git grep ... ':!__tests__'` failed with
+`Unimplemented pathspec magic`, and `|| echo "  clean"` printed reassurance. The rerun added
+a control case proving the search finds a known hit before trusting an empty one — the same
+discipline this effort has needed at least four times now.
+
+**The guard test published the very value it protects.** Its pattern-proof sample read
+`const RATE_LIMIT_MAX_REQUESTS = 5;` — the real production number, committed to a public
+repo inside the suite meant to keep it out. Changed to an obviously-arbitrary `999`. Worth
+recording plainly: the fix and the leak were written in the same file, minutes apart.
