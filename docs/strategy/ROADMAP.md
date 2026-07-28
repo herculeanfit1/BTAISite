@@ -619,3 +619,44 @@ re-verified periodically, and re-deriving this each time invites skipping it.
 `__tests__/infra/alerting.test.ts` asserts the template stays quarantined: never referenced
 by `main.bicep`, resources named `DELETEME`, deletion commands documented, and the probe
 URL pointing at a path that cannot exist.
+
+## Transparency report — anti-abuse tunables externalised (2026-07-28)
+
+CLAUDE.md has said since the start that anti-abuse tunables belong only in the private
+runbook. The contact rate limit was nonetheless sitting in `send-contact-email.ts` as two
+literals in a **public** repository, telling anyone exactly how to stay under it.
+
+Both now come from Static Web App settings. Two details make this more than a move:
+
+**The repo default is deliberately stricter than production.** Any default in a public repo
+publishes _a_ number, so the number published is one that fails **safe**: an environment
+that forgets to configure the limit gets a tighter limit, not a looser one. The code says
+so, to stop a future reader "correcting" the gap.
+
+**Garbage input falls back rather than disabling the limiter.** `""`, `"0"`, `"-1"`,
+`"abc"` and `"5.5"` all resolve to the safe default. A typo in an app setting must not
+silently switch anti-abuse off — and that is asserted, not assumed.
+
+Circuit-breaker values stay in code deliberately. They protect against a failing email
+provider, not a human, and knowing them enables no evasion: an attacker cannot make Resend
+fail on demand.
+
+### Verified before touching production
+
+`az staticwebapp appsettings set` documents itself as "add to or change", but CLI docs have
+been wrong before, and a replace would have wiped the three secrets. It was **tested
+empirically** with a throwaway setting nothing reads: 11 → 12 → 11. Merge confirmed, then
+the real values were set: **11 → 13, with all three secrets still present**, and the
+contract script reports 13 settings matching exactly.
+
+### Two things this exercise caught in its own work
+
+**A scrub that reported "clean" while erroring.** `git grep ... ':!__tests__'` failed with
+`Unimplemented pathspec magic`, and `|| echo "  clean"` printed reassurance. The rerun added
+a control case proving the search finds a known hit before trusting an empty one — the same
+discipline this effort has needed at least four times now.
+
+**The guard test published the very value it protects.** Its pattern-proof sample read
+`const RATE_LIMIT_MAX_REQUESTS = 5;` — the real production number, committed to a public
+repo inside the suite meant to keep it out. Changed to an obviously-arbitrary `999`. Worth
+recording plainly: the fix and the leak were written in the same file, minutes apart.

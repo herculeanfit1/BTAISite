@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
 
 // Dual delivery plus the two protective mechanisms in front of it. Both keep
 // module-level state, so every test re-imports the module through
@@ -188,5 +189,65 @@ describe("isEmailConfigured", () => {
     expect(result.success).toBe(false);
     expect(result.circuitBreakerOpen).toBe(true);
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe("anti-abuse tunables are configuration, not code", () => {
+  // These assertions deliberately never name the production values. Encoding
+  // "the default must not be N" would publish N, which is the exact problem
+  // this externalisation exists to fix. Wiring is proven by behaviour instead.
+  const source = readFileSync("src/lib/api/email/send-contact-email.ts", "utf8");
+
+  it("reads both tunables from the environment", () => {
+    expect(source).toContain("process.env.CONTACT_RATE_LIMIT_MAX");
+    expect(source).toContain("process.env.CONTACT_RATE_LIMIT_WINDOW_MS");
+  });
+
+  it("hardcodes neither as a bare constant", () => {
+    expect(source).not.toMatch(/const RATE_LIMIT_MAX_REQUESTS\s*=\s*\d/);
+    expect(source).not.toMatch(/const RATE_LIMIT_WINDOW\s*=\s*\d/);
+  });
+
+  it("proves those patterns match a hardcoded form", () => {
+    // Sample uses an obviously-arbitrary number: putting the real value here
+    // would publish it, which is precisely what this suite exists to prevent.
+    expect(/const RATE_LIMIT_MAX_REQUESTS\s*=\s*\d/.test("const RATE_LIMIT_MAX_REQUESTS = 999;")).toBe(true);
+  });
+
+  it("actually honours the configured limit", async () => {
+    process.env.CONTACT_RATE_LIMIT_MAX = "2";
+    process.env.CONTACT_RATE_LIMIT_WINDOW_MS = "60000";
+    const { sendContactEmail } = await freshModule();
+
+    const ip = "203.0.113.222";
+    const results: boolean[] = [];
+    for (let i = 0; i < 4; i++) {
+      const r = await sendContactEmail({ ...data, ipAddress: ip });
+      results.push(Boolean(r.rateLimited));
+    }
+
+    // Two allowed, then blocked — matching the configured value, whatever it is.
+    expect(results).toEqual([false, false, true, true]);
+
+    delete process.env.CONTACT_RATE_LIMIT_MAX;
+    delete process.env.CONTACT_RATE_LIMIT_WINDOW_MS;
+  });
+
+  it("falls back safely when the value is absent or nonsense", async () => {
+    for (const bad of [undefined, "", "0", "-1", "abc", "5.5"]) {
+      if (bad === undefined) delete process.env.CONTACT_RATE_LIMIT_MAX;
+      else process.env.CONTACT_RATE_LIMIT_MAX = bad;
+
+      const { sendContactEmail } = await freshModule();
+      // A garbage value must not disable the limiter; it must still block
+      // eventually rather than allowing unbounded submissions.
+      let blocked = false;
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        const r = await sendContactEmail({ ...data, ipAddress: "203.0.113.231" });
+        if (r.rateLimited) { blocked = true; break; }
+      }
+      expect(blocked, `value ${JSON.stringify(bad)} disabled the limiter`).toBe(true);
+    }
+    delete process.env.CONTACT_RATE_LIMIT_MAX;
   });
 });

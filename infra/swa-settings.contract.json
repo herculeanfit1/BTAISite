@@ -96,6 +96,24 @@
       "source": "operator",
       "consumedBy": "src/lib/telemetry.ts",
       "note": "NEXT_PUBLIC_, so it ships to the browser and is public by construction. Browser-side telemetry only \u2014 nothing server-side emits to App Insights."
+    },
+    {
+      "name": "CONTACT_RATE_LIMIT_MAX",
+      "classification": "config",
+      "sensitivity": "anti-abuse tunable \u2014 value must not appear in this repo",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts",
+      "optional": true,
+      "note": "Anti-abuse tunable. Lives here and in the private runbook, never in code: a published rate limit tells someone exactly how to stay under it. The code default is deliberately stricter, so an unconfigured environment fails safe."
+    },
+    {
+      "name": "CONTACT_RATE_LIMIT_WINDOW_MS",
+      "classification": "config",
+      "sensitivity": "anti-abuse tunable \u2014 value must not appear in this repo",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts",
+      "optional": true,
+      "note": "Anti-abuse tunable, window in milliseconds. Same reasoning as CONTACT_RATE_LIMIT_MAX."
     }
   ],
   "notRuntimeSettings": {

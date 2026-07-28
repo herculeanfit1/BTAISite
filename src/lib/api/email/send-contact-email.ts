@@ -19,8 +19,32 @@ import { apiLog } from "../log";
 // object and needs no cleanup.
 const circuitBreakerState = { failures: 0, lastFailureTime: 0, isOpen: false };
 
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-const RATE_LIMIT_MAX_REQUESTS = 5;
+/**
+ * Anti-abuse tunables are CONFIGURATION, not code.
+ *
+ * This repository is public, and a rate limit published verbatim tells someone
+ * exactly how to stay under it. The live values are Static Web App settings and
+ * are recorded in the private runbook; they are deliberately not written here.
+ *
+ * The defaults below are STRICTER than production, so an environment that
+ * forgets to configure them fails safe rather than permissive. That is also why
+ * they must not be "corrected" to match production: the gap is the point.
+ */
+function positiveInt(raw: string | undefined, fallback: number): number {
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
+const RATE_LIMIT_WINDOW = positiveInt(
+  process.env.CONTACT_RATE_LIMIT_WINDOW_MS,
+  60 * 60 * 1000,
+);
+const RATE_LIMIT_MAX_REQUESTS = positiveInt(process.env.CONTACT_RATE_LIMIT_MAX, 3);
+
+// Circuit-breaker values stay in code: they protect against a failing email
+// provider, not against a human, and knowing them enables no evasion — an
+// attacker cannot make Resend fail on demand.
 const CIRCUIT_BREAKER_THRESHOLD = 5;
 const CIRCUIT_BREAKER_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 export const CONTACT_RATE_LIMIT_NAMESPACE = "contact-email";
