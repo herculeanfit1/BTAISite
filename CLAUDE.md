@@ -50,7 +50,7 @@ A vitest path filter matching **zero** files is silently ignored as long as anot
 ### Broken/misleading npm scripts (verified — don't trust them)
 
 - `validate:quick` passes `--quick` to `scripts/validate-before-push.sh`, which parses **no** arguments and runs the full gate anyway. There is no quick mode; use `./ci/g_master.sh --skip-tests`.
-- `test:middleware` **does not exist** (only the orphaned `pretest:middleware` hook does). `test:middleware:coverage` and `test:e2e:dark-mode` both point at deleted files and exit 1 — the latter also targets a path outside Playwright's `testDir`.
+- `validate:quick` is the only surviving liar in this list (see above). The former `test:middleware*` entries and their orphaned `pretest` hook are **gone** as of PLAN-005. `test:e2e:dark-mode` **works** — `e2e/dark-mode.spec.ts` exists and `testDir` is `./e2e`, so the old warning about deleted files and a path outside `testDir` was itself stale.
 
 ## Architecture facts
 
