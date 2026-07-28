@@ -55,7 +55,7 @@ export const PrivacyContent = () => {
               </p>
               <h3 className="text-2xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">Information collected automatically</h3>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
-                When you visit our website, we may automatically collect certain technical information including your IP address (for rate limiting and security purposes), browser type, referring URL, and pages visited. We use Google Analytics to understand how visitors use our site. Google Analytics uses cookies and collects anonymized usage data in accordance with Google&#39;s privacy policy.
+                When you visit our website, we may automatically collect certain technical information including your IP address (for rate limiting and security purposes), browser type, referring URL, and pages visited. We use Cloudflare Web Analytics to understand how visitors use our site. It is cookieless and does not fingerprint or track you across sites; it records aggregated page views and performance timings only. Our site is also served through Cloudflare, which processes requests to protect against abuse.
               </p>
               <h3 className="text-2xl font-bold mb-4 leading-tight text-gray-900 dark:text-gray-100">Information from service engagements</h3>
               <p className="text-lg leading-relaxed mb-6 text-gray-600 dark:text-gray-400">
@@ -172,7 +172,7 @@ export const PrivacyContent = () => {
                 We use the following third-party services:
               </p>
               <ul className="list-disc pl-6 mb-8 leading-relaxed text-gray-600 dark:text-gray-400">
-                <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Google Analytics</span>: Website traffic analysis (anonymized data)</li>
+                <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Cloudflare</span>: Content delivery, abuse protection, and cookieless Web Analytics</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Resend</span>: Email delivery for contact form submissions</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">HubSpot</span>: Customer relationship management &mdash; where contact form submissions are stored</li>
                 <li className="mb-4"><span className="font-semibold text-gray-800 dark:text-gray-200">Azure Static Web Apps</span>: Website hosting (Microsoft)</li>
