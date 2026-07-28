@@ -355,6 +355,27 @@ resource contactAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   }
 }
 
+// ── Static Web App settings: deliberately NOT declared here ─────────
+//
+// Microsoft.Web/staticSites/config REPLACES the entire settings collection on
+// every deploy. Declaring the eight non-secret values would DELETE the three
+// secrets, and production fails on the next apply: no RESEND_API_KEY means the
+// contact form answers 503, no CLASSIFY_QUEUE_SAS_URL means every lead enqueue
+// throws. Declaring all eleven with @secure() parameters is worse — any deploy
+// that forgot to pass them blanks the secrets silently.
+//
+// So the settings stay operator-managed, and the contract is made explicit and
+// testable instead of tribal:
+//   infra/swa-settings.contract.json    — the authoritative list, names only
+//   __tests__/infra/swa-settings.test.ts — offline cross-check against the
+//                                          code's process.env usage, both ways
+//   scripts/check-swa-settings.sh        — live diff (read-only, names only)
+//
+// The SWA is Standard tier with a system-assigned identity, so Key Vault
+// references ARE supported: the literal values are historical, not a platform
+// limitation. Migrating them is tracked in docs/strategy/ROADMAP.md and is
+// currently blocked on the vault's network ACLs.
+
 // ── Outputs ─────────────────────────────────────────────────────────
 
 output storageAccountName string = storageAccount.name

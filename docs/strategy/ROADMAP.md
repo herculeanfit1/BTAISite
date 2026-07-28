@@ -462,3 +462,66 @@ plain-text in app settings." That is **false for the live application**: the Sta
 App's 11 settings contain zero Key Vault references and every secret is a literal value.
 Key Vault + managed identity was the _Functions app's_ mechanism and died with it. The
 claim is corrected, and closing the gap is the next open item.
+
+---
+
+## Transparency report — the three follow-up items (2026-07-27)
+
+All three of the items listed after the twelve plans are now closed. Two shipped as built;
+the third shipped as the opposite of what was proposed, for a reason worth reading.
+
+### 1. Alerting deployed ✅
+
+Live in `BTAI-RG1`, alerting `terence@bridgingtrust.ai`. Detail in the addendum above. The
+finding that generalises: **`what-if` cannot read role assignments**, so it reported two
+pre-existing ones as `Create` and the apply failed with `RoleAssignmentExists` — after the
+alert resources had already been created. A clean `what-if` does not guarantee a clean
+apply.
+
+### 2. Phase 5 teardown ✅
+
+`api/` deleted; `func-btai-site-prod` and its plan deleted. Storage (the live queue), App
+Insights, Log Analytics and Key Vault deliberately kept. Detail in the addendum above.
+
+### 3. SWA settings in IaC — **inverted, and this is the important one**
+
+The item was "declare the Static Web App's settings in Bicep." **Doing that would have
+taken production down.**
+
+`Microsoft.Web/staticSites/config` **replaces the entire settings collection** on every
+deploy. Of the eleven live settings, three are secrets that cannot live in a public repo.
+Declaring the eight safe ones deletes the other three, and the next apply breaks the site:
+no `RESEND_API_KEY` means the contact form answers 503, no `CLASSIFY_QUEUE_SAS_URL` means
+every lead enqueue throws. Declaring all eleven behind `@secure()` parameters is worse
+still — any deploy that omits them blanks the secrets silently, with no error.
+
+So the settings stay operator-managed, and what was actually missing — a written,
+enforceable contract — was built instead:
+
+- `infra/swa-settings.contract.json` — the authoritative list. Names, classification, and
+  the file that consumes each. No values.
+- `__tests__/infra/swa-settings.test.ts` — cross-checks it against the code's real
+  `process.env` usage **in both directions**: a variable the code reads that nobody
+  provisions, and a setting provisioned that no code reads. Runs offline. Mutation-verified
+  both ways.
+- `scripts/check-swa-settings.sh` — the live half. Read-only, names only. Run against
+  production: **11 settings, names match exactly.**
+- `infra/main.bicep` records why the resource is absent, so the omission is not "fixed"
+  later by someone who sees a gap.
+
+**A security correction fell out of this.** CLAUDE.md claimed "Prod secrets: Azure Key
+Vault via system-assigned managed identity, referenced with `@Microsoft.KeyVault()` — never
+plain-text in app settings." That is **false for the live application**: zero of the three
+secrets are Key Vault references; all are literal values. Key Vault + managed identity was
+the _Functions app's_ mechanism and died with it. The Static Web App is Standard tier with
+a system-assigned identity, so Key Vault references **are** supported — the literals are
+historical, not a platform limit. Migrating them is now a tracked item, currently blocked
+on the vault's network ACLs, which deny access from outside its allowed ranges.
+
+### The pattern, one more time
+
+Three items; one of them, followed literally, would have broken production. That is now
+**nine** instructions across this effort that were wrong against the code — and as with all
+the others, it surfaced only by checking the mechanism rather than trusting the sentence.
+The check that caught it was reading what `staticSites/config` actually does before
+declaring one.

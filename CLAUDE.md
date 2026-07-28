@@ -158,7 +158,7 @@ Concurrency groups must key on **both** `${{ github.workflow }}` and `${{ github
 
 ## Environment variables
 
-The contract the code actually reads (audited via `grep -rE process\.env` over `app/ src/ lib/ api/` + `next.config.js`). Prod values come from Key Vault; for local email testing put the Resend/EMAIL vars in `.env.local`.
+**`infra/swa-settings.contract.json` is authoritative** for what production actually has, and `__tests__/infra/swa-settings.test.ts` fails if this list and the code's `process.env` usage diverge in either direction. Do not restate the contract here — the list below is orientation. Prod values are **literal Static Web App settings, not Key Vault references** (see Deployment); for local email testing put the Resend/EMAIL vars in `.env.local`.
 
 - **App (frontend/SSR)**: `NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING`, `NEXT_PUBLIC_APP_URL`, `LOG_ENDPOINT`.
 - **Email**: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`, `EMAIL_ADMIN`, `EMAIL_REPLY_TO`, and `EMAIL_TEST_MODE` (preferred) or `RESEND_TEST_MODE` (legacy, still honoured).

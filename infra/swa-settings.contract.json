@@ -1,0 +1,118 @@
+{
+  "$comment": [
+    "Authoritative contract for the Static Web App's runtime application settings.",
+    "",
+    "WHY THIS IS A CONTRACT FILE AND NOT A BICEP RESOURCE:",
+    "Microsoft.Web/staticSites/config@... with name 'appsettings' REPLACES the entire",
+    "settings collection on every deploy. Declaring the eight non-secret values would",
+    "therefore DELETE the three secrets, and production would fail on the next apply:",
+    "no RESEND_API_KEY means the contact form answers 503, and no",
+    "CLASSIFY_QUEUE_SAS_URL means every lead enqueue throws. Declaring all eleven with",
+    "@secure() parameters is worse still — any deploy that forgot to pass them would",
+    "blank the secrets silently. So the settings stay operator-managed, and this file",
+    "makes the contract explicit and testable instead of tribal.",
+    "",
+    "__tests__/infra/swa-settings.test.ts cross-checks this against the code's actual",
+    "process.env usage in both directions: a variable the code reads but nobody",
+    "provisions, and a setting provisioned that no code reads.",
+    "",
+    "scripts/check-swa-settings.sh diffs this against the live resource (needs az).",
+    "",
+    "Secret VALUES never appear here, and never should — this repo is public."
+  ],
+  "resource": "bridgingtrust-website",
+  "resourceGroup": "BTAI-RG1",
+  "verifiedAgainstLive": "2026-07-27",
+  "settings": [
+    {
+      "name": "RESEND_API_KEY",
+      "classification": "secret",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/resend-provider.ts",
+      "note": "Absent in preview environments by design; the handler surfaces 503 rather than throwing."
+    },
+    {
+      "name": "HUBSPOT_TOKEN",
+      "classification": "secret",
+      "source": "operator",
+      "consumedBy": "src/lib/api/hubspot.ts"
+    },
+    {
+      "name": "CLASSIFY_QUEUE_SAS_URL",
+      "classification": "secret",
+      "source": "operator",
+      "consumedBy": "src/lib/api/queue-client.ts",
+      "note": "Queue-scoped and add-only. Least privilege stands in for the managed identity the retired Functions app used."
+    },
+    {
+      "name": "EMAIL_FROM",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts"
+    },
+    {
+      "name": "EMAIL_TO",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts"
+    },
+    {
+      "name": "EMAIL_ADMIN",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts"
+    },
+    {
+      "name": "EMAIL_REPLY_TO",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/send-contact-email.ts"
+    },
+    {
+      "name": "EMAIL_TEST_MODE",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/provider.ts"
+    },
+    {
+      "name": "RESEND_TEST_MODE",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/email/provider.ts",
+      "note": "Legacy alias for EMAIL_TEST_MODE, still honoured."
+    },
+    {
+      "name": "HUBSPOT_PORTAL_ID",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/api/hubspot.ts"
+    },
+    {
+      "name": "NEXT_PUBLIC_APPLICATIONINSIGHTS_CONNECTION_STRING",
+      "classification": "config",
+      "source": "operator",
+      "consumedBy": "src/lib/telemetry.ts",
+      "note": "NEXT_PUBLIC_, so it ships to the browser and is public by construction. Browser-side telemetry only — nothing server-side emits to App Insights."
+    }
+  ],
+  "notRuntimeSettings": {
+    "$comment": "Read by the code but supplied elsewhere, so absent from the SWA on purpose.",
+    "buildTime": [
+      "PREVIEW_BUILD",
+      "NEXT_PUBLIC_SKIP_DYNAMIC_ROUTES",
+      "NEXT_PUBLIC_DIST_DIR",
+      "NODE_ENV",
+      "CI"
+    ],
+    "localDevServerOnly": [
+      "HOST",
+      "PORT",
+      "HTTP_PORT",
+      "HTTPS_PORT",
+      "DOMAIN",
+      "CUSTOM_HOSTNAME",
+      "SSL_CERT_ENV"
+    ],
+    "optionalUnset": ["NEXT_PUBLIC_APP_URL", "LOG_ENDPOINT"]
+  }
+}
