@@ -203,6 +203,7 @@ jobs:
           cache: npm
 
       - name: Lighthouse budgets against the preview
+        id: lighthouse
         if: steps.deploy.outputs.static_web_app_url != ''
         continue-on-error: true
         # Version pinned inline rather than via `npm ci`: this job only needs
@@ -211,7 +212,34 @@ jobs:
         # Keep in step with the @lhci/cli pin in package.json.
         # Chrome is auto-detected -- the runner image ships one, and hard-coding
         # a path breaks silently when the image moves it.
-        run: npx --yes @lhci/cli@0.15.1 autorun --collect.url="${{ steps.deploy.outputs.static_web_app_url }}"
+        #
+        # The chown is required, not defensive. Azure/static-web-apps-deploy runs
+        # in a Docker container as root and leaves root-owned files in the
+        # workspace, so this step -- running as `runner` -- cannot mkdir
+        # .lighthouseci and lhci aborts at its healthcheck with EACCES. On the
+        # first run that produced a GREEN job that had measured nothing, because
+        # continue-on-error swallowed it.
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" || true
+          npx --yes @lhci/cli@0.15.1 autorun --collect.url="${{ steps.deploy.outputs.static_web_app_url }}"
+
+      # continue-on-error above means a budget breach does not fail the deploy,
+      # which is the intent -- but it equally hides a gate that could not run at
+      # all. Those are different problems and must not look the same. This step
+      # distinguishes them: reports present = it measured; absent = it did not,
+      # and that gets an annotation on the PR rather than silence.
+      - name: Report whether the budgets were actually measured
+        if: always() && steps.deploy.outputs.static_web_app_url != ''
+        run: |
+          count=$(ls -1 .lighthouseci/lhr-*.json 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$count" -eq 0 ]; then
+            echo "::warning title=Lighthouse did not run::No Lighthouse reports were produced. The performance budgets were NOT measured for this PR -- this is not a pass. Check the Lighthouse step's log."
+          else
+            echo "Lighthouse produced $count report(s); outcome: ${{ steps.lighthouse.outcome }}"
+            if [ "${{ steps.lighthouse.outcome }}" = "failure" ]; then
+              echo "::warning title=Performance budget breached::Lighthouse ran and at least one budget assertion failed. Advisory for now; see the lighthouse-reports artifact."
+            fi
+          fi
 
       - name: Upload Lighthouse reports
         if: always() && steps.deploy.outputs.static_web_app_url != ''

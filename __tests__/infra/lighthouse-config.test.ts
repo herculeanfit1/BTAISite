@@ -81,6 +81,22 @@ describe("the workflow wiring", () => {
     ).toContain(`@lhci/cli@${declared}`);
   });
 
+  it("makes the workspace writable before running lhci", () => {
+    // Azure/static-web-apps-deploy runs as root in a container and leaves
+    // root-owned files behind, so the next step cannot mkdir .lighthouseci and
+    // lhci aborts at its healthcheck with EACCES. On the first CI run this
+    // produced a GREEN job that had measured nothing, because continue-on-error
+    // swallowed the failure.
+    expect(workflow).toMatch(/chown -R.*GITHUB_WORKSPACE/);
+  });
+
+  it("distinguishes 'budget breached' from 'gate never ran'", () => {
+    // continue-on-error is deliberate for a budget breach and unacceptable for
+    // a gate that could not start. Those must not look identical on the PR.
+    expect(workflow).toContain("Lighthouse did not run");
+    expect(workflow).toMatch(/lhr-\*\.json/);
+  });
+
   it("proves those checks could fail (guard against a vacuous pass)", () => {
     expect(/lhci.*autorun/.test("run: npx lhci autorun --collect.url=x")).toBe(true);
     expect(

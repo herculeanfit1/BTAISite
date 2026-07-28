@@ -1099,3 +1099,34 @@ installs it via `npx` rather than `npm ci`, so the two can otherwise diverge sil
   reasons outside this repo. When the Cloudflare item is resolved, move it.
 - **No performance optimisation work.** The application already meets its published budget;
   the deficit is at the edge.
+
+### Addendum — the new gate's first CI run measured nothing (2026-07-28)
+
+The Lighthouse step went green on its first run and had not executed. From the log:
+
+```
+❌  .lighthouseci/ directory not writable
+    ERROR: EACCES: permission denied, mkdir '/home/runner/work/BTAISite/BTAISite/.lighthouseci'
+Healthcheck failed!
+##[error]Process completed with exit code 1.
+```
+
+`Azure/static-web-apps-deploy` runs in a Docker container as **root** and leaves root-owned
+files in the workspace; the next step runs as `runner` and cannot create a directory there.
+`continue-on-error: true` — added deliberately so a budget breach would not fail a deploy —
+turned that into a passing check.
+
+Caught by reading the job log rather than trusting the green tick. **This is the same failure
+this entire effort has been about, produced by the gate built to prevent it, within minutes
+of adding it.** Worth stating plainly: knowing the pattern is not protection from it. Only
+checking is.
+
+Two fixes:
+
+1. `sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"` before invoking lhci.
+2. A step that distinguishes **"a budget was breached"** from **"the gate never ran"**. Both
+   were previously indistinguishable green. It counts `.lighthouseci/lhr-*.json` and emits a
+   PR annotation — `Lighthouse did not run … this is not a pass` — when there are none.
+
+`__tests__/infra/lighthouse-config.test.ts` now fails if the chown is removed or if the
+"did it actually measure" reporting disappears.
