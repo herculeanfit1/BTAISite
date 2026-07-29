@@ -1877,3 +1877,61 @@ Run `scripts/measure-cloudflare-cost.sh` before and after. **The apex is not det
 the bot-detection long task varies, and a single run has swung between 64 and 86 performance on
 unchanged code. The script reports min/max alongside the median for exactly that reason: if a
 before/after difference falls inside those ranges, it is noise. Use `RUNS=3` or more.
+
+---
+
+## The newly-required e2e gate flaked immediately, and the promotion evidence was hollow (2026-07-29)
+
+`Quality Gate / e2e` was promoted to required on the strength of **12 of 12 green runs**. It
+failed on run 13 — a PR whose only changes were documentation and a shell script, so the site
+code was byte-identical to `main`.
+
+**The 12 green runs were not evidence.** They were passing with a wait that did nothing, so
+they were twelve lucky samples rather than twelve demonstrations of determinism. Counting green
+runs measures nothing if the mechanism under test is inert — which is the same mistake as
+counting workflow successes when the job is skipped, made one level deeper.
+
+### What was actually wrong
+
+`settleAndFreeze()` waited for every element with an inline `opacity` to reach 0 or 1. Probing
+a real production build showed why that can never succeed:
+
+```
+{"atMs":2500,"inlineOpacityEls":14,"animations":8,"running":7,
+ "prop":"backgroundPositionX,backgroundPositionY","cls":"absolute inset-0 hero-aurora"}
+```
+
+At 2.5 s there were still **7 running animations** — an infinite `hero-aurora` background pan
+and `mix-blend-screen` floating blobs — and **14 elements held a permanently fractional inline
+opacity**. The loop therefore always ran to its timeout and proceeded anyway. axe then sampled
+whatever frame it landed on, and the hero CTA's contrast came out as a different blend each
+time: 1.08, 1.17, 1.27, 1.53.
+
+Two earlier attempts at this function both failed the same way, for reasons that each looked
+sufficient in isolation:
+
+1. `emulateMedia({ reducedMotion })` — Framer Motion keeps opacity fades by design.
+2. A `transition: none` stylesheet — cannot stop script-driven animation.
+3. Waiting for inline opacity to settle — **some never settle**.
+
+### The fix: freeze, do not wait
+
+`document.getAnimations()` covers CSS animations, CSS transitions **and** the Web Animations
+API that Framer Motion uses — all three at once, which no CSS-only or inline-style-only
+approach can. Each animation's `currentTime` is pinned to 0 before pausing, so the frozen frame
+is identical on every run; pausing alone would freeze at an arbitrary point and stay flaky.
+
+**Verified 9 consecutive clean runs** on the exact configuration that failed (CI path,
+production build, chromium): 6× the a11y spec alone, 2× the full 32-test CI suite, plus
+160/160 across all five browsers on the dev path.
+
+### On the promotion
+
+Kept required rather than reverted, because the root cause is now understood and fixed rather
+than retried until green — and because the alternative would restore the same hollow evidence
+this entry is about. The written rule ("a flaky new gate gets switched off") was aimed at
+nursing a gate that cannot be made deterministic; this one could.
+
+The lesson to carry: **before counting green runs as evidence, confirm the thing you are
+counting actually exercises the mechanism.** A gate whose wait is a no-op passes exactly as
+often as one that works, until it doesn't.
