@@ -72,7 +72,7 @@ jobs:
 
       - name: Persist SARIF as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sarif-fs
           path: trivy-fs.sarif
@@ -164,7 +164,7 @@ jobs:
 
       - name: Persist SARIF as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sarif-config
           path: trivy-config.sarif
@@ -257,7 +257,7 @@ jobs:
 
       - name: Persist SARIF as artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sarif-secrets
           path: trivy-secrets.sarif
