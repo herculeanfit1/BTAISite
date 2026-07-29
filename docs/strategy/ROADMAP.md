@@ -60,7 +60,9 @@ they are no longer open.
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
 | 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ⬜ Open — deliberately **not** suppressed; take one at a time with CI as the check                                                      |
-| 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ⬜ Open — removing `next-intl` resolves both; the other 67 are dev tooling that never ships                                             |
+| Dependabot PRs failed `deploy-pr-to-azure` — Dependabot runs read a separate secret store with no SWA token                      | ✅ **Fixed 2026-07-28** — job now skips `dependabot[bot]`; the deploy could never have succeeded                                        |
+| `dependabot-security.yml` ran for the first time ever and failed — gated on an actor that had never existed                      | ✅ **Fixed 2026-07-28** — it was correct; it failed on the real `next-intl` vulnerability, now removed                                  |
+| 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ✅ **Fixed 2026-07-28** — `next-intl` removed; `npm audit --omit=dev` now reports **0 vulnerabilities**                                 |
 | `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
 | Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
 
@@ -1415,3 +1417,38 @@ the Node 20 action runtime (the deploy logs already warn about it), so those are
 
 Also corrected: a comment in the config claimed only the root `dockerfile` was matched.
 The first real run proposed all three Dockerfiles together, so that was wrong.
+
+### Addendum — what Dependabot's first run exposed (2026-07-28)
+
+Turning Dependabot on did more than open 6 PRs. It **executed two mechanisms that had never
+run**, and both were broken:
+
+**1. `dependabot-security.yml` had never fired.** It is gated on
+`github.actor == 'dependabot[bot]'` — an actor that could not exist while the config failed
+to parse. Its first ever run failed, on every Dependabot PR. It was **not** a decoy: it was
+working correctly and failing on a genuine finding — `npm run security:audit`
+(`npm audit --production`) exited 1 because of the `next-intl` open redirect. The workflow
+was right and nobody had ever heard it speak.
+
+**2. `deploy-pr-to-azure` failed on every Dependabot PR**, in ~40s, with
+`deployment_token was not provided`. The log line that explains it is `Secret source:
+Dependabot` — Dependabot-triggered runs read a **separate secret store** that does not
+contain `AZURE_STATIC_WEB_APPS_API_TOKEN_*`. The job could never have succeeded there. It now
+skips `dependabot[bot]`, since nothing on a dependency bump is worth previewing anyway.
+
+**`next-intl` removed.** It was the repository's only production-scope vulnerability, and
+CLAUDE.md had already recorded it as *installed but never wired up*: zero imports across
+`app/`, `src/` and `lib/`, no config reference. `npm audit --omit=dev` now reports
+**0 vulnerabilities**, down from 1 moderate, and `npm run security:audit` exits 0 instead of
+1 — which unblocks every Dependabot PR at once.
+
+`messages/en.json` and `messages/es.json` are **kept deliberately**. They are orphaned now,
+but ADR-0003 defers i18n rather than abandoning it, and deleting translation catalogues is
+not the same kind of change as dropping an unused package. A dead `vi.mock("next-intl")` in
+`NavBar.test.tsx` was removed with it — NavBar never imported next-intl, so that mock had
+never once been resolved, and it described translation keys no component ever requested.
+
+**The pattern worth naming**: three separate mechanisms in this repo were configured, looked
+authoritative, and had never executed — the Playwright suite, `dependabot-security.yml`, and
+Dependabot itself. In each case the first execution failed immediately. Configuration is not
+evidence of operation, and neither is the absence of complaints.
