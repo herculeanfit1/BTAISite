@@ -60,7 +60,7 @@ they are no longer open.
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
 | 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ✅ **Done 2026-07-28** — all four landed one at a time, plus the hadolint minor (#91); all four workflows green on `main`                |
-| Two actions still on the deprecated Node 20 runtime: `setup-node@v4` and `download-artifact@v4`                                   | ⬜ Open — Dependabot did not propose them; both sit in workflows that had never executed                                                |
+| Two actions still on the deprecated Node 20 runtime: `setup-node@v4` and `download-artifact@v4`                                   | ✅ **Done 2026-07-29** — bumped to v6/v7; a guard now fails if any action is pinned at two versions across workflows                    |
 | Dependabot PRs failed `deploy-pr-to-azure` — Dependabot runs read a separate secret store with no SWA token                      | ✅ **Fixed 2026-07-28** — job now skips `dependabot[bot]`; the deploy could never have succeeded                                        |
 | `dependabot-security.yml` ran for the first time ever and failed — gated on an actor that had never existed                      | ✅ **Fixed 2026-07-28** — it was correct; it failed on the real `next-intl` vulnerability, now removed                                  |
 | 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ✅ **Fixed 2026-07-28** — `next-intl` removed; `npm audit --omit=dev` now reports **0 vulnerabilities**                                 |
@@ -1676,3 +1676,100 @@ in `quality-gate.yml` says so at the point of danger.
 - **`deploy-pr-to-azure`** — it cannot run on Dependabot PRs at all (separate secret store),
   so requiring it would block every dependency bump.
 - **The Lighthouse step** — advisory while it earns the same track record this job just did.
+
+---
+
+## Toolchain version alignment (2026-07-29)
+
+**Outcome**: one Node version (`20.20.2`) across all seven declaration sites, every shared
+action on a single version, and a guard that fails on drift in either.
+
+### The Node version had silently split, and nothing could have told you
+
+Dependabot bumps Dockerfiles. It **cannot** touch `.nvmrc`. So after #98:
+
+| Site | Was |
+| --- | --- |
+| `.nvmrc`, `package.json` `engines` | **20.19.1** |
+| `dockerfile` | 20.20.2-alpine |
+| `Dockerfile.static`, `Dockerfile.test` | 20.20-slim |
+| `cost-optimized-ci.yml` `NODE_VERSION` ×2 | 20.19.1 |
+| `dependabot-security.yml` `node-version` | 20.19.1 |
+
+Two separate problems. The obvious one: test containers ran a different Node than CI. The
+quieter one: the Dockerfiles did not agree with each other on **precision** —
+`20.20.2-alpine` pinned a patch while `20.20-slim` floated to whatever the latest 20.20.x
+happened to be that day, so the build was not reproducible and a Dockerfile could diverge
+from `.nvmrc` with no file changing at all.
+
+**Nothing failed**, because `.npmrc` sets `engine-strict=false` — the mismatch only
+downgraded `npm ci` to a warning nobody reads. That is the whole problem: a repo whose test
+containers quietly ran a different Node than its CI, with no signal.
+
+All seven now say `20.20.0` — see the correction below; `20.20.2` was tried first and Azure's
+Oryx builder rejected it. `dependabot-security.yml`'s literal was replaced with `node-version-file: .nvmrc`
+rather than updated, removing one declaration site entirely.
+
+**Validated on the version being shipped, not the one already installed**: `nvm install
+20.20.0`, then `npm ci` (clean, no engine warning), type-check, 339 unit tests, lint, build,
+and **160 Playwright tests across 5 browsers** — all green on 20.20.0.
+
+### The stragglers
+
+`actions/setup-node@v4` → **v6** (matching the four others) and `actions/download-artifact@v4`
+→ **v7** (matching `upload-artifact@v7`). Both sat in workflows that had never executed until
+this week, which is why the drift was invisible.
+
+The download bump needed care rather than confidence: it feeds **`Gate on HIGH / CRITICAL`**,
+a *required* check. v3 and v4+ use different artifact backends and do not interoperate; v4
+through v7 all share the post-v4 backend, so v7-upload/v4-download was working — but the
+split was one Dependabot bump away from becoming a v3/v4 problem on a required gate.
+
+### The guard
+
+`__tests__/infra/toolchain-versions.test.ts` **discovers** declarations rather than listing
+them, so a new hardcoded version anywhere is caught instead of silently becoming an eighth
+source of truth. It fails when the seven disagree, when any of them floats instead of pinning
+an exact patch, when a shared action is pinned at two different versions across workflows, or
+when upload/download-artifact fall onto different generations.
+
+Mutation-confirmed on all three failure shapes: reverting `.nvmrc` to 20.19.1 → red; floating
+a Dockerfile tag back to `20.20-slim` → 2 red; splitting the artifact generation → red.
+
+CLAUDE.md **no longer restates the number**. It says read `.nvmrc` — because the line that
+said `20.19.1` was itself one of the stale copies.
+
+### Correction — the Node version is not a free choice (2026-07-29)
+
+The alignment above first landed on **20.20.2**: the latest Node 20 LTS, a real release,
+with all three Docker tags verified to exist. Every local check passed — `npm ci`,
+type-check, 338 unit tests, lint, build, and 160 Playwright tests across five browsers.
+
+Then the preview deploy failed in 33 seconds:
+
+```
+Error: Platform 'nodejs' version '20.20.2' is unsupported.
+Oryx has found build steps, but identified unsupported platform versions. Failing build.
+```
+
+**Azure's Oryx builder ships a fixed allow-list**, and 20.20.2 is not on it. The newest Node
+20.x Oryx carries is **20.20.0**. Everything moved to that; all checks re-run and green.
+
+Two things worth keeping from this:
+
+**The premise "align all seven to the newest version" was wrong.** Six of those sites are
+this repo's choice; the seventh — `NODE_VERSION` for the SWA build — is constrained by a
+platform allow-list nobody here controls. "Latest LTS" and "valid Docker tag" and "installs
+under nvm" were all true and none of them implied deployable. **Verifying a version exists is
+not verifying a version is accepted.**
+
+**No amount of local validation would have caught it.** The failure lives only in Oryx, which
+runs nowhere but the deploy. It surfaced on a preview rather than production purely because
+previews run first — which is an argument for previews existing, not for the check having
+been adequate.
+
+The guard now asserts `NODE_VERSION` is in Oryx's supported set, with the list snapshotted
+from the failing build and labelled as a snapshot rather than an authority: when Oryx adds
+versions the list goes stale in the *safe* direction, rejecting something that would now work.
+Widen it from a real build log, never by guessing. Mutation-confirmed — setting `NODE_VERSION`
+back to 20.20.2 turns it red.

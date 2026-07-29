@@ -12,7 +12,29 @@ Bridging Trust AI marketing/consulting site — Next.js 15.5 (App Router) + Reac
 
 ## Commands
 
-Node **20.19.1** is required and pinned in `.nvmrc` / `engines` — 18.x is incompatible and 23.x breaks the build. Start every session with `nvm use 20`.
+**Node: read `.nvmrc`** — deliberately not restated here, because this line said `20.19.1`
+while all three Dockerfiles had moved to 20.20 and nothing complained (`.npmrc` sets
+`engine-strict=false`, so the mismatch was only a warning). Run `nvm use` (no argument — it
+reads `.nvmrc`). 18.x is incompatible and 23.x breaks the build; stay on the 20 LTS line.
+
+The version is declared in **seven** places — `.nvmrc`, `package.json` `engines`, three
+Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`. Everything else uses
+`node-version-file:`, which cannot drift. `__tests__/infra/toolchain-versions.test.ts` fails
+if any of the seven disagree, if one floats instead of pinning an exact patch, or if a new
+hardcoded declaration appears. Change the version in all seven, or add a `node-version-file:`
+reference instead of an eighth literal.
+
+**The version is not a free choice — Azure's Oryx builder ships a fixed allow-list.**
+`20.20.2` is the latest Node 20 LTS and a perfectly real release, and Oryx rejects it:
+
+```
+Error: Platform 'nodejs' version '20.20.2' is unsupported.
+Oryx has found build steps, but identified unsupported platform versions. Failing build.
+```
+
+The build dies *before it starts*, in ~30s. `20.20.0` is the newest 20.x Oryx carries. Before
+bumping Node, check the version against Oryx's list — the guard test holds a snapshot taken
+from a real failing build, and the authoritative list is whatever the next failure prints.
 
 ```bash
 npm install
