@@ -15,7 +15,7 @@ jobs:
     name: Standards Compliance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # ── Detect repo type ───────────────────────────────
       - name: Detect repo type
@@ -199,7 +199,7 @@ jobs:
 
       - name: Python — setup
         if: steps.detect.outputs.type == 'python'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -237,7 +237,7 @@ jobs:
       # ── Dockerfile checks ────────────────────────────────
       - name: Lint Dockerfiles (hadolint)
         if: hashFiles('**/Dockerfile') != ''
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           recursive: true
           failure-threshold: error

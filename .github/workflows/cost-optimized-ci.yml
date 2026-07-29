@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: false
           lfs: false
@@ -152,16 +152,24 @@ jobs:
     # on an otherwise valid contribution. The guard also keeps the job from
     # becoming a real token-exposure path if the trigger is ever changed to
     # `pull_request_target`, which does receive secrets.
+    # Dependabot is excluded because this job CANNOT succeed for it, not as a
+    # policy choice. Dependabot-triggered runs read from a separate secret store
+    # (the log says `Secret source: Dependabot`), which does not contain
+    # AZURE_STATIC_WEB_APPS_API_TOKEN_*, so the deploy fails with
+    # `deployment_token was not provided` after ~40s. Every Dependabot PR wore a
+    # red X for a preview that was never possible. Nothing here is worth
+    # previewing on a dependency bump anyway.
     if: >-
       github.event_name == 'pull_request'
       && github.event.action != 'closed'
       && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: false
           lfs: false
@@ -243,7 +251,7 @@ jobs:
 
       - name: Upload Lighthouse reports
         if: always() && steps.deploy.outputs.static_web_app_url != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lighthouse-reports
           path: .lighthouseci/
@@ -253,12 +261,103 @@ jobs:
   # =============================================================================
   # CLEANUP JOB (for PRs)
   # =============================================================================
+  # This job used to RACE the deploy it was cleaning up after, and lost.
+  #
+  # Observed on PR #75: cleanup ran 18:34:01-18:34:25 and reported success,
+  # while the deploy from the preceding push ran until 18:35:02 and CREATED the
+  # staging environment at 18:34:37 -- twelve seconds after its own cleanup had
+  # finished. The environment was orphaned and the cleanup was green. Ten
+  # accumulated that way, the Static Web App hit its staging-environment cap,
+  # and preview deploys then failed on unrelated PRs with
+  # "already has the maximum number of staging environments".
+  #
+  # The fix is ordering, not retrying: wait for every in-flight run of this
+  # workflow on this PR's branch to finish, THEN close. Whatever a deploy
+  # created, cleanup now removes afterwards rather than before.
+  #
+  # No new run can start behind us: `deploy-pr-to-azure` is gated on
+  # `github.event.action != 'closed'`, and a closed PR cannot emit
+  # `synchronize`.
   cleanup-pr:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Was 5. Now covers a full in-flight deploy (~5 min) plus the close itself.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read # list workflow runs to detect in-flight deploys
 
     steps:
+      - name: Wait for in-flight deploys on this PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -uo pipefail
+
+          # GITHUB_WORKFLOW_REF is
+          #   owner/repo/.github/workflows/FILE.yml@refs/pull/N/merge
+          #
+          # Strip the @ref FIRST, then take the basename. The other order looks
+          # equivalent and is not: `${VAR##*/}` on the full string returns
+          # "merge", from the tail of refs/pull/N/merge. That 404s, and the
+          # first version of this step shipped with exactly that bug.
+          wf="${GITHUB_WORKFLOW_REF%%@*}"
+          wf="${wf##*/}"
+          api="repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100"
+          echo "workflow: $wf   branch: $HEAD_REF"
+
+          # Returns a bare integer, or empty when the query could not answer.
+          #
+          # The empty case must be distinguishable from zero. `gh api` prints
+          # its error BODY to stdout on a 404 while also exiting non-zero, so a
+          # naive `|| echo 0` yields `{"message":"Not Found"...}0` -- which is
+          # not a number, makes `[ "$n" -eq 0 ]` error rather than match, and
+          # spins the loop for its full duration instead of failing. That is
+          # what the first version did.
+          query() {
+            local out
+            if out="$(gh api "$api" --jq "$1" 2>/dev/null)"; then
+              case "$out" in
+                ''|*[!0-9]*) printf '' ;;
+                *)           printf '%s' "$out" ;;
+              esac
+            else
+              printf ''
+            fi
+          }
+
+          # Prove the query can see before trusting any zero it reports. A
+          # filter that matches nothing answers "0 in flight", which is
+          # indistinguishable from an idle branch and would silently restore
+          # the race this step exists to prevent.
+          total="$(query '.workflow_runs | length')"
+          if [ -z "$total" ]; then
+            echo "::error::Cannot list runs for workflow '$wf' on branch '$HEAD_REF'. Closing WITHOUT waiting -- an orphaned staging environment is possible. Check GITHUB_WORKFLOW_REF parsing and the actions:read permission."
+            exit 0
+          fi
+          echo "runs visible for this branch (any status): $total"
+
+          waited=0
+          while [ "$waited" -lt 900 ]; do
+            n="$(query "[.workflow_runs[]
+                         | select(.id != $GITHUB_RUN_ID)
+                         | select(.status == \"in_progress\" or .status == \"queued\")]
+                        | length")"
+            if [ -z "$n" ]; then
+              echo "::error::Run query stopped answering mid-wait; closing without further waiting."
+              exit 0
+            fi
+            if [ "$n" -eq 0 ]; then
+              echo "No in-flight runs after ${waited}s; safe to close."
+              exit 0
+            fi
+            echo "  ${n} run(s) still in flight (${waited}s elapsed) -- waiting"
+            sleep 15
+            waited=$((waited + 15))
+          done
+          echo "::warning::Still in flight after ${waited}s; closing anyway. If an environment is orphaned, this is why."
+
       - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
         with:

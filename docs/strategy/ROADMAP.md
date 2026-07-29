@@ -51,7 +51,7 @@ they are no longer open.
 | Verify whether the platform appends the client IP to `x-forwarded-for`                                                          | ⬜ Open — needs a header-echo endpoint                                                                                                 |
 | **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ✅ **Done 2026-07-28 (PLAN-013 Part 1)** — 130 tests green across 5 browsers; advisory `Quality Gate / e2e` job added                   |
 | Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
-| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
+| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ✅ **Fixed 2026-07-29** — `cleanup-pr` now waits for in-flight runs before closing; ordering, not retrying                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
 | **Cloudflare Bot Management costs ~15 performance points** — `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval, 396 ms long task | ⬜ Open — **CSP cannot fix this**; served same-origin, so only a Cloudflare dashboard setting can disable it                        |
@@ -59,8 +59,11 @@ they are no longer open.
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
-| 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ⬜ Open — deliberately **not** suppressed; take one at a time with CI as the check                                                      |
-| 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ⬜ Open — removing `next-intl` resolves both; the other 67 are dev tooling that never ships                                             |
+| 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ✅ **Done 2026-07-28** — all four landed one at a time, plus the hadolint minor (#91); all four workflows green on `main`                |
+| Two actions still on the deprecated Node 20 runtime: `setup-node@v4` and `download-artifact@v4`                                   | ⬜ Open — Dependabot did not propose them; both sit in workflows that had never executed                                                |
+| Dependabot PRs failed `deploy-pr-to-azure` — Dependabot runs read a separate secret store with no SWA token                      | ✅ **Fixed 2026-07-28** — job now skips `dependabot[bot]`; the deploy could never have succeeded                                        |
+| `dependabot-security.yml` ran for the first time ever and failed — gated on an actor that had never existed                      | ✅ **Fixed 2026-07-28** — it was correct; it failed on the real `next-intl` vulnerability, now removed                                  |
+| 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ✅ **Fixed 2026-07-28** — `next-intl` removed; `npm audit --omit=dev` now reports **0 vulnerabilities**                                 |
 | `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
 | Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
 
@@ -1415,3 +1418,216 @@ the Node 20 action runtime (the deploy logs already warn about it), so those are
 
 Also corrected: a comment in the config claimed only the root `dockerfile` was matched.
 The first real run proposed all three Dockerfiles together, so that was wrong.
+
+### Addendum — what Dependabot's first run exposed (2026-07-28)
+
+Turning Dependabot on did more than open 6 PRs. It **executed two mechanisms that had never
+run**, and both were broken:
+
+**1. `dependabot-security.yml` had never fired.** It is gated on
+`github.actor == 'dependabot[bot]'` — an actor that could not exist while the config failed
+to parse. Its first ever run failed, on every Dependabot PR. It was **not** a decoy: it was
+working correctly and failing on a genuine finding — `npm run security:audit`
+(`npm audit --production`) exited 1 because of the `next-intl` open redirect. The workflow
+was right and nobody had ever heard it speak.
+
+**2. `deploy-pr-to-azure` failed on every Dependabot PR**, in ~40s, with
+`deployment_token was not provided`. The log line that explains it is `Secret source:
+Dependabot` — Dependabot-triggered runs read a **separate secret store** that does not
+contain `AZURE_STATIC_WEB_APPS_API_TOKEN_*`. The job could never have succeeded there. It now
+skips `dependabot[bot]`, since nothing on a dependency bump is worth previewing anyway.
+
+**`next-intl` removed.** It was the repository's only production-scope vulnerability, and
+CLAUDE.md had already recorded it as *installed but never wired up*: zero imports across
+`app/`, `src/` and `lib/`, no config reference. `npm audit --omit=dev` now reports
+**0 vulnerabilities**, down from 1 moderate, and `npm run security:audit` exits 0 instead of
+1 — which unblocks every Dependabot PR at once.
+
+`messages/en.json` and `messages/es.json` are **kept deliberately**. They are orphaned now,
+but ADR-0003 defers i18n rather than abandoning it, and deleting translation catalogues is
+not the same kind of change as dropping an unused package. A dead `vi.mock("next-intl")` in
+`NavBar.test.tsx` was removed with it — NavBar never imported next-intl, so that mock had
+never once been resolved, and it described translation keys no component ever requested.
+
+**The pattern worth naming**: three separate mechanisms in this repo were configured, looked
+authoritative, and had never executed — the Playwright suite, `dependabot-security.yml`, and
+Dependabot itself. In each case the first execution failed immediately. Configuration is not
+evidence of operation, and neither is the absence of complaints.
+
+---
+
+## Transparency report — the preview-cleanup race (2026-07-29)
+
+**Outcome**: `cleanup-pr` can no longer orphan a staging environment. It waits for every
+in-flight run of its own workflow on the PR's branch, then closes.
+
+### The bug was an ordering bug, so the fix is ordering
+
+Reconstructed from PR #75's timestamps:
+
+```
+18:32:13  deploy (from the preceding push) starts
+18:33:52  PR merged -> `closed` event fires
+18:34:01  cleanup-pr starts
+18:34:25  cleanup-pr reports SUCCESS
+18:34:37  the deploy CREATES the staging environment   <-- 12s after its own cleanup
+18:35:02  deploy finishes
+```
+
+The cleanup ran before the thing it was cleaning up existed, exited green, and orphaned it.
+Ten accumulated, the Static Web App hit its staging-environment cap, and preview deploys
+started failing on unrelated PRs — usually docs-only ones — with *"already has the maximum
+number of staging environments."* **The symptom appeared nowhere near the cause**, which is
+why it went unexplained long enough for ten to pile up.
+
+Retrying would not have fixed it; there was nothing to retry *yet*. The job now blocks until
+no run of this workflow on that branch is `in_progress` or `queued`, and only then closes.
+Whatever a deploy created, cleanup removes afterwards.
+
+**Nothing can start behind it**: `deploy-pr-to-azure` is gated on
+`github.event.action != 'closed'`, and a closed PR cannot emit `synchronize`.
+
+### The wait had to be able to prove it can see
+
+A run-listing query that silently matches nothing returns "0 in flight" — indistinguishable
+from a genuinely idle branch, and it would have restored the exact race while looking like a
+guard. So the step first counts runs of **any** status for that branch and emits a
+`::warning::` if that is also zero, and it **derives the workflow filename** from
+`GITHUB_WORKFLOW_REF` rather than hard-coding it, because a rename would otherwise turn the
+query into a permanent no-op that still reported success.
+
+Both properties were verified against the live API before shipping: a real branch
+(`docs/actions-majors-landed`) returns 1 run; a fabricated branch name returns 0. The filter
+discriminates, so a zero means something.
+
+`actions: read` was added to the job. Without it the API returns nothing and the wait becomes
+a no-op — which is why one of the guard tests asserts the permission rather than only the
+step.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **330 passed** |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| Live API query | real branch → 1 run; fabricated branch → 0 |
+| Guards proven able to fail | wait step removed → **4 red**; `actions: read` dropped → 1 red; timeout back to 5 → 1 red |
+
+### What this does not do
+
+It does not **verify** the environment is gone afterwards — that needs Azure credentials the
+workflow does not have. If the wait ever times out (15 min) it closes anyway and logs
+`::warning::`, naming itself as the cause of any orphan. Detection today is still the cap
+being reached; the residual risk is much smaller but not zero.
+
+### Correction — the race fix shipped with two bugs of its own (2026-07-29)
+
+The transparency report above says the cleanup race is fixed. **The mechanism was right and
+the implementation was broken**, and it broke on the very first merge that exercised it —
+its own.
+
+**Bug 1: the workflow filename derivation was backwards.**
+
+```bash
+wf="${GITHUB_WORKFLOW_REF##*/}"   # WRONG
+wf="${wf%%@*}"
+```
+
+`GITHUB_WORKFLOW_REF` is `owner/repo/.github/workflows/FILE.yml@refs/pull/N/merge`. Taking
+the basename *first* returns **`merge`** — from the tail of the ref, not the workflow file.
+The API call then 404s. Correct order is strip the `@ref`, then take the basename.
+
+**Bug 2: a 404 did not fail, it hung.** `gh api --jq` prints its **error body to stdout**
+while also exiting non-zero, so `... 2>/dev/null || echo "0"` produced
+`{"message":"Not Found",...}0`. That is not a number, so `[ "$n" -eq 0 ]` *errored* rather
+than matching, the condition was never true, and the loop span its full 900-second budget
+before falling through to the close.
+
+Net effect on PR #101's own merge: cleanup took ~15 minutes instead of ~20 seconds, and only
+cleaned up because the timeout path fails open. Not an orphan — but only by luck of the
+fallback, not by design.
+
+**Why the guard test did not catch it.** It asserted that `GITHUB_WORKFLOW_REF` was
+*mentioned* in the step. It was. The derivation was still wrong.
+
+> **Presence is not behaviour.** A test that greps for the name of the right approach passes
+> against a broken use of it.
+
+The test now **executes** the derivation — it extracts the `wf=` lines from the workflow and
+runs them under `bash` against a realistic `GITHUB_WORKFLOW_REF`, asserting the result is
+`cost-optimized-ci.yml`. Mutation-confirmed: restoring the shipped expansion order turns it
+red.
+
+The query helper now returns a bare integer or **empty**, and empty is treated as a loud
+`::error::` and an immediate close, rather than being conflated with zero. A query that
+cannot answer and a branch with nothing in flight are different states and must not look the
+same — the same distinction the Lighthouse gate needed.
+
+**And a third instance of the comment-matching trap.** The new test asserting the absence of
+`|| echo 0` initially failed against the *comment* explaining why `|| echo 0` is wrong. Guards
+in this repo have now been fooled by their own explanatory prose three times (`Http5xx` in
+`alerting.test.ts`, the `staticSites/config` declaration in `swa-settings.test.ts`, and this).
+Strip comments before asserting a pattern is absent.
+### Addendum — the actions majors landed, and the docker pin proved itself (2026-07-28)
+
+All five of Dependabot's first-run PRs are merged, one at a time with CI as the check:
+
+| PR | Bump | Notes |
+| --- | --- | --- |
+| #91 | `hadolint-action` 3.1.0 → 3.3.0 | grouped minor; Standards Check green |
+| #92 | `setup-python` 6 → 7 | single use in standards-check.yml |
+| #93 | `upload-artifact` 4 → 7 | verified it still uploads — Lighthouse wrote 3 reports through v7 |
+| #94 | `github-script` 7 → 9 | only API used is `github.rest.issues.createComment`, stable across both |
+| #95 | `checkout` 4 → 7 | **also normalised a v4/v6 split** — all 9 uses are now v7 |
+
+All four workflows green on `main` afterwards, deploy successful, production healthy.
+
+**The docker pin proved itself the same day it shipped.** #96 (`node 20.19-slim → 26.5-slim`,
+four majors past known-broken) is gone, and Dependabot re-proposed **#98:
+`20.19-slim → 20.20-slim`** — a minor inside the pinned major. The `ignore` rule did exactly
+what it was written to do rather than merely appearing to.
+
+**Two stragglers remain on the deprecated Node 20 action runtime**, and Dependabot did *not*
+propose them: `actions/setup-node@v4` in `dependabot-security.yml` and
+`actions/download-artifact@v4` in `security-scan.yml`. Both sit in workflows that had never
+executed until this week, which is likely why nobody noticed the versions drift. Four other
+`setup-node` uses are already at v6.
+
+**A detail worth knowing about the Dependabot deploy skip.** The guard is
+`github.actor != 'dependabot[bot]'`, keyed on who *triggered the run* rather than who opened
+the PR. That is deliberate and it is the correct discriminator: the failure is that
+Dependabot-triggered runs read a secret store without the SWA token. When a human runs
+`gh pr update-branch` on a Dependabot PR, the actor becomes that human, secrets resolve
+normally, and the deploy runs and passes — which is exactly what happened on all five of
+these merges. Keying on `pull_request.user.login` instead would have skipped a deploy that
+works.
+### Verified live — the cleanup race fix works, on both paths (2026-07-29)
+
+The corrected `cleanup-pr` ran on its own merge (#102). Actual log output:
+
+```
+workflow: cost-optimized-ci.yml   branch: fix/cleanup-wait-workflow-ref
+runs visible for this branch (any status): 2
+No in-flight runs after 0s; safe to close.
+```
+
+Three things confirmed at once: the filename now derives correctly (`cost-optimized-ci.yml`,
+not `merge`), the see-check returns **2** so the zero that follows is meaningful rather than
+the artefact of a broken filter, and the wait exits immediately when nothing is in flight.
+**Wait-step duration: 2 seconds**, against 15+ minutes for the broken version.
+
+Both paths are now proven:
+
+| Path | Evidence |
+| --- | --- |
+| Fast path (nothing in flight) | #102 — wait exited at 0s, close succeeded, environment `102` never lingered |
+| Fail-open path (query broken) | #101 — hit the 900s bound, warned, closed anyway; environment `101` **was** removed |
+
+Staging environments afterwards: `default` and `100` only — and `100` belongs to a PR that
+was still open. Nothing orphaned.
+
+The fail-open evidence matters as much as the fast path: it is the behaviour that kept a
+broken implementation from actually leaking an environment, and it is why the bug cost 15
+minutes rather than a recurrence of the original outage.
