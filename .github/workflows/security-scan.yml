@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy filesystem scan (SARIF)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy config scan (SARIF)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -232,7 +232,7 @@ jobs:
     runs-on: ubuntu-latest  # TODO: switch to [self-hosted, herculean, linux] when runner registered (Phase R2)
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy secrets scan (SARIF)
         uses: aquasecurity/trivy-action@v0.36.0
