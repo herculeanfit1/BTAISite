@@ -104,6 +104,43 @@ describe("dependabot config", () => {
     expect(ecosystems).toContain("docker");
   });
 
+  it("does not let the Docker base image drift past the pinned Node version", () => {
+    // The first run after this config was repaired proposed
+    // node 20.19-slim -> 26.5-slim (PR #96), across all three Dockerfiles.
+    // package.json engines and .nvmrc both pin 20.19.1 and CLAUDE.md records
+    // that 23.x breaks the build, so that is four majors past known-broken.
+    // Cause: the major `ignore` had been applied to the npm entry only.
+    const docker = config.updates.find(
+      (u) => u["package-ecosystem"] === "docker",
+    );
+    expect(docker, "docker ecosystem entry missing").toBeDefined();
+
+    const ignores = (docker!.ignore ?? []) as Array<{
+      "dependency-name"?: string;
+      "update-types"?: string[];
+    }>;
+    const blocksNodeMajors = ignores.some(
+      (r) =>
+        (r["dependency-name"] === "node" || r["dependency-name"] === "*") &&
+        (r["update-types"] ?? []).includes("version-update:semver-major"),
+    );
+    expect(
+      blocksNodeMajors,
+      "docker entry must ignore node major bumps; the base image tracks the engines pin",
+    ).toBe(true);
+  });
+
+  it("keeps the Docker pin consistent with engines and .nvmrc", () => {
+    // If these three ever disagree, the ignore rule above is guarding the
+    // wrong version and the mismatch should surface here rather than in a
+    // broken image.
+    const engines = JSON.parse(readFileSync("package.json", "utf8")).engines
+      .node as string;
+    const nvmrc = readFileSync(".nvmrc", "utf8").trim();
+    expect(nvmrc).toBe(engines);
+    expect(engines.startsWith("20."), `engines pins ${engines}`).toBe(true);
+  });
+
   it("proves the unknown-key check can fail (guard against a vacuous pass)", () => {
     // Re-runs the exact assertion against the exact config that was broken.
     const broken = load(
