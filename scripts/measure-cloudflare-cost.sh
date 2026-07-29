@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Measure what the Cloudflare layer costs this site, by comparing the apex
+# against the SWA origin serving the IDENTICAL build.
+#
+# Why a comparison and not a single measurement: the apex and the origin run the
+# same code, so any difference between them is the edge, not the application.
+# That isolation is the whole reason this script exists -- a bare apex score
+# cannot tell you whether 79 means "slow app" or "slow edge", and this repo spent
+# real time on that ambiguity.
+#
+# Read-only. Makes HTTP requests and runs Lighthouse; changes nothing.
+#
+# Usage:
+#   ./scripts/measure-cloudflare-cost.sh            # 3 runs each (default)
+#   RUNS=1 ./scripts/measure-cloudflare-cost.sh     # quick look
+#
+# Run it BEFORE and AFTER any Cloudflare dashboard change to see whether the
+# change did what was expected. Expect run-to-run variance on the apex of ~20
+# performance points: the bot-detection script's long task is not deterministic,
+# so a single run cannot tell an improvement from noise. That is why the default
+# is 3 and why the median is reported alongside the range.
+
+set -uo pipefail
+
+APEX="${APEX:-https://bridgingtrust.ai/}"
+ORIGIN="${ORIGIN:-https://wonderful-bush-0e888f30f.6.azurestaticapps.net/}"
+RUNS="${RUNS:-3}"
+
+command -v npx >/dev/null || { echo "npx not found" >&2; exit 1; }
+
+if [ -z "${CHROME_PATH:-}" ]; then
+  CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())" 2>/dev/null || true)"
+  export CHROME_PATH
+fi
+[ -n "${CHROME_PATH:-}" ] || { echo "No Chrome found. Set CHROME_PATH or run: npx playwright install chromium" >&2; exit 1; }
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+
+measure() { # $1=url  $2=label
+  local url="$1" label="$2" out="$work/$2"
+  mkdir -p "$out"
+  echo "  measuring $label ($RUNS run(s))..." >&2
+  ( cd "$out" && npx --yes @lhci/cli@0.15.1 collect \
+      --url="$url" --numberOfRuns="$RUNS" --settings.preset=desktop >/dev/null 2>&1 )
+  python3 - "$out" "$label" <<'PY'
+import json, glob, statistics, sys
+d, label = sys.argv[1], sys.argv[2]
+files = sorted(glob.glob(d + "/.lighthouseci/lhr-*.json"))
+if not files:
+    print(json.dumps({"label": label, "error": "no reports"})); sys.exit()
+cats = {c: [] for c in ("performance", "accessibility", "best-practices", "seo")}
+tbt = []
+for f in files:
+    r = json.load(open(f))
+    for c in cats:
+        s = r["categories"].get(c, {}).get("score")
+        if s is not None:
+            cats[c].append(round(s * 100))
+    v = r["audits"].get("total-blocking-time", {}).get("numericValue")
+    if v is not None:
+        tbt.append(v)
+print(json.dumps({
+    "label": label,
+    "runs": len(files),
+    "cats": {c: {"med": statistics.median(v), "min": min(v), "max": max(v)} for c, v in cats.items() if v},
+    "tbt": {"med": round(statistics.median(tbt)), "min": round(min(tbt)), "max": round(max(tbt))} if tbt else None,
+}))
+PY
+}
+
+echo "Comparing the Cloudflare-fronted apex against the bare SWA origin."
+echo "  apex:   $APEX"
+echo "  origin: $ORIGIN"
+echo
+
+a="$(measure "$APEX" apex)"
+o="$(measure "$ORIGIN" origin)"
+
+python3 - "$a" "$o" <<'PY'
+import json, sys
+apex, origin = json.loads(sys.argv[1]), json.loads(sys.argv[2])
+if "error" in apex or "error" in origin:
+    print("measurement failed:", apex.get("error") or origin.get("error")); sys.exit(1)
+
+print("%-16s %-22s %-22s %s" % ("category", "apex (Cloudflare)", "origin (bare SWA)", "edge cost"))
+print("-" * 78)
+for c in ("performance", "accessibility", "best-practices", "seo"):
+    A, O = apex["cats"].get(c), origin["cats"].get(c)
+    if not (A and O):
+        continue
+    delta = A["med"] - O["med"]
+    flag = "" if delta >= 0 else "  <-- %d pts" % -delta
+    print("%-16s %-22s %-22s %s%s" % (
+        c,
+        "%d  (%d-%d)" % (A["med"], A["min"], A["max"]),
+        "%d  (%d-%d)" % (O["med"], O["min"], O["max"]),
+        ("%+d" % delta) if delta else "0", flag))
+
+if apex["tbt"] and origin["tbt"]:
+    print("%-16s %-22s %-22s %+d ms" % (
+        "TBT",
+        "%d ms (%d-%d)" % (apex["tbt"]["med"], apex["tbt"]["min"], apex["tbt"]["max"]),
+        "%d ms (%d-%d)" % (origin["tbt"]["med"], origin["tbt"]["min"], origin["tbt"]["max"]),
+        apex["tbt"]["med"] - origin["tbt"]["med"]))
+
+print()
+print("Ranges are shown because the apex is NOT deterministic -- the bot-detection")
+print("script's long task varies run to run. If a before/after difference is inside")
+print("the ranges above, it is noise, not an improvement.")
+PY
