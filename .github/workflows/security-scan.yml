@@ -80,7 +80,7 @@ jobs:
 
       - name: PR comment summary (filesystem)
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           SARIF_FILE: trivy-fs.sarif
           MARKER: '<!-- security-scan:trivy-fs -->'
@@ -172,7 +172,7 @@ jobs:
 
       - name: PR comment summary (config)
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           SARIF_FILE: trivy-config.sarif
           MARKER: '<!-- security-scan:trivy-config -->'
@@ -265,7 +265,7 @@ jobs:
 
       - name: PR comment summary (secrets)
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           SARIF_FILE: trivy-secrets.sarif
           MARKER: '<!-- security-scan:trivy-secrets -->'
