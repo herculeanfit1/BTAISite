@@ -1520,3 +1520,52 @@ It does not **verify** the environment is gone afterwards — that needs Azure c
 workflow does not have. If the wait ever times out (15 min) it closes anyway and logs
 `::warning::`, naming itself as the cause of any orphan. Detection today is still the cap
 being reached; the residual risk is much smaller but not zero.
+
+### Correction — the race fix shipped with two bugs of its own (2026-07-29)
+
+The transparency report above says the cleanup race is fixed. **The mechanism was right and
+the implementation was broken**, and it broke on the very first merge that exercised it —
+its own.
+
+**Bug 1: the workflow filename derivation was backwards.**
+
+```bash
+wf="${GITHUB_WORKFLOW_REF##*/}"   # WRONG
+wf="${wf%%@*}"
+```
+
+`GITHUB_WORKFLOW_REF` is `owner/repo/.github/workflows/FILE.yml@refs/pull/N/merge`. Taking
+the basename *first* returns **`merge`** — from the tail of the ref, not the workflow file.
+The API call then 404s. Correct order is strip the `@ref`, then take the basename.
+
+**Bug 2: a 404 did not fail, it hung.** `gh api --jq` prints its **error body to stdout**
+while also exiting non-zero, so `... 2>/dev/null || echo "0"` produced
+`{"message":"Not Found",...}0`. That is not a number, so `[ "$n" -eq 0 ]` *errored* rather
+than matching, the condition was never true, and the loop span its full 900-second budget
+before falling through to the close.
+
+Net effect on PR #101's own merge: cleanup took ~15 minutes instead of ~20 seconds, and only
+cleaned up because the timeout path fails open. Not an orphan — but only by luck of the
+fallback, not by design.
+
+**Why the guard test did not catch it.** It asserted that `GITHUB_WORKFLOW_REF` was
+*mentioned* in the step. It was. The derivation was still wrong.
+
+> **Presence is not behaviour.** A test that greps for the name of the right approach passes
+> against a broken use of it.
+
+The test now **executes** the derivation — it extracts the `wf=` lines from the workflow and
+runs them under `bash` against a realistic `GITHUB_WORKFLOW_REF`, asserting the result is
+`cost-optimized-ci.yml`. Mutation-confirmed: restoring the shipped expansion order turns it
+red.
+
+The query helper now returns a bare integer or **empty**, and empty is treated as a loud
+`::error::` and an immediate close, rather than being conflated with zero. A query that
+cannot answer and a branch with nothing in flight are different states and must not look the
+same — the same distinction the Lighthouse gate needed.
+
+**And a third instance of the comment-matching trap.** The new test asserting the absence of
+`|| echo 0` initially failed against the *comment* explaining why `|| echo 0` is wrong. Guards
+in this repo have now been fooled by their own explanatory prose three times (`Http5xx` in
+`alerting.test.ts`, the `staticSites/config` declaration in `swa-settings.test.ts`, and this).
+Strip comments before asserting a pattern is absent.
