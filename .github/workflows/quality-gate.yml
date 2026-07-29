@@ -60,13 +60,23 @@ jobs:
       - run: npm run build
 
   # ===========================================================================
-  # E2E — ADVISORY, NOT REQUIRED
+  # E2E — REQUIRED as of 2026-07-29
   # ===========================================================================
-  # Deliberately NOT a required status check yet. A new gate that blocks merges
-  # before it has a track record gets switched off the first time it flakes, and
-  # then it is off permanently. Promote it to required once it has been green
-  # across several PRs — the same staging this repo used for the Quality Gate
-  # itself.
+  # Shipped advisory on 2026-07-28 and promoted once it had earned it: the `e2e`
+  # JOB (not merely the workflow) was green on 12 of the last 12 runs, across
+  # five Dependabot dependency bumps and four hand-written PRs. Checking the job
+  # rather than the workflow conclusion matters -- a workflow can report success
+  # with this job skipped, which would have looked like the same evidence and
+  # been worth nothing.
+  #
+  # It ran advisory first on purpose. A new gate that blocks merges before it
+  # has a track record gets switched off the first time it flakes, and then it
+  # is off permanently.
+  #
+  # NOTE: the requirement lives in branch protection, not here. If this job is
+  # renamed, the required context "Quality Gate / e2e" no longer matches
+  # anything and every PR blocks forever waiting for a check that cannot report.
+  # Rename the protection context in the same change.
   #
   # Runs independently of `frontend` (no `needs:`), so a Playwright flake cannot
   # mask a type or unit-test failure and both report in parallel.
