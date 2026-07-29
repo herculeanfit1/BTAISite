@@ -95,6 +95,38 @@ describe("Node version is stated consistently", () => {
     // CLAUDE.md: 18.x is incompatible and 23.x breaks the build.
     expect(decls[0].version.startsWith("20.")).toBe(true);
   });
+
+  it("uses a version Azure's Oryx builder actually supports", () => {
+    // NOT a free choice. Oryx ships a fixed allow-list and rejects anything
+    // outside it at build time:
+    //
+    //   Error: Platform 'nodejs' version '20.20.2' is unsupported.
+    //   Oryx has found build steps, but identified unsupported platform
+    //   versions. Failing build.
+    //
+    // 20.20.2 is the latest Node 20 LTS and a perfectly real release -- Oryx
+    // simply does not carry it. This bit exactly once, on the PR that first
+    // aligned these versions, and it failed the preview deploy rather than
+    // production only because previews run first.
+    //
+    // This list is Oryx's Node 20.x support as reported by the failing build on
+    // 2026-07-29. It is a snapshot, not an authority: when Oryx adds versions
+    // this list goes stale in the safe direction (it rejects a version that
+    // would now work), so widen it from a real build log rather than guessing.
+    const ORYX_NODE_20 = [
+      "20.9.0", "20.11.0", "20.11.1", "20.14.0", "20.15.1", "20.17.0",
+      "20.18.0", "20.18.1", "20.18.3", "20.19.1", "20.19.3", "20.19.5",
+      "20.19.6", "20.20.0",
+    ];
+    const deployVersion = decls.find((d) =>
+      d.where.includes("NODE_VERSION"),
+    )?.version;
+    expect(deployVersion, "no NODE_VERSION found for the deploy").toBeDefined();
+    expect(
+      ORYX_NODE_20,
+      `Oryx does not support ${deployVersion}; the SWA build will fail before it starts`,
+    ).toContain(deployVersion);
+  });
 });
 
 describe("shared GitHub Actions are on one version each", () => {

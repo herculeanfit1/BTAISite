@@ -1706,14 +1706,13 @@ from `.nvmrc` with no file changing at all.
 downgraded `npm ci` to a warning nobody reads. That is the whole problem: a repo whose test
 containers quietly ran a different Node than its CI, with no signal.
 
-All seven now say `20.20.2` — the current Node 20 LTS (Iron, released 2026-03-24), verified
-against `nodejs.org/dist/index.json`, with all three Docker tags confirmed to exist before
-being used. `dependabot-security.yml`'s literal was replaced with `node-version-file: .nvmrc`
+All seven now say `20.20.0` — see the correction below; `20.20.2` was tried first and Azure's
+Oryx builder rejected it. `dependabot-security.yml`'s literal was replaced with `node-version-file: .nvmrc`
 rather than updated, removing one declaration site entirely.
 
 **Validated on the version being shipped, not the one already installed**: `nvm install
-20.20.2`, then `npm ci` (clean, no engine warning), type-check, 338 unit tests, lint, build,
-and **160 Playwright tests across 5 browsers** — all green on 20.20.2.
+20.20.0`, then `npm ci` (clean, no engine warning), type-check, 339 unit tests, lint, build,
+and **160 Playwright tests across 5 browsers** — all green on 20.20.0.
 
 ### The stragglers
 
@@ -1739,3 +1738,38 @@ a Dockerfile tag back to `20.20-slim` → 2 red; splitting the artifact generati
 
 CLAUDE.md **no longer restates the number**. It says read `.nvmrc` — because the line that
 said `20.19.1` was itself one of the stale copies.
+
+### Correction — the Node version is not a free choice (2026-07-29)
+
+The alignment above first landed on **20.20.2**: the latest Node 20 LTS, a real release,
+with all three Docker tags verified to exist. Every local check passed — `npm ci`,
+type-check, 338 unit tests, lint, build, and 160 Playwright tests across five browsers.
+
+Then the preview deploy failed in 33 seconds:
+
+```
+Error: Platform 'nodejs' version '20.20.2' is unsupported.
+Oryx has found build steps, but identified unsupported platform versions. Failing build.
+```
+
+**Azure's Oryx builder ships a fixed allow-list**, and 20.20.2 is not on it. The newest Node
+20.x Oryx carries is **20.20.0**. Everything moved to that; all checks re-run and green.
+
+Two things worth keeping from this:
+
+**The premise "align all seven to the newest version" was wrong.** Six of those sites are
+this repo's choice; the seventh — `NODE_VERSION` for the SWA build — is constrained by a
+platform allow-list nobody here controls. "Latest LTS" and "valid Docker tag" and "installs
+under nvm" were all true and none of them implied deployable. **Verifying a version exists is
+not verifying a version is accepted.**
+
+**No amount of local validation would have caught it.** The failure lives only in Oryx, which
+runs nowhere but the deploy. It surfaced on a preview rather than production purely because
+previews run first — which is an argument for previews existing, not for the check having
+been adequate.
+
+The guard now asserts `NODE_VERSION` is in Oryx's supported set, with the list snapshotted
+from the failing build and labelled as a snapshot rather than an authority: when Oryx adds
+versions the list goes stale in the *safe* direction, rejecting something that would now work.
+Widen it from a real build log, never by guessing. Mutation-confirmed — setting `NODE_VERSION`
+back to 20.20.2 turns it red.

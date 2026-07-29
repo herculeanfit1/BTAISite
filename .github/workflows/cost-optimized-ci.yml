@@ -57,7 +57,7 @@ jobs:
           api_location: ""
           output_location: ""
         env:
-          NODE_VERSION: "20.20.2"
+          NODE_VERSION: "20.20.0"
 
       # Deploying successfully is not the same as working. This step checks the
       # API, not the pages, because the pages were never the thing that broke.
@@ -185,7 +185,7 @@ jobs:
           api_location: ""
           output_location: ""
         env:
-          NODE_VERSION: "20.20.2"
+          NODE_VERSION: "20.20.0"
           # Marks this as a preview build so /api/contact skips real side effects.
           PREVIEW_BUILD: "true"
 

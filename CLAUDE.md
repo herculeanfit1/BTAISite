@@ -24,6 +24,18 @@ if any of the seven disagree, if one floats instead of pinning an exact patch, o
 hardcoded declaration appears. Change the version in all seven, or add a `node-version-file:`
 reference instead of an eighth literal.
 
+**The version is not a free choice — Azure's Oryx builder ships a fixed allow-list.**
+`20.20.2` is the latest Node 20 LTS and a perfectly real release, and Oryx rejects it:
+
+```
+Error: Platform 'nodejs' version '20.20.2' is unsupported.
+Oryx has found build steps, but identified unsupported platform versions. Failing build.
+```
+
+The build dies *before it starts*, in ~30s. `20.20.0` is the newest 20.x Oryx carries. Before
+bumping Node, check the version against Oryx's list — the guard test holds a snapshot taken
+from a real failing build, and the authoritative list is whatever the next failure prints.
+
 ```bash
 npm install
 npm run dev:http       # custom HTTP dev server — recommended locally
