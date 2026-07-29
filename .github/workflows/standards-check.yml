@@ -237,7 +237,7 @@ jobs:
       # ── Dockerfile checks ────────────────────────────────
       - name: Lint Dockerfiles (hadolint)
         if: hashFiles('**/Dockerfile') != ''
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           recursive: true
           failure-threshold: error
