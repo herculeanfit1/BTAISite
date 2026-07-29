@@ -86,10 +86,9 @@ updates:
   # ---------------------------------------------------------------------------
   # Docker
   # ---------------------------------------------------------------------------
-  # Watches the root `dockerfile`. Dependabot matches Dockerfiles by name within
-  # the given directory, so `Dockerfile.static` and `Dockerfile.test` are NOT
-  # covered here; each would need its own `directory` entry if its base image
-  # ever matters.
+  # Covers `dockerfile`, `Dockerfile.static` and `Dockerfile.test` -- on the
+  # first real run Dependabot proposed all three together, correcting an earlier
+  # note here that claimed only the root `dockerfile` was matched.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -101,3 +100,13 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+
+    # The base image must track the Node version this repo pins, not drift past
+    # it. `package.json` engines and `.nvmrc` both say 20.19.1, and CLAUDE.md
+    # records that 23.x breaks the build. The first run after this config was
+    # repaired proposed node 20.19-slim -> 26.5-slim (PR #96) -- four majors
+    # past a version already known to break -- because the major `ignore` had
+    # been applied to npm only.
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]

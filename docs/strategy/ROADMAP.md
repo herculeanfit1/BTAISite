@@ -59,6 +59,7 @@ they are no longer open.
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
+| 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ⬜ Open — deliberately **not** suppressed; take one at a time with CI as the check                                                      |
 | 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ⬜ Open — removing `next-intl` resolves both; the other 67 are dev tooling that never ships                                             |
 | `server.js` prints `HTTP_PORT` but the HTTP-only branch binds `PORT` — the startup banner can name a port it is not serving          | ⬜ Open — cosmetic but cost real debugging time; see CLAUDE.md                                                                          |
 | Availability monitoring costs **~$16.26/mo**, 81% of it the 5-minute health probe                                                    | ⬜ Open — owner's call; 10-min interval saves ~$6.60/mo for ~5 min more detection latency                                              |
@@ -1387,3 +1388,30 @@ package is a guard waiting to disappear in a dependency update.
 - **`ignore: version-update:semver-major`** is retained. The roadmap's trigger for taking
   majors on is met, but releasing fourteen months of majors is its own piece of work.
 - **Removing `next-intl`**, which would clear both production alerts.
+
+### Addendum — Dependabot's first run, and a gap in the fix (2026-07-28)
+
+Within minutes of #90 merging, the `.github/dependabot.yml` check on the merge commit
+reported **`success`** and Dependabot opened **6 pull requests — the first in the
+repository's history**. The mechanism works.
+
+One of them, **#96, would have broken the build**: `node 20.19-slim → 26.5-slim` across
+`dockerfile`, `Dockerfile.static` and `Dockerfile.test`. `package.json` `engines` and
+`.nvmrc` both pin `20.19.1`, and CLAUDE.md records that **23.x breaks the build** — so that
+is four majors past known-broken.
+
+**Dependabot did exactly what it was told.** #90's description said majors were "held back";
+that was true of the **npm** entry only, and the same `ignore` had never been applied to
+`docker` or `github-actions`. An accurate-sounding summary of a change that was narrower
+than described — the same class of error as predicting best-practices would reach 100.
+
+Fixed by ignoring `node` majors on the docker entry, with two guards: one asserting that
+ignore exists, and one asserting `engines`, `.nvmrc` and each other stay consistent, so the
+rule cannot end up pinned to a version the repo no longer uses.
+
+The four `actions/*` major bumps are **deliberately not suppressed**. GitHub is deprecating
+the Node 20 action runtime (the deploy logs already warn about it), so those are worth taking
+— one at a time, with CI as the check.
+
+Also corrected: a comment in the config claimed only the root `dockerfile` was matched.
+The first real run proposed all three Dockerfiles together, so that was wrong.
