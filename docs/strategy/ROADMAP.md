@@ -906,7 +906,7 @@ in place.**
 
 ### What is deliberately not done
 
-- **The `e2e` job is advisory, not required.** It gets promoted after several green runs.
+- **The `e2e` job shipped advisory, not required.** It was promoted to required on 2026-07-29 after the job itself was green 12 of 12 runs.
 - **Five-browser runs stay local.** CI runs chromium only.
 - **No visual-regression snapshots.** Deleting the dead project is not a decision to adopt
   snapshots; that needs its own justification.
@@ -1631,3 +1631,48 @@ was still open. Nothing orphaned.
 The fail-open evidence matters as much as the fast path: it is the behaviour that kept a
 broken implementation from actually leaking an environment, and it is why the bug cost 15
 minutes rather than a recurrence of the original outage.
+
+---
+
+## `Quality Gate / e2e` promoted to a required check (2026-07-29)
+
+Shipped advisory on 2026-07-28 with an explicit promotion condition — *"once it has been
+green across several PRs"* — and that condition is now met.
+
+**Evidence, checked at the job level rather than the workflow level**: the `e2e` **job** was
+`success` on **12 of the last 12** runs, spanning five Dependabot dependency bumps
+(`checkout`, `github-script`, `upload-artifact`, `setup-python`, `hadolint`) and four
+hand-written PRs.
+
+That distinction is the point. `gh run list --workflow=quality-gate.yml` showed 20
+consecutive successes, but a workflow can report success with this job **skipped** — the
+same evidence, worth nothing. Enumerating the job's own conclusion per run is what makes 12
+of 12 mean something.
+
+`main` now has **seven** required contexts:
+
+| Context | Since |
+| --- | --- |
+| `Standards Compliance` | pre-existing |
+| `Gate on HIGH / CRITICAL` | pre-existing |
+| `Trivy filesystem scan` · `Trivy IaC config scan` · `Trivy secrets scan` | pre-existing |
+| `Quality Gate / frontend` | PLAN-002 |
+| **`Quality Gate / e2e`** | **2026-07-29** |
+
+Applied with the additive contexts endpoint rather than a full `PUT` of the protection
+object, because a `PUT` replaces the entire configuration and silently drops anything omitted
+from the payload. Before/after were captured and diffed: the only difference is the new
+context; `enforce_admins` and the require-up-to-date flag are unchanged and still on.
+
+### The trap this creates
+
+**The requirement lives in branch protection, not in the workflow file.** Renaming the job
+without renaming the protection context blocks every PR forever, waiting on a check that can
+no longer report — and the workflow will look perfectly healthy while it happens. A comment
+in `quality-gate.yml` says so at the point of danger.
+
+### Still deliberately not required
+
+- **`deploy-pr-to-azure`** — it cannot run on Dependabot PRs at all (separate secret store),
+  so requiring it would block every dependency bump.
+- **The Lighthouse step** — advisory while it earns the same track record this job just did.
