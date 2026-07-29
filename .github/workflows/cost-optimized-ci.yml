@@ -152,10 +152,18 @@ jobs:
     # on an otherwise valid contribution. The guard also keeps the job from
     # becoming a real token-exposure path if the trigger is ever changed to
     # `pull_request_target`, which does receive secrets.
+    # Dependabot is excluded because this job CANNOT succeed for it, not as a
+    # policy choice. Dependabot-triggered runs read from a separate secret store
+    # (the log says `Secret source: Dependabot`), which does not contain
+    # AZURE_STATIC_WEB_APPS_API_TOKEN_*, so the deploy fails with
+    # `deployment_token was not provided` after ~40s. Every Dependabot PR wore a
+    # red X for a preview that was never possible. Nothing here is worth
+    # previewing on a dependency bump anyway.
     if: >-
       github.event_name == 'pull_request'
       && github.event.action != 'closed'
       && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
