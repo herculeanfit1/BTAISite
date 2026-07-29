@@ -51,7 +51,7 @@ they are no longer open.
 | Verify whether the platform appends the client IP to `x-forwarded-for`                                                          | ⬜ Open — needs a header-echo endpoint                                                                                                 |
 | **90 E2E tests exist and run in no workflow**, and `vercel-safari.spec.ts` targets a deleted page so a third fails on first run | ✅ **Done 2026-07-28 (PLAN-013 Part 1)** — 130 tests green across 5 browsers; advisory `Quality Gate / e2e` job added                   |
 | Dev server could not hydrate — CSP withheld `'unsafe-eval'` from Next's dev bundler                                             | ✅ **Fixed 2026-07-28** — dev-only relaxation gated on `NODE_ENV === "development"`, 4 guard tests; production policy unchanged         |
-| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ⬜ Open — 10 orphans deleted 2026-07-28 and previews restored; the race that created them is **not** fixed                              |
+| SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ✅ **Fixed 2026-07-29** — `cleanup-pr` now waits for in-flight runs before closing; ordering, not retrying                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
 | **Cloudflare Bot Management costs ~15 performance points** — `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval, 396 ms long task | ⬜ Open — **CSP cannot fix this**; served same-origin, so only a Cloudflare dashboard setting can disable it                        |
@@ -1452,3 +1452,71 @@ never once been resolved, and it described translation keys no component ever re
 authoritative, and had never executed — the Playwright suite, `dependabot-security.yml`, and
 Dependabot itself. In each case the first execution failed immediately. Configuration is not
 evidence of operation, and neither is the absence of complaints.
+
+---
+
+## Transparency report — the preview-cleanup race (2026-07-29)
+
+**Outcome**: `cleanup-pr` can no longer orphan a staging environment. It waits for every
+in-flight run of its own workflow on the PR's branch, then closes.
+
+### The bug was an ordering bug, so the fix is ordering
+
+Reconstructed from PR #75's timestamps:
+
+```
+18:32:13  deploy (from the preceding push) starts
+18:33:52  PR merged -> `closed` event fires
+18:34:01  cleanup-pr starts
+18:34:25  cleanup-pr reports SUCCESS
+18:34:37  the deploy CREATES the staging environment   <-- 12s after its own cleanup
+18:35:02  deploy finishes
+```
+
+The cleanup ran before the thing it was cleaning up existed, exited green, and orphaned it.
+Ten accumulated, the Static Web App hit its staging-environment cap, and preview deploys
+started failing on unrelated PRs — usually docs-only ones — with *"already has the maximum
+number of staging environments."* **The symptom appeared nowhere near the cause**, which is
+why it went unexplained long enough for ten to pile up.
+
+Retrying would not have fixed it; there was nothing to retry *yet*. The job now blocks until
+no run of this workflow on that branch is `in_progress` or `queued`, and only then closes.
+Whatever a deploy created, cleanup removes afterwards.
+
+**Nothing can start behind it**: `deploy-pr-to-azure` is gated on
+`github.event.action != 'closed'`, and a closed PR cannot emit `synchronize`.
+
+### The wait had to be able to prove it can see
+
+A run-listing query that silently matches nothing returns "0 in flight" — indistinguishable
+from a genuinely idle branch, and it would have restored the exact race while looking like a
+guard. So the step first counts runs of **any** status for that branch and emits a
+`::warning::` if that is also zero, and it **derives the workflow filename** from
+`GITHUB_WORKFLOW_REF` rather than hard-coding it, because a rename would otherwise turn the
+query into a permanent no-op that still reported success.
+
+Both properties were verified against the live API before shipping: a real branch
+(`docs/actions-majors-landed`) returns 1 run; a fabricated branch name returns 0. The filter
+discriminates, so a zero means something.
+
+`actions: read` was added to the job. Without it the API returns nothing and the wait becomes
+a no-op — which is why one of the guard tests asserts the permission rather than only the
+step.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| `npm run type-check` | clean |
+| `npm run test:coverage` | **330 passed** |
+| `npm run build` | clean |
+| `npx eslint . --no-cache` | 0 errors |
+| Live API query | real branch → 1 run; fabricated branch → 0 |
+| Guards proven able to fail | wait step removed → **4 red**; `actions: read` dropped → 1 red; timeout back to 5 → 1 red |
+
+### What this does not do
+
+It does not **verify** the environment is gone afterwards — that needs Azure credentials the
+workflow does not have. If the wait ever times out (15 min) it closes anyway and logs
+`::warning::`, naming itself as the cause of any orphan. Detection today is still the cap
+being reached; the residual risk is much smaller but not zero.
