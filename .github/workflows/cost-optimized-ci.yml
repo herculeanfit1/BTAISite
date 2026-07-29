@@ -251,7 +251,7 @@ jobs:
 
       - name: Upload Lighthouse reports
         if: always() && steps.deploy.outputs.static_web_app_url != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lighthouse-reports
           path: .lighthouseci/
