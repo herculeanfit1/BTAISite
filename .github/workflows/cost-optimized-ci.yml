@@ -293,40 +293,62 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
-          # Derive this workflow's filename rather than hard-coding it, so a
-          # rename cannot silently turn the query into a no-op.
-          # GITHUB_WORKFLOW_REF is owner/repo/.github/workflows/file.yml@refs/...
-          wf="${GITHUB_WORKFLOW_REF##*/}"
-          wf="${wf%%@*}"
+          # GITHUB_WORKFLOW_REF is
+          #   owner/repo/.github/workflows/FILE.yml@refs/pull/N/merge
+          #
+          # Strip the @ref FIRST, then take the basename. The other order looks
+          # equivalent and is not: `${VAR##*/}` on the full string returns
+          # "merge", from the tail of refs/pull/N/merge. That 404s, and the
+          # first version of this step shipped with exactly that bug.
+          wf="${GITHUB_WORKFLOW_REF%%@*}"
+          wf="${wf##*/}"
+          api="repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100"
           echo "workflow: $wf   branch: $HEAD_REF"
 
-          inflight() {
-            gh api \
-              "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100" \
-              --jq "[.workflow_runs[]
-                     | select(.id != $GITHUB_RUN_ID)
-                     | select(.status == \"in_progress\" or .status == \"queued\")]
-                    | length" 2>/dev/null || echo "0"
+          # Returns a bare integer, or empty when the query could not answer.
+          #
+          # The empty case must be distinguishable from zero. `gh api` prints
+          # its error BODY to stdout on a 404 while also exiting non-zero, so a
+          # naive `|| echo 0` yields `{"message":"Not Found"...}0` -- which is
+          # not a number, makes `[ "$n" -eq 0 ]` error rather than match, and
+          # spins the loop for its full duration instead of failing. That is
+          # what the first version did.
+          query() {
+            local out
+            if out="$(gh api "$api" --jq "$1" 2>/dev/null)"; then
+              case "$out" in
+                ''|*[!0-9]*) printf '' ;;
+                *)           printf '%s' "$out" ;;
+              esac
+            else
+              printf ''
+            fi
           }
 
-          # Prove the query can see this branch at all. If it returns nothing
-          # even counting completed runs, the filter is wrong and a "0 in
-          # flight" answer would be meaningless -- the exact false-confidence
-          # this job is being fixed for.
-          total=$(gh api \
-            "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100" \
-            --jq '.workflow_runs | length' 2>/dev/null || echo "0")
-          echo "runs visible for this branch (any status): $total"
-          if [ "$total" -eq 0 ]; then
-            echo "::warning::Run query returned nothing for branch '$HEAD_REF'. Proceeding, but the wait below cannot be trusted."
+          # Prove the query can see before trusting any zero it reports. A
+          # filter that matches nothing answers "0 in flight", which is
+          # indistinguishable from an idle branch and would silently restore
+          # the race this step exists to prevent.
+          total="$(query '.workflow_runs | length')"
+          if [ -z "$total" ]; then
+            echo "::error::Cannot list runs for workflow '$wf' on branch '$HEAD_REF'. Closing WITHOUT waiting -- an orphaned staging environment is possible. Check GITHUB_WORKFLOW_REF parsing and the actions:read permission."
+            exit 0
           fi
+          echo "runs visible for this branch (any status): $total"
 
           waited=0
           while [ "$waited" -lt 900 ]; do
-            n="$(inflight)"
-            if [ "${n:-0}" -eq 0 ]; then
+            n="$(query "[.workflow_runs[]
+                         | select(.id != $GITHUB_RUN_ID)
+                         | select(.status == \"in_progress\" or .status == \"queued\")]
+                        | length")"
+            if [ -z "$n" ]; then
+              echo "::error::Run query stopped answering mid-wait; closing without further waiting."
+              exit 0
+            fi
+            if [ "$n" -eq 0 ]; then
               echo "No in-flight runs after ${waited}s; safe to close."
               exit 0
             fi
