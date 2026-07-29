@@ -261,12 +261,81 @@ jobs:
   # =============================================================================
   # CLEANUP JOB (for PRs)
   # =============================================================================
+  # This job used to RACE the deploy it was cleaning up after, and lost.
+  #
+  # Observed on PR #75: cleanup ran 18:34:01-18:34:25 and reported success,
+  # while the deploy from the preceding push ran until 18:35:02 and CREATED the
+  # staging environment at 18:34:37 -- twelve seconds after its own cleanup had
+  # finished. The environment was orphaned and the cleanup was green. Ten
+  # accumulated that way, the Static Web App hit its staging-environment cap,
+  # and preview deploys then failed on unrelated PRs with
+  # "already has the maximum number of staging environments".
+  #
+  # The fix is ordering, not retrying: wait for every in-flight run of this
+  # workflow on this PR's branch to finish, THEN close. Whatever a deploy
+  # created, cleanup now removes afterwards rather than before.
+  #
+  # No new run can start behind us: `deploy-pr-to-azure` is gated on
+  # `github.event.action != 'closed'`, and a closed PR cannot emit
+  # `synchronize`.
   cleanup-pr:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Was 5. Now covers a full in-flight deploy (~5 min) plus the close itself.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read # list workflow runs to detect in-flight deploys
 
     steps:
+      - name: Wait for in-flight deploys on this PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+
+          # Derive this workflow's filename rather than hard-coding it, so a
+          # rename cannot silently turn the query into a no-op.
+          # GITHUB_WORKFLOW_REF is owner/repo/.github/workflows/file.yml@refs/...
+          wf="${GITHUB_WORKFLOW_REF##*/}"
+          wf="${wf%%@*}"
+          echo "workflow: $wf   branch: $HEAD_REF"
+
+          inflight() {
+            gh api \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100" \
+              --jq "[.workflow_runs[]
+                     | select(.id != $GITHUB_RUN_ID)
+                     | select(.status == \"in_progress\" or .status == \"queued\")]
+                    | length" 2>/dev/null || echo "0"
+          }
+
+          # Prove the query can see this branch at all. If it returns nothing
+          # even counting completed runs, the filter is wrong and a "0 in
+          # flight" answer would be meaningless -- the exact false-confidence
+          # this job is being fixed for.
+          total=$(gh api \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?branch=$HEAD_REF&per_page=100" \
+            --jq '.workflow_runs | length' 2>/dev/null || echo "0")
+          echo "runs visible for this branch (any status): $total"
+          if [ "$total" -eq 0 ]; then
+            echo "::warning::Run query returned nothing for branch '$HEAD_REF'. Proceeding, but the wait below cannot be trusted."
+          fi
+
+          waited=0
+          while [ "$waited" -lt 900 ]; do
+            n="$(inflight)"
+            if [ "${n:-0}" -eq 0 ]; then
+              echo "No in-flight runs after ${waited}s; safe to close."
+              exit 0
+            fi
+            echo "  ${n} run(s) still in flight (${waited}s elapsed) -- waiting"
+            sleep 15
+            waited=$((waited + 15))
+          done
+          echo "::warning::Still in flight after ${waited}s; closing anyway. If an environment is orphaned, this is why."
+
       - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
         with:
