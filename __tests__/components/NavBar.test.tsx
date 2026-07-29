@@ -24,18 +24,10 @@ vi.mock("next/image", () => ({
   },
 }));
 
-// Mock next-intl
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => {
-    const translations: Record<string, string> = {
-      services: "Solutions",
-      about: "About",
-      contact: "Contact",
-    };
-    return translations[key] || key;
-  },
-  useLocale: () => "en",
-}));
+// The next-intl mock that used to sit here was removed with the package
+// (2026-07-28). NavBar never imported next-intl, so the mock had never been
+// resolved -- it described translation keys ("services" -> "Solutions") that no
+// component ever asked for.
 
 // Mock next/router
 vi.mock("next/router", () => ({
