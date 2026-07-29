@@ -59,7 +59,8 @@ they are no longer open.
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
-| 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ⬜ Open — deliberately **not** suppressed; take one at a time with CI as the check                                                      |
+| 4 GitHub Actions major bumps proposed on Dependabot's first run (#92–#95) — Node 20 action runtime is being deprecated            | ✅ **Done 2026-07-28** — all four landed one at a time, plus the hadolint minor (#91); all four workflows green on `main`                |
+| Two actions still on the deprecated Node 20 runtime: `setup-node@v4` and `download-artifact@v4`                                   | ⬜ Open — Dependabot did not propose them; both sit in workflows that had never executed                                                |
 | Dependabot PRs failed `deploy-pr-to-azure` — Dependabot runs read a separate secret store with no SWA token                      | ✅ **Fixed 2026-07-28** — job now skips `dependabot[bot]`; the deploy could never have succeeded                                        |
 | `dependabot-security.yml` ran for the first time ever and failed — gated on an actor that had never existed                      | ✅ **Fixed 2026-07-28** — it was correct; it failed on the real `next-intl` vulnerability, now removed                                  |
 | 69 open Dependabot alerts, of which **only 2 are production scope** (both `next-intl`, which is installed and never wired up)     | ✅ **Fixed 2026-07-28** — `next-intl` removed; `npm audit --omit=dev` now reports **0 vulnerabilities**                                 |
@@ -1569,3 +1570,64 @@ same — the same distinction the Lighthouse gate needed.
 in this repo have now been fooled by their own explanatory prose three times (`Http5xx` in
 `alerting.test.ts`, the `staticSites/config` declaration in `swa-settings.test.ts`, and this).
 Strip comments before asserting a pattern is absent.
+### Addendum — the actions majors landed, and the docker pin proved itself (2026-07-28)
+
+All five of Dependabot's first-run PRs are merged, one at a time with CI as the check:
+
+| PR | Bump | Notes |
+| --- | --- | --- |
+| #91 | `hadolint-action` 3.1.0 → 3.3.0 | grouped minor; Standards Check green |
+| #92 | `setup-python` 6 → 7 | single use in standards-check.yml |
+| #93 | `upload-artifact` 4 → 7 | verified it still uploads — Lighthouse wrote 3 reports through v7 |
+| #94 | `github-script` 7 → 9 | only API used is `github.rest.issues.createComment`, stable across both |
+| #95 | `checkout` 4 → 7 | **also normalised a v4/v6 split** — all 9 uses are now v7 |
+
+All four workflows green on `main` afterwards, deploy successful, production healthy.
+
+**The docker pin proved itself the same day it shipped.** #96 (`node 20.19-slim → 26.5-slim`,
+four majors past known-broken) is gone, and Dependabot re-proposed **#98:
+`20.19-slim → 20.20-slim`** — a minor inside the pinned major. The `ignore` rule did exactly
+what it was written to do rather than merely appearing to.
+
+**Two stragglers remain on the deprecated Node 20 action runtime**, and Dependabot did *not*
+propose them: `actions/setup-node@v4` in `dependabot-security.yml` and
+`actions/download-artifact@v4` in `security-scan.yml`. Both sit in workflows that had never
+executed until this week, which is likely why nobody noticed the versions drift. Four other
+`setup-node` uses are already at v6.
+
+**A detail worth knowing about the Dependabot deploy skip.** The guard is
+`github.actor != 'dependabot[bot]'`, keyed on who *triggered the run* rather than who opened
+the PR. That is deliberate and it is the correct discriminator: the failure is that
+Dependabot-triggered runs read a secret store without the SWA token. When a human runs
+`gh pr update-branch` on a Dependabot PR, the actor becomes that human, secrets resolve
+normally, and the deploy runs and passes — which is exactly what happened on all five of
+these merges. Keying on `pull_request.user.login` instead would have skipped a deploy that
+works.
+### Verified live — the cleanup race fix works, on both paths (2026-07-29)
+
+The corrected `cleanup-pr` ran on its own merge (#102). Actual log output:
+
+```
+workflow: cost-optimized-ci.yml   branch: fix/cleanup-wait-workflow-ref
+runs visible for this branch (any status): 2
+No in-flight runs after 0s; safe to close.
+```
+
+Three things confirmed at once: the filename now derives correctly (`cost-optimized-ci.yml`,
+not `merge`), the see-check returns **2** so the zero that follows is meaningful rather than
+the artefact of a broken filter, and the wait exits immediately when nothing is in flight.
+**Wait-step duration: 2 seconds**, against 15+ minutes for the broken version.
+
+Both paths are now proven:
+
+| Path | Evidence |
+| --- | --- |
+| Fast path (nothing in flight) | #102 — wait exited at 0s, close succeeded, environment `102` never lingered |
+| Fail-open path (query broken) | #101 — hit the 900s bound, warned, closed anyway; environment `101` **was** removed |
+
+Staging environments afterwards: `default` and `100` only — and `100` belongs to a PR that
+was still open. Nothing orphaned.
+
+The fail-open evidence matters as much as the fast path: it is the behaviour that kept a
+broken implementation from actually leaking an environment, and it is why the bug cost 15
+minutes rather than a recurrence of the original outage.
