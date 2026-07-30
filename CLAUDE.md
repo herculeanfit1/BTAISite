@@ -249,41 +249,65 @@ The gate must stay `=== "development"`, never `!== "production"`: vitest runs un
 ### Performance: measure a deployed origin, never localhost
 
 `lighthouserc.json` + an advisory `lhci` step in `deploy-pr-to-azure` (the only job that
-knows the preview URL). Measured 2026-07-28, one commit, desktop preset, 3 runs each:
+knows the preview URL). Measured **2026-07-30**, desktop preset, 3 runs each:
 
 | Target | Perf | Best prac. | SEO | TBT |
 | --- | --- | --- | --- | --- |
 | local `npm run start` | **100** | 100 | 100 | 0 ms |
 | SWA origin (same code as apex) | **97** | 100 | 100 | 0 ms |
-| apex `bridgingtrust.ai` | **79** | **74** | **92** | **360 ms** |
+| apex `bridgingtrust.ai` | **81** (81–86) | **81** | **92** | **293 ms** |
 
-- **A localhost gate is worthless here** — perfect 100 while real users get 79. The config
+- **A localhost gate is worthless here** — perfect 100 while real users get 81. The config
   pins no URL and a guard test fails if one is added.
-- **The app meets "Perf ≥ 90"; the deployment does not.** Same build, 97 vs 79. The apex is
-  behind **Cloudflare**; the SWA origin is not. Two separate costs, and they have different
-  fixes:
-  - **best-practices 74** was one console error — the Web Analytics beacon
-    (`static.cloudflareinsights.com`, injected at the edge for browser UAs only, so `curl`
-    will not show you) being refused by the CSP. **Fixed 2026-07-28** by allow-listing it in
-    `script-src` plus `cloudflareinsights.com` in `connect-src` for its `/cdn-cgi/rum` POST.
-  - **The ~15 performance points are `/cdn-cgi/challenge-platform/scripts/jsd/main.js`** —
-    Cloudflare Bot Management's JS detection: 793 ms of script evaluation including a single
-    396 ms long task. It is served from **this site's own origin**, so `script-src 'self'`
-    already permits it and **no CSP change can affect it**; only a Cloudflare dashboard
-    setting can. The blocked beacon contributed 0 ms and 0 bytes — a refused script does not
-    run, so it never cost performance, only the error.
+- **The app meets "Perf ≥ 90"; the deployment does not.** Same build, 97 vs 81, and a
+  **byte-identical CSP header** on both. The apex is behind **Cloudflare**; the SWA origin
+  is not.
+- **Attribute from per-audit source locations, never from the category score.** Doing the
+  latter is how one identified cause gets credited with an entire aggregate — it happened
+  here. best-practices 74 was recorded as "one console error, the blocked Web Analytics
+  beacon"; allow-listing it in #89 was correct and bought **7 points, not 26**. The
+  remaining deficit was a different Cloudflare feature all along. Points must add up before
+  a cause is named.
+- **Today's split** (best-practices is scored out of weight 27, so 1 weight = 3.7 points):
+  - **`deprecations`, weight 5 = 18.5 pts, fails 6/6 runs.** All three entries
+    (`SharedStorage`, `StorageType.persistent`, `Fledge`) carry a `sourceCodeLocation` of
+    `/cdn-cgi/challenge-platform/scripts/jsd/main.js` — Bot Management's JS Detections.
+  - **Performance −16 is that same one file**: 750 ms script evaluation, one 375 ms long
+    task. Nothing else on the page evaluates for more than 25 ms. It is served from **this
+    site's own origin**, so `script-src 'self'` already permits it and **no CSP change can
+    affect it**; only a Cloudflare dashboard setting can.
+  - **`inspector-issues`, 3.7 pts, fails 1/6 runs — cause deliberately not established.**
+    It reports a "Content security policy" issue, but six positive-controlled browser loads
+    found **zero** real CSP violations, and a specific `static.cloudflareinsights.com`
+    `connect-src` hypothesis was *refuted*. Edge-related; beyond that, unknown.
   - SEO 92 is Cloudflare merging an AI-crawler policy into `robots.txt` that Lighthouse
-    rejects as invalid. Your own `Allow: /` and `Sitemap:` survive inside it.
-  Tracked in `docs/strategy/ROADMAP.md`; do not point the gate at the apex until resolved.
-- **The edge costs 42 Lighthouse points and none of it is fixable here.** Measure it with
-  `scripts/measure-cloudflare-cost.sh`, which compares the apex against the SWA origin serving
-  the identical build — accessibility scores 100 on both, which is what proves the difference
-  is the edge and not the app. Three causes: Bot Management JS Detections (−15 perf, −19
-  best-practices, served same-origin so CSP cannot touch it), the `Content-Signal:` directive
-  Cloudflare prepends to `robots.txt` (−8 SEO, *and a deliberate AI-crawler policy worth
-  keeping*), and Web Analytics (resolved in #89). All are dashboard settings; there are no
-  Cloudflare credentials in this repo. **The apex is not deterministic** — single runs have
-  swung 64→86 on unchanged code, so use `RUNS=3` and compare ranges, not points.
+    rejects as invalid. Your own `Allow: /` and `Sitemap:` survive inside it, and the policy
+    is **deliberate and being kept**.
+- **The JS Detections cost recurs about every 15 minutes** — measured, because two sources
+  disagreed and the wrong one was more convenient. Same browser profile: cold → **3**
+  requests to `/cdn-cgi/challenge-platform/`, +10 s → **0**, **+17 min → 5**. Cloudflare's
+  docs (15-minute session, re-injected before expiry) are right; the **365-day
+  `cf_clearance` expiry is a red herring** — it answers "how long is this cookie valid",
+  not "how long until JSD re-injects". Reasoning from the cookie would have understated the
+  cost enormously. So: further page views inside a session are free, but the first load of
+  essentially every visit pays. Lighthouse always runs cold, so it always pays full price.
+- **Apex Core Web Vitals still pass** — LCP 1.2 s, CLS 0, FCP 0.6 s. The damage is
+  concentrated in TBT, a lab metric carrying the single heaviest score weight (30). The
+  score is worse than the experience; weigh that before trading security for it.
+- **Measure it with `scripts/measure-cloudflare-cost.sh`**, which compares the apex against
+  the SWA origin serving the identical build — accessibility scores 100 on both, which is
+  what proves the difference is the edge and not the app. **Check `JSD_ONLY=1` first**: JSD
+  injection is a byte in the HTML, so it answers yes/no in one request, and it exits `2` for
+  "could not tell" rather than folding a fetch failure into "not present". The apex scores
+  are **not deterministic** — single runs have swung 64→86 on unchanged code, so use
+  `RUNS=3`+ and compare ranges, not points.
+- **There are no Cloudflare credentials in this repo or environment**, and the available
+  lever depends on the zone's plan: on **Free**, Bot Fight Mode makes JS Detections
+  mandatory and runs *outside* the Ruleset Engine, so it cannot be skipped by WAF custom
+  rules or Page Rules nor scoped to paths; on **Pro/Business** it is a separate optional
+  toggle. The decision is written up in
+  `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`. Do not point the gate at the
+  apex until it is resolved.
 - The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
   it could not load, every assertion `"warn"` so it could not fail, and `url` plus
   `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and
