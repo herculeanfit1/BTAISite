@@ -17,7 +17,7 @@
     "hybrid adapter ignores and which broke the entire route map when tried 2026-07-23."
   ],
   "platform": {
-    "apiRuntime": "node:20"
+    "apiRuntime": "node:22"
   },
   "routes": [
     {
