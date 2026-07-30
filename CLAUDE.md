@@ -22,12 +22,22 @@ Migrated to **Node 22.22.0** on 2026-07-29 (PLAN-014), off end-of-life Node 20.
 run on a mismatched runtime. Node 22 is EOL 2027-04-30, so this buys ~9 months; the real fix is
 SWA shipping `node:24` — watch [Azure/static-web-apps#1724](https://github.com/Azure/static-web-apps/issues/1724).
 
-The version is declared in **seven** places — `.nvmrc`, `package.json` `engines`, three
-Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`. Everything else uses
-`node-version-file:`, which cannot drift. `__tests__/infra/toolchain-versions.test.ts` fails
-if any of the seven disagree, if one floats instead of pinning an exact patch, or if a new
-hardcoded declaration appears. Change the version in all seven, or add a `node-version-file:`
-reference instead of an eighth literal.
+The version is declared in **seven** places as a full `x.y.z` — `.nvmrc`, `package.json`
+`engines`, three Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`.
+Everything else uses `node-version-file:`, which cannot drift.
+`__tests__/infra/toolchain-versions.test.ts` fails if any of the seven disagree, if one
+floats instead of pinning an exact patch, or if a new hardcoded declaration appears. Change
+the version in all seven, or add a `node-version-file:` reference instead of an eighth
+literal.
+
+**An eighth declaration exists and is easy to miss: `@types/node` in `devDependencies`.**
+Its **major** tracks the Node major it describes, so it is a Node version statement wearing
+a dependency's clothes — which is why PLAN-014 moved all seven and left it on `20.11.5`
+while the runtime ran 22, type-checking the repo against a Node it no longer runs. Bumped to
+`22.20.1` on 2026-07-30 and now guarded. Only the **major** is asserted: `@types/node`'s
+minor and patch move on their own schedule and do not track Node's. And **"latest" is the
+wrong target** for the same reason it was wrong for Oryx — `@types/node@26` is real, current,
+and describes APIs this runtime does not have.
 
 **`NODE_VERSION` in `cost-optimized-ci.yml` sets the RUNTIME too, not just the build.** Proven
 2026-07-29 by three preview deploys: `platform.apiRuntime` in `staticwebapp.config.json` is
