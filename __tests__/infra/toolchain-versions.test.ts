@@ -137,6 +137,30 @@ describe("Node version is stated consistently", () => {
     ).toContain(deployVersion);
   });
 
+  it("types Node at the major the runtime actually runs", () => {
+    // @types/node's MAJOR tracks the Node major it describes. PLAN-014 moved the
+    // seven declaration sites above from 20 to 22 and left this one at 20.11.5,
+    // so for a day the repo type-checked against a runtime it no longer ran --
+    // an eighth de-facto Node declaration that the checks above do not collect,
+    // because it lives in `devDependencies` rather than in a version field.
+    //
+    // Only the major is asserted. @types/node's minor and patch move on their own
+    // schedule and deliberately do NOT track Node's; pinning the full version to
+    // .nvmrc would fail on every legitimate types release.
+    //
+    // "Latest" is the wrong target here for the same reason it was wrong for
+    // Oryx: @types/node@26 is a real, current release and describes APIs this
+    // runtime does not have.
+    const nvmrcMajor = readFileSync(".nvmrc", "utf8").trim().split(".")[0];
+    const typesNode = JSON.parse(readFileSync("package.json", "utf8"))
+      .devDependencies["@types/node"] as string;
+    expect(typesNode, "@types/node is not declared").toBeDefined();
+    expect(
+      typesNode.split(".")[0].replace(/^[^\d]*/, ""),
+      `@types/node ${typesNode} describes Node ${typesNode.split(".")[0]}, but .nvmrc runs ${nvmrcMajor}`,
+    ).toBe(nvmrcMajor);
+  });
+
   it("declares no platform.apiRuntime, which is inert and therefore a decoy", () => {
     // Proven inert 2026-07-29 by three preview deploys (PLAN-014 Step 1):
     //   apiRuntime node:22 + build 20 -> runtime 20
