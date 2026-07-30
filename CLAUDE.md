@@ -15,7 +15,12 @@ Bridging Trust AI marketing/consulting site — Next.js 15.5 (App Router) + Reac
 **Node: read `.nvmrc`** — deliberately not restated here, because this line said `20.19.1`
 while all three Dockerfiles had moved to 20.20 and nothing complained (`.npmrc` sets
 `engine-strict=false`, so the mismatch was only a warning). Run `nvm use` (no argument — it
-reads `.nvmrc`). 18.x is incompatible and 23.x breaks the build; stay on the 20 LTS line.
+reads `.nvmrc`).
+
+> ⚠️ **Node 20 reached end-of-life on 2026-04-30 and receives no security patches.** The repo
+> is still on it. Migrating to **Node 24** (Active LTS to 2028-04-30) is a tracked, overdue
+> item — see `docs/strategy/ROADMAP.md`. Oryx currently carries exactly one Node 24 version,
+> `24.13.0`, so there is no choice of patch.
 
 The version is declared in **seven** places — `.nvmrc`, `package.json` `engines`, three
 Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`. Everything else uses
@@ -259,6 +264,15 @@ knows the preview URL). Measured 2026-07-28, one commit, desktop preset, 3 runs 
   - SEO 92 is Cloudflare merging an AI-crawler policy into `robots.txt` that Lighthouse
     rejects as invalid. Your own `Allow: /` and `Sitemap:` survive inside it.
   Tracked in `docs/strategy/ROADMAP.md`; do not point the gate at the apex until resolved.
+- **The edge costs 42 Lighthouse points and none of it is fixable here.** Measure it with
+  `scripts/measure-cloudflare-cost.sh`, which compares the apex against the SWA origin serving
+  the identical build — accessibility scores 100 on both, which is what proves the difference
+  is the edge and not the app. Three causes: Bot Management JS Detections (−15 perf, −19
+  best-practices, served same-origin so CSP cannot touch it), the `Content-Signal:` directive
+  Cloudflare prepends to `robots.txt` (−8 SEO, *and a deliberate AI-crawler policy worth
+  keeping*), and Web Analytics (resolved in #89). All are dashboard settings; there are no
+  Cloudflare credentials in this repo. **The apex is not deterministic** — single runs have
+  swung 64→86 on unchanged code, so use `RUNS=3` and compare ranges, not points.
 - The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
   it could not load, every assertion `"warn"` so it could not fail, and `url` plus
   `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and

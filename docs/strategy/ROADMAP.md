@@ -54,7 +54,8 @@ they are no longer open.
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ✅ **Fixed 2026-07-29** — `cleanup-pr` now waits for in-flight runs before closing; ordering, not retrying                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
-| **Cloudflare Bot Management costs ~15 performance points** — `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval, 396 ms long task | ⬜ Open — **CSP cannot fix this**; served same-origin, so only a Cloudflare dashboard setting can disable it                        |
+| **Cloudflare costs 42 Lighthouse points total** — 15 perf, 19 best-practices, 8 SEO, +298 ms TBT vs the identical build on the SWA origin | ⬜ Open — **all three need dashboard access this repo does not have**; quantify with `scripts/measure-cloudflare-cost.sh` |
+| **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ⬜ **Open, overdue** — target Node 24 (LTS to 2028-04-30); Oryx supports `24.13.0`                                                      |
 | Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
@@ -1773,3 +1774,164 @@ from the failing build and labelled as a snapshot rather than an authority: when
 versions the list goes stale in the *safe* direction, rejecting something that would now work.
 Widen it from a real build log, never by guessing. Mutation-confirmed — setting `NODE_VERSION`
 back to 20.20.2 turns it red.
+
+---
+
+## Node 20 is end-of-life, and has been for 90 days (2026-07-29)
+
+From `nodejs/Release/schedule.json`, checked rather than remembered:
+
+| Major | EOL | Status on 2026-07-29 |
+| --- | --- | --- |
+| 18 | 2025-04-30 | EOL |
+| **20** | **2026-04-30** | **EOL — 90 days ago** |
+| 22 | 2027-04-30 | maintenance (275 days left) |
+| **24** | **2028-04-30** | **Active LTS (641 days)** |
+| 26 | 2029-04-30 | becomes LTS 2026-10-28 |
+
+This repo pins **20.20.0** everywhere. That runtime receives **no security patches**, which
+makes it a standing security item rather than housekeeping — and it outranks the Cloudflare
+performance work on that basis, even though Cloudflare is the more visible number.
+
+**Target: Node 24.** Not 22 (already in maintenance, EOL in 9 months — a migration that buys
+9 months is barely worth doing twice). Not 26 (not LTS until 2026-10-28). Dependabot proposed
+`node:26.5-slim` and the docker pin correctly blocked it.
+
+### What a migration has to touch, and the trap in it
+
+All **seven** declaration sites, which `__tests__/infra/toolchain-versions.test.ts` already
+enumerates and cross-checks — so the mechanical part is bounded and the guard will fail loudly
+if one is missed.
+
+**The trap is the same one that caught the 20.20.2 attempt**: `NODE_VERSION` for the SWA build
+must be a version **Oryx carries**, and Oryx's Node 24 support is currently a single version —
+**`24.13.0`**. There is no choice of patch. Confirm from a real build log at migration time,
+because that list moves; the guard's snapshot goes stale in the safe direction (rejecting a
+version that would now work) rather than the dangerous one.
+
+### What needs checking beyond the version bump
+
+- **Next.js 15.5** on Node 24 — supported, but verify against a real build rather than docs.
+- **`happy-dom`** (the vitest environment) and `@vitest/coverage-v8` — both are native-adjacent
+  and the most likely to complain about a V8 major change.
+- **`node:` builtin API changes** in 21→24, particularly anything `server.js` touches.
+- **The three Dockerfiles** — `node:24.13.0-slim` and `-alpine` tags must be confirmed to
+  exist before use, the way `20.20.0`'s were.
+- **CI runners** — `node-version-file: .nvmrc` picks it up automatically; nothing to change.
+
+Estimated shape: a single PR, mechanical, with the risk concentrated entirely in the test
+toolchain rather than the application. The E2E suite and 339 unit tests are the evidence that
+it worked, and both now exist — which is exactly the "real test gate" that the deferred
+dependency-majors item was waiting on.
+
+---
+
+## The Cloudflare edge costs 42 Lighthouse points, and none of it is fixable from this repo (2026-07-29)
+
+Measured with `scripts/measure-cloudflare-cost.sh`, which compares the apex against the SWA
+origin serving the **identical build** — so every difference is the edge, not the application:
+
+| Category | apex (Cloudflare) | origin (bare SWA) | Edge cost |
+| --- | --- | --- | --- |
+| performance | 81 | 96 | **−15** |
+| accessibility | 100 | 100 | 0 |
+| best-practices | 81 | 100 | **−19** |
+| SEO | 92 | 100 | **−8** |
+| TBT | 298 ms | 0 ms | **+298 ms** |
+
+Accessibility being identical is what proves the code is the same and the rest is the edge.
+
+### Three distinct causes, three separate decisions
+
+**1. Bot Management / JS Detections — costs 15 performance points and 19 best-practices.**
+It injects `/cdn-cgi/challenge-platform/scripts/jsd/main.js` (793 ms of script evaluation, one
+396 ms long task) *and* is the source of the `StorageType.persistent` deprecation that keeps
+best-practices at 81. Served from **this site's own origin**, so `script-src 'self'` already
+permits it and **no CSP change can touch it**. Cloudflare dashboard → Security → Bots →
+JavaScript Detections.
+
+**2. AI Crawl Control / Content Signals — costs 8 SEO points.** Cloudflare prepends a
+`Content-Signal: search=yes,ai-train=no,use=reference` directive to `robots.txt`, which
+Lighthouse rejects: *line 30 — Unknown directive*. Verified as the single reported error.
+It also adds `Disallow: /` blocks for `GPTBot`, `ClaudeBot`, `Google-Extended`, `CCBot`,
+`Bytespider`, `Amazonbot`, `Applebot-Extended` and `meta-externalagent`.
+
+**This one is a product decision, not a cleanup.** Those rules are what stop AI crawlers
+training on this site's content. Turning them off to gain 8 Lighthouse SEO points would trade
+content protection for a score — and the site's own `Allow: /` and `Sitemap:` survive inside
+the merged file either way, so real crawlers are not being harmed today. Recommend **keeping
+it** and accepting SEO 92.
+
+**3. Web Analytics — already resolved.** The beacon is allow-listed as of #89 and now loads
+(`200`) and reports (`204 /cdn-cgi/rum`). No longer a cost.
+
+### Why this is not being done here
+
+There are **no Cloudflare credentials in this repo or environment** — no `CLOUDFLARE_API_TOKEN`,
+no Cloudflare secrets, no `wrangler`. All three are dashboard settings belonging to the account
+owner. What this repo can contribute is the measurement, which it now does.
+
+### Verifying a change afterwards
+
+Run `scripts/measure-cloudflare-cost.sh` before and after. **The apex is not deterministic** —
+the bot-detection long task varies, and a single run has swung between 64 and 86 performance on
+unchanged code. The script reports min/max alongside the median for exactly that reason: if a
+before/after difference falls inside those ranges, it is noise. Use `RUNS=3` or more.
+
+---
+
+## The newly-required e2e gate flaked immediately, and the promotion evidence was hollow (2026-07-29)
+
+`Quality Gate / e2e` was promoted to required on the strength of **12 of 12 green runs**. It
+failed on run 13 — a PR whose only changes were documentation and a shell script, so the site
+code was byte-identical to `main`.
+
+**The 12 green runs were not evidence.** They were passing with a wait that did nothing, so
+they were twelve lucky samples rather than twelve demonstrations of determinism. Counting green
+runs measures nothing if the mechanism under test is inert — which is the same mistake as
+counting workflow successes when the job is skipped, made one level deeper.
+
+### What was actually wrong
+
+`settleAndFreeze()` waited for every element with an inline `opacity` to reach 0 or 1. Probing
+a real production build showed why that can never succeed:
+
+```
+{"atMs":2500,"inlineOpacityEls":14,"animations":8,"running":7,
+ "prop":"backgroundPositionX,backgroundPositionY","cls":"absolute inset-0 hero-aurora"}
+```
+
+At 2.5 s there were still **7 running animations** — an infinite `hero-aurora` background pan
+and `mix-blend-screen` floating blobs — and **14 elements held a permanently fractional inline
+opacity**. The loop therefore always ran to its timeout and proceeded anyway. axe then sampled
+whatever frame it landed on, and the hero CTA's contrast came out as a different blend each
+time: 1.08, 1.17, 1.27, 1.53.
+
+Two earlier attempts at this function both failed the same way, for reasons that each looked
+sufficient in isolation:
+
+1. `emulateMedia({ reducedMotion })` — Framer Motion keeps opacity fades by design.
+2. A `transition: none` stylesheet — cannot stop script-driven animation.
+3. Waiting for inline opacity to settle — **some never settle**.
+
+### The fix: freeze, do not wait
+
+`document.getAnimations()` covers CSS animations, CSS transitions **and** the Web Animations
+API that Framer Motion uses — all three at once, which no CSS-only or inline-style-only
+approach can. Each animation's `currentTime` is pinned to 0 before pausing, so the frozen frame
+is identical on every run; pausing alone would freeze at an arbitrary point and stay flaky.
+
+**Verified 9 consecutive clean runs** on the exact configuration that failed (CI path,
+production build, chromium): 6× the a11y spec alone, 2× the full 32-test CI suite, plus
+160/160 across all five browsers on the dev path.
+
+### On the promotion
+
+Kept required rather than reverted, because the root cause is now understood and fixed rather
+than retried until green — and because the alternative would restore the same hollow evidence
+this entry is about. The written rule ("a flaky new gate gets switched off") was aimed at
+nursing a gate that cannot be made deterministic; this one could.
+
+The lesson to carry: **before counting green runs as evidence, confirm the thing you are
+counting actually exercises the mechanism.** A gate whose wait is a no-op passes exactly as
+often as one that works, until it doesn't.

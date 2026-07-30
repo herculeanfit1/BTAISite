@@ -51,18 +51,49 @@ const BLOCKING = new Set(["critical", "serious"]);
  * not be mistaken for an animation in flight.
  */
 async function settleAndFreeze(page: Page) {
-  await page.waitForFunction(
-    () =>
-      Array.from(document.querySelectorAll<HTMLElement>('[style*="opacity"]')).every(
-        (el) => {
-          const v = el.style.opacity;
-          return v === "" || v === "1" || v === "0";
-        },
-      ),
-    undefined,
-    { timeout: 15_000 },
-  );
+  // 1. Wait for hydration. Framer Motion writes nothing until React mounts, so
+  //    polling opacity before that finds NO animated elements, concludes
+  //    "settled", and returns instantly -- then the fade starts under the scan.
+  //    That is the opposite race from the one this function was written for, and
+  //    it is what made a promoted required check flake on the next PR. The theme
+  //    toggle renders a placeholder div until mounted, so its button existing is
+  //    a positive signal that effects have run.
+  await page
+    .locator('[data-testid="dark-mode-toggle"]')
+    .waitFor({ state: "visible", timeout: 15_000 });
 
+  // 2. FREEZE every animation rather than waiting for them to finish, because
+  //    several never do. Probed on a real production build: at 2.5s there were
+  //    still 7 running animations -- an infinite `hero-aurora` background pan
+  //    and `mix-blend-screen` floating blobs -- and 14 elements held a
+  //    permanently fractional inline opacity. Any "wait until everything
+  //    settles" loop therefore runs to its timeout and proceeds anyway, which
+  //    is a wait that does nothing while looking like a guard. Two earlier
+  //    versions of this function did exactly that.
+  //
+  //    getAnimations() covers all three mechanisms at once -- CSS animations,
+  //    CSS transitions, and the Web Animations API that Framer Motion uses --
+  //    which no single CSS or inline-style approach can. currentTime is pinned
+  //    before pausing so the frozen frame is the same on every run; pausing
+  //    alone would freeze at an arbitrary point and stay flaky.
+  await page.evaluate(() => {
+    for (const a of document.getAnimations()) {
+      try {
+        a.currentTime = 0;
+        a.pause();
+      } catch {
+        /* an animation that refuses to seek is still better paused */
+        try {
+          a.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  });
+
+  // 3. Kill CSS transitions and prevent NEW animations starting after the
+  //    freeze above -- a separate mechanism from anything already running.
   await page.addStyleTag({
     content: `*, *::before, *::after {
       transition: none !important;
