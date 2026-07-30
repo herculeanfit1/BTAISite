@@ -166,8 +166,12 @@ attacker-controlled values in the admin email.
 ### E2E: never point it at a port you did not start (PLAN-013)
 
 `e2e/` holds **160 Playwright tests** across 3 specs (`basic`, `dark-mode`, `a11y`) and 5
-browser projects, green as of 2026-07-28 and run in CI by `Quality Gate / e2e` (chromium
-only — 32 tests — **advisory**, not a required check until it has a track record).
+browser projects. CI runs `Quality Gate / e2e` (chromium only, 32 tests) against a **production
+build**, and it is a **required check** as of 2026-07-29.
+
+It shipped advisory and was promoted on 12 green runs — which then **failed on the next PR**,
+because those 12 had been passing with a wait that did nothing. See the animation note below;
+the lesson is that counting green runs proves nothing until you know the mechanism ran.
 
 The config takes two env knobs, both unset by default:
 
@@ -296,25 +300,77 @@ green here is not "accessible", and the spec says so.
   fails AA, so `#3A5F77` (6.81:1) is the *text and button* tone and `#5B90B0` is kept for
   decorative accents and dark-mode text, where it is fine. Hovers go to `#2C4A5E`. Do not
   "restore the brand colour" on text without re-running the a11y spec.
-- **Never scan on `networkidle` alone.** It means the network is quiet, not that the page
-  settled. Framer Motion fades the hero in by writing inline `style="opacity"` from rAF,
-  so a scan can sample an element mid-fade where text and background both resolve to blends
-  of the page behind — a captured failure read `#192736 on #1a2937, 1.02:1`. Neither
-  `emulateMedia({ reducedMotion })` (Motion keeps opacity fades by design) nor a
-  `transition: none` stylesheet (cannot stop inline styles) fixes it. `settleAndFreeze()`
-  waits for every **inline** opacity to reach 0 or 1, then freezes. It polls inline opacity
-  only — the contact form's disabled submit is a permanent `opacity-85` from a class.
+- **Never scan on `networkidle`, and never *wait* for animations here — freeze them.** This
+  page has animations that **never end**: probed on a production build, 7 were still running at
+  2.5 s (an infinite `hero-aurora` background pan and `mix-blend-screen` blobs) and 14 elements
+  held a permanently fractional inline opacity. Any "wait until everything settles" loop
+  therefore runs to its timeout and proceeds anyway — a wait that does nothing while looking
+  like a guard. Two versions of `settleAndFreeze()` did exactly that, and the second one is why
+  a newly-required check failed on the next PR.
 
-### PR preview deploys leak staging environments
+  Three approaches that look sufficient and are not: `emulateMedia({ reducedMotion })` (Framer
+  Motion keeps opacity fades by design), a `transition: none` stylesheet (cannot stop
+  script-driven animation), and waiting on inline opacity (some never settle). Only
+  `document.getAnimations()` covers CSS animations, CSS transitions **and** the Web Animations
+  API that Motion uses. `settleAndFreeze()` waits for hydration, then pins every animation's
+  `currentTime` to 0 and pauses it — pinning matters, or the frozen frame is arbitrary and it
+  stays flaky. A captured mid-fade failure read `#192736 on #1a2937, 1.02:1`.
 
-`deploy-pr-to-azure` fails with *"already has the maximum number of staging environments"*
-once ~10 accumulate, and they accumulate because `cleanup-pr` **races the deploy it is
-cleaning up after**: on a merge the `closed` event's cleanup can finish before the
-still-in-flight push deploy creates the environment, so it is orphaned and the cleanup
-reports success. Symptom is a red preview deploy on an unrelated PR, usually docs-only.
+### PR preview deploys used to leak staging environments (fixed 2026-07-29)
 
-Clear it with `az staticwebapp environment list/delete` (the environment name is the PR
-number; **never delete `default`** — that is production). Tracked in `docs/strategy/ROADMAP.md`.
+`cleanup-pr` **raced the deploy it was cleaning up after**: on a merge, the `closed` event's
+cleanup could finish *before* the still-in-flight push deploy created the environment, so the
+environment was orphaned and the cleanup exited green. Ten accumulated, the Static Web App hit
+its cap, and `deploy-pr-to-azure` then failed with *"already has the maximum number of staging
+environments"* — on unrelated PRs, usually docs-only. **The symptom appeared nowhere near the
+cause**, which is why it went unexplained long enough to matter.
+
+Fixed by ordering, not retrying: `cleanup-pr` now waits for every in-flight run of its workflow
+on that branch before closing. If it ever recurs, clear it with
+`az staticwebapp environment list/delete` (the environment name is the PR number;
+**never delete `default`** — that is production).
+
+Two notes for anyone editing that job. It needs `actions: read`; without it the run query
+returns nothing, the wait sees "0 in flight" and closes immediately, silently restoring the
+race. And `gh api --jq` prints its **error body to stdout** on a 404 while also exiting
+non-zero, so `|| echo 0` yields a non-numeric string that makes `[ "$n" -eq 0 ]` error rather
+than match — the loop then spins its full budget. Treat "query failed" and "zero in flight" as
+different states.
+
+### Dependabot never ran here until 2026-07-29
+
+`.github/dependabot.yml` failed schema validation from the repository's **first commit
+(2025-05-25)** until it was fixed — fourteen months, **0 Dependabot PRs against 88 total**. One
+unknown key (`security-updates-only`) did it. Three things kept it invisible, each worth
+remembering separately:
+
+1. **A config that fails to parse is ignored *entirely*** — the valid `github-actions` and
+   `docker` entries never ran either.
+2. **Validation is server-side and only reports on the merge commit** that *changes the file*.
+   One red check, once; every commit after looked clean. There is **no local validator** —
+   `__tests__/infra/dependabot-config.test.ts` approximates the schema and is the only
+   pre-merge signal.
+3. **Two adjacent mechanisms looked like coverage.** `dependabot-security.yml` is gated on
+   `github.actor == 'dependabot[bot]'`, an actor that had never opened a PR; `security-scan.yml`
+   runs Trivy, which *finds* vulnerabilities but updates nothing.
+
+Vulnerability alerts were also **disabled at the repo level** and are now on. Of 69 open alerts
+only **2 were production-scope** (both `next-intl`, since removed) — so quote the runtime-scope
+number, not the total. Automatic security-update PRs remain **off**; that is a review-load
+decision, not an oversight.
+
+`ignore` rules are **per-ecosystem**. The npm entry ignores majors; docker ignores `node`
+majors specifically, because Dependabot proposed `node:26.5-slim` — four majors past a version
+CLAUDE.md documents as breaking. `github-actions` majors are deliberately *not* suppressed.
+
+### Dependabot PRs cannot run the preview deploy
+
+`deploy-pr-to-azure` skips `github.actor == 'dependabot[bot]'` because it **cannot succeed**
+there: Dependabot-triggered runs read a separate secret store with no
+`AZURE_STATIC_WEB_APPS_API_TOKEN_*`, and the job fails in ~40 s with `deployment_token was not
+provided`. The guard keys on `github.actor` (who *triggered* the run), not on the PR author —
+so when a human runs `gh pr update-branch` on a Dependabot PR the actor changes, secrets
+resolve, and the deploy correctly runs.
 
 ### Testing route handlers: two harness traps (PLAN-007)
 
