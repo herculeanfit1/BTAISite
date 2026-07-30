@@ -54,7 +54,7 @@ they are no longer open.
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ✅ **Fixed 2026-07-29** — `cleanup-pr` now waits for in-flight runs before closing; ordering, not retrying                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
-| **Cloudflare Bot Management (JS Detections) costs ~34 points** — 16 performance + 18.5 best-practices; `/cdn-cgi/challenge-platform/…/jsd/main.js`, 750 ms eval, one 375 ms long task | ⬜ **Open — decision documented, owner's call.** See `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`. Dashboard-only; **the available lever depends on the Cloudflare plan** and there are no credentials here. Cost **recurs ~every 15 min** (measured; the 365-day `cf_clearance` expiry is a red herring), so the first load of essentially every visit pays — but apex Core Web Vitals still pass. Prove with `JSD_ONLY=1 ./scripts/measure-cloudflare-cost.sh` |
+| **Cloudflare Bot Management (JS Detections) costs ~34 points** — 16 performance + 18.5 best-practices; `/cdn-cgi/challenge-platform/…/jsd/main.js`, 750 ms eval, one 375 ms long task | ✅ **Closed 2026-07-30 — ACCEPTED, won't fix** (PLAN-015). The zone is **Free**, where Bot Fight Mode makes JS Detections mandatory and runs outside the Ruleset Engine — it cannot be disabled, skipped by WAF rules or Page Rules, or scoped. The only lever removes the whole bot layer; apex CWV already pass (LCP 1.2 s, CLS 0) and `/api/contact` is defended server-side. **Reopening requires a plan upgrade, not a code change.** Cost **recurs ~every 15 min** (measured; the 365-day `cf_clearance` expiry is a red herring). Baseline: `JSD_ONLY=1 ./scripts/measure-cloudflare-cost.sh` |
 | Intermittent `inspector-issues` CSP audit at the apex (~3.7 best-practices points, fails 1 run in 6) | ⬜ Open — **cause not established, deliberately.** Edge-related (origin is clean under a byte-identical CSP) but it corresponds to **no** CSP violation a real browser reports; a `static.cloudflareinsights.com` `connect-src` hypothesis was refuted with a positive-controlled probe |
 | **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ✅ **Done 2026-07-29 (PLAN-014)** — migrated to **22.22.0**, build *and* runtime; `apiRuntime` proven inert and removed                  |
 | Cloudflare's AI-crawler policy costs 8 SEO points — the `Content-Signal:` line Lighthouse calls an unknown directive               | ⬜ Open — **recommend KEEPING.** It blocks GPTBot/ClaudeBot/Google-Extended et al from training on this content; 8 points is a poor trade |
@@ -1107,8 +1107,11 @@ installs it via `npx` rather than `npm ci`, so the two can otherwise diverge sil
 
 - **The Lighthouse step is `continue-on-error`** while it earns a track record, same staging
   as the `e2e` job.
-- **The gate does not run against the apex.** Pointing it there would fail on day one for
-  reasons outside this repo. When the Cloudflare item is resolved, move it.
+- **The gate does not run against the apex, and never will.** Pointing it there would fail
+  on day one for reasons outside this repo. This was written as "when the Cloudflare item is
+  resolved, move it" — but it resolved on 2026-07-30 as **accepted, won't fix** (Free plan;
+  JS Detections is mandatory there). So the condition is satisfied and the instruction is
+  still wrong. Moving the gate now needs a **Cloudflare plan upgrade**, not a resolution.
 - **No performance optimisation work.** The application already meets its published budget;
   the deficit is at the edge.
 

@@ -301,13 +301,19 @@ knows the preview URL). Measured **2026-07-30**, desktop preset, 3 runs each:
   "could not tell" rather than folding a fetch failure into "not present". The apex scores
   are **not deterministic** — single runs have swung 64→86 on unchanged code, so use
   `RUNS=3`+ and compare ranges, not points.
-- **There are no Cloudflare credentials in this repo or environment**, and the available
-  lever depends on the zone's plan: on **Free**, Bot Fight Mode makes JS Detections
-  mandatory and runs *outside* the Ruleset Engine, so it cannot be skipped by WAF custom
-  rules or Page Rules nor scoped to paths; on **Pro/Business** it is a separate optional
-  toggle. The decision is written up in
-  `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`. Do not point the gate at the
-  apex until it is resolved.
+- **DECIDED 2026-07-30: the edge deficit is accepted and will not be fixed.** The zone is on
+  the **Free** plan, where Bot Fight Mode makes JS Detections **mandatory** and runs
+  *outside* the Ruleset Engine — so it cannot be disabled, skipped by WAF custom rules or
+  Page Rules, or scoped to paths. The only available lever removes the entire Cloudflare bot
+  layer, which is a bad trade for points on a lab metric when apex Core Web Vitals already
+  pass. There are also no Cloudflare credentials in this repo or environment. Reasoning in
+  `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`.
+- **Therefore: never point the Lighthouse gate at the apex.** This is permanent, not
+  "pending the Cloudflare item" — the apex cannot meet `Perf ≥ 90` and the cause is not in
+  this codebase. The published performance budget applies to the **app**, measured on the
+  preview URL, where it is met (97 on the SWA origin). A gate on the apex would fail on day
+  one, for ever, for reasons no PR can fix. Reopening this needs a **plan upgrade** (Pro+
+  makes JS Detections a separate optional toggle), not a code change.
 - The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
   it could not load, every assertion `"warn"` so it could not fail, and `url` plus
   `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and
@@ -405,9 +411,49 @@ resolve, and the deploy correctly runs.
 
 Never pass a logger method as a bare callback into another module — the `this`-binding is lost and calls throw silently inside non-blocking try/catch. Arrow-wrap it: `(msg, meta) => context.log(msg, meta)`. Originally an Azure Functions `context.log` incident; the same hazard applies to any method passed by reference across the API seam.
 
-### Coverage only counts `app/components/**`
+### Coverage: what it counts, and the two traps in the config
 
-`vitest.config.js` sets `coverage.include` to `app/components/**` only, with `all: false`. Tests you add for `src/lib/api/**` — the most logic-heavy code in the repo, and the whole `/api/*` implementation — earn **no** coverage credit and cannot lift the thresholds. Thresholds are 70/60/70/70 locally and 30/20/30/30 in CI (lines/branches/functions/statements). Widening the include list is PLAN-005's call; until then, do not read a passing coverage gate as evidence the API layer is tested.
+`vitest.config.js` includes **`app/components/**`, `app/api/**`, `src/lib/**` and `lib/**`**,
+with **`all: true`** — so files with no test at all are counted, and the numbers describe the
+whole included surface rather than only what some test happened to import. Thresholds are
+**28 lines / 81 branches / 82 functions / 28 statements**, **identical in CI and locally**.
+
+Measured 2026-07-30 by `npm run test:coverage` — quoted from the run, not from the config:
+
+```
+All files          |   31.61 |    84.93 |   86.01 |   31.61
+ app/api/contact   |     100 |      100 |      75 |     100
+ app/components    |   27.12 |    78.12 |    82.5 |   27.12
+ src/lib/api       |   95.25 |    86.29 |   96.96 |   95.25
+ src/lib/api/email |   97.51 |    91.66 |     100 |   97.51
+```
+
+`src/lib/api` is the **best-covered directory in the repo**. The headline 31.61 is dragged
+down by `app/components`, not by the API layer.
+
+Two failure modes are baked into this config's history, and both are the kind that leave a
+gate green while measuring nothing:
+
+- **`exclude` silently cancels `include`.** The exclude list used to blanket-exclude
+  `app/**` and `lib/**`, which overrode the `include` naming `app/components/**` — so the
+  config measured **nothing** while appearing to measure components, and the thresholds were
+  judged against whatever slipped through. Exclude specific non-source files, never a tree
+  that `include` names.
+- **A CI/local threshold split means the gating number is not the number anyone reads.**
+  This was `process.env.CI ? 30 : 70`. Now identical in both.
+
+> This section previously said coverage counted `app/components/**` *only*, with
+> `all: false`, that `src/lib/api/**` tests earned **no** credit and "cannot lift the
+> thresholds", and that the thresholds were 70/60/70/70 local and 30/20/30/30 CI. Every one
+> of those was false by the time it was read — the include list was widened in PLAN-007 and
+> the split was removed. It told readers not to bother testing the most logic-heavy code in
+> the repo, while that code sat at 95% and was carrying the gate. Corrected 2026-07-30.
+>
+> It also said "widening the include list is PLAN-005's call; **until then** …" — a
+> conditional whose condition had already been met. Same defect as the Lighthouse-gate note
+> this PR fixes: **an instruction written against a condition outlives the condition, and
+> then fires at the wrong moment.** Prefer stating what is true now, dated, over an
+> instruction that waits on an event nobody is watching for.
 
 ### CI concurrency groups (PR #14, #18)
 
@@ -420,7 +466,7 @@ Concurrency groups must key on **both** `${{ github.workflow }}` and `${{ github
 - **API response shapes are a CI contract.** Post-deploy verification polls `/api/health` for `"status"` on the SWA origin _or_ the apex, then POSTs an invalid payload to `/api/contact` expecting a JSON **400**. Changing either shape breaks the deploy gate and the incident tooling that greps them.
 - PR previews deploy with `PREVIEW_BUILD=true` baked in at build time, which makes `/api/contact` skip real email/HubSpot/queue side effects (host headers alone were unreliable for detecting previews).
 - Pages that must be statically prerendered live under `app/[locale]/` and get `generateStaticParams` treatment; the canonical legal pages are also top-level routes.
-- **Infra is owned by `infra/main.bicep`** (+ `infra/parameters.prod.json`) — do not restate the topology here; read the Bicep. Storage, Key Vault and the Function App still exist pending Phase 5 teardown.
+- **Infra is owned by `infra/main.bicep`** (+ `infra/parameters.prod.json`) — do not restate the topology here; read the Bicep. Storage and Key Vault still exist (the Key Vault is unused — see above); **the Function App is gone**, deleted 2026-07-27 with Phase 5, and `__tests__/infra/phase5-teardown.test.ts` fails if it returns. This line used to say all three existed "pending Phase 5 teardown", which contradicted the Architecture section of this same file for three days after the teardown completed.
 - **On withholding Azure resource names**: this file does not name them, but that is convention, not a control. `infra/main.bicep` and two `scripts/*.sh` name them by construction in this **public** repo, so the topology is already published and scrubbing prose would be theatre. Treat resource names as public and rely on the actual controls — Key Vault + managed identity, and a queue-scoped add-only SAS. What must **never** land here: credential values, Key Vault secret _values_, 1Password vault/item names, private LAN addresses, and anti-abuse thresholds.
 - **Prod secrets are literal Static Web App settings, and Key Vault is not available for them.** SWA supports `@Microsoft.KeyVault()` references **only for custom authentication config** — the managed backend serving `/api/*` does not resolve them (Microsoft documents that SWA's serverless functions "do not support direct Key Vault integration"; see Azure/static-web-apps#1090, #1091, #428). Setting `RESEND_API_KEY` to a reference would hand the runtime that literal string and break every email send. `kv-btai-site-prod` exists but nothing reads it; it was the retired Functions app's mechanism. **The real controls** are Azure RBAC on the SWA resource, a queue-scoped add-only SAS, and rotation. `infra/swa-settings.contract.json` is authoritative; do not reopen this as "move the secrets to Key Vault".
 - **Performance budgets** (no regression vs `main` for changed pages): LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms, Perf ≥ 90. Check bundle size with `ANALYZE=true npm run build`.
