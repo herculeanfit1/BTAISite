@@ -55,7 +55,7 @@ they are no longer open.
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
 | **Cloudflare costs 42 Lighthouse points total** — 15 perf, 19 best-practices, 8 SEO, +298 ms TBT vs the identical build on the SWA origin | ⬜ Open — **all three need dashboard access this repo does not have**; quantify with `scripts/measure-cloudflare-cost.sh` |
-| **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ⬜ **Open, overdue** — target Node 24 (LTS to 2028-04-30); Oryx supports `24.13.0`                                                      |
+| **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ⬜ **Open, overdue** — plan written: `PLAN-014`. Target is **Node 22**, not 24; SWA has no `node:24` runtime                             |
 | Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
@@ -1935,3 +1935,28 @@ nursing a gate that cannot be made deterministic; this one could.
 The lesson to carry: **before counting green runs as evidence, confirm the thing you are
 counting actually exercises the mechanism.** A gate whose wait is a no-op passes exactly as
 often as one that works, until it doesn't.
+
+### Correction — the Node target is 22, not 24 (2026-07-29)
+
+The entry above originally recommended **Node 24**, reasoning from Oryx carrying `24.13.0`.
+**That was wrong**, and wrong in a familiar way: it checked the *build* platform's support and
+never checked the *runtime* ceiling.
+
+Azure Static Web Apps' `apiRuntime` supports `node:18`, `node:20` and `node:22`. **There is no
+`node:24`.** [Azure/static-web-apps#1724](https://github.com/Azure/static-web-apps/issues/1724),
+asking for a Node 24 timeline, was opened 2026-02-05 and is still open with no Microsoft
+response.
+
+So the platform ceiling is Node 22, EOL 2027-04-30 — the migration buys about 9 months rather
+than 2½ years. Unsatisfying, and it is the ceiling that exists.
+
+**The pattern to notice**: "Oryx supports 24.13.0" was a true fact that supported a false
+conclusion, because it answered a different question than the one that mattered. The same shape
+as "20.20.2 is the latest LTS" (true, and Oryx rejects it) and "the e2e job was green 12 times"
+(true, and the wait was a no-op). **Check that the fact you verified is the fact the decision
+turns on.**
+
+`PLAN-014` also found an **eighth** Node declaration site that yesterday's
+`toolchain-versions.test.ts` does not cover: `staticwebapp.config.json` `platform.apiRuntime`.
+The guard scans `.nvmrc`, `package.json`, the Dockerfiles and the workflows, and never looks at
+that file. Closing the gap is part of PLAN-014 rather than a follow-up.
