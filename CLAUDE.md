@@ -426,20 +426,36 @@ Never pass a logger method as a bare callback into another module — the `this`
 `vitest.config.js` includes **`app/components/**`, `app/api/**`, `src/lib/**` and `lib/**`**,
 with **`all: true`** — so files with no test at all are counted, and the numbers describe the
 whole included surface rather than only what some test happened to import. Thresholds are
-**28 lines / 81 branches / 82 functions / 28 statements**, **identical in CI and locally**.
+**35 lines / 29 branches / 28 functions / 34 statements**, **identical in CI and locally**.
 
-Measured 2026-07-30 by `npm run test:coverage` — quoted from the run, not from the config:
+Measured 2026-07-30 on **Vitest 4** by `npm run test:coverage` — quoted from the run, not
+from the config:
 
 ```
-All files          |   31.61 |    84.93 |   86.01 |   31.61
- app/api/contact   |     100 |      100 |      75 |     100
- app/components    |   27.12 |    78.12 |    82.5 |   27.12
- src/lib/api       |   95.25 |    86.29 |   96.96 |   95.25
- src/lib/api/email |   97.51 |    91.66 |     100 |   97.51
+All files          |   36.83 |    31.66 |   30.84 |   37.03
+ app/api/contact   |   85.71 |      100 |      75 |   85.71
+ app/components    |   28.02 |    17.81 |   21.27 |   28.36
+ src/lib/api       |   90.32 |    85.99 |   82.22 |   95.31
+ src/lib/api/email |   95.23 |     91.3 |     100 |   95.08
 ```
 
-`src/lib/api` is the **best-covered directory in the repo**. The headline 31.61 is dragged
-down by `app/components`, not by the API layer.
+`src/lib/api` is the **best-covered directory in the repo**. The headline is dragged down by
+`app/components`, not by the API layer.
+
+**Do not compare these to any pre-Vitest-4 figure.** The v8 provider moved from
+`v8-to-istanbul` to AST-based analysis, which changed what is *counted*, on identical tests:
+
+| | v3 covered/total | v4 covered/total |
+| --- | --- | --- |
+| functions | 123/**143** = 86.01% | 91/**295** = 30.85% |
+| branches | 344/**405** = 84.94% | 322/**1017** = 31.66% |
+| statements | 1793/**5672** = 31.61% | 452/**1227** = 36.84% |
+
+The numerators barely moved; the **denominators** did. AST analysis finds ~2.5× more
+functions and branches than `v8-to-istanbul` enumerated and ~4.6× fewer statements — so the
+old 86%/85% were **flattering**, measured against a denominator omitting more than half the
+functions and branches, while the old statement figure was pessimistic. **The v3 numbers
+were wrong in both directions.** Real function coverage was never 86%; nothing regressed.
 
 Two failure modes are baked into this config's history, and both are the kind that leave a
 gate green while measuring nothing:
