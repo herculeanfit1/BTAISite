@@ -1,8 +1,27 @@
 # PLAN-015 — Cloudflare Bot Management (JS Detections): the decision
 
-**Status**: decision document. **No change is proposed in this repo, because none is
-possible from this repo.** Everything actionable lives in the Cloudflare dashboard, for
-which there are no credentials here.
+**Status**: ✅ **DECIDED 2026-07-30 — accepted, won't fix.**
+
+The zone is on the **Free** plan. That resolves §5 to its worst branch: JS Detections is
+**mandatory** under Bot Fight Mode and cannot be disabled, scoped, or skipped, so the only
+available lever is turning off the entire Cloudflare bot layer. Per §7, the owner's decision
+is to **leave Bot Fight Mode alone** and accept the ~34-point edge deficit.
+
+Three consequences, so nobody re-derives this:
+
+1. **Never point the Lighthouse gate at the apex.** Permanent. Not "pending the Cloudflare
+   item" — the item is closed and the apex still cannot pass. See §7's last line.
+2. **The published `Perf ≥ 90` budget applies to the app, on the preview URL**, where it is
+   met (97). It does not apply to the apex and never will.
+3. **Reopening this requires a Cloudflare plan upgrade, not a code change.** Pro/Business
+   makes JS Detections a separate optional toggle; that is the only thing that changes the
+   answer.
+
+The rest of this document is the reasoning that produced the decision, kept intact — the
+measurements in §1–§4 remain the baseline for §8 should the plan ever change.
+
+**No change was made in this repo, because none is possible from this repo.** Everything
+actionable lives in the Cloudflare dashboard, for which there are no credentials here.
 
 **Measured**: 2026-07-30, against `main` at `1de7983`, apex vs SWA origin serving the
 identical build.

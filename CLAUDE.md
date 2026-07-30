@@ -301,13 +301,19 @@ knows the preview URL). Measured **2026-07-30**, desktop preset, 3 runs each:
   "could not tell" rather than folding a fetch failure into "not present". The apex scores
   are **not deterministic** — single runs have swung 64→86 on unchanged code, so use
   `RUNS=3`+ and compare ranges, not points.
-- **There are no Cloudflare credentials in this repo or environment**, and the available
-  lever depends on the zone's plan: on **Free**, Bot Fight Mode makes JS Detections
-  mandatory and runs *outside* the Ruleset Engine, so it cannot be skipped by WAF custom
-  rules or Page Rules nor scoped to paths; on **Pro/Business** it is a separate optional
-  toggle. The decision is written up in
-  `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`. Do not point the gate at the
-  apex until it is resolved.
+- **DECIDED 2026-07-30: the edge deficit is accepted and will not be fixed.** The zone is on
+  the **Free** plan, where Bot Fight Mode makes JS Detections **mandatory** and runs
+  *outside* the Ruleset Engine — so it cannot be disabled, skipped by WAF custom rules or
+  Page Rules, or scoped to paths. The only available lever removes the entire Cloudflare bot
+  layer, which is a bad trade for points on a lab metric when apex Core Web Vitals already
+  pass. There are also no Cloudflare credentials in this repo or environment. Reasoning in
+  `docs/strategy/plans/PLAN-015-cloudflare-bot-management.md`.
+- **Therefore: never point the Lighthouse gate at the apex.** This is permanent, not
+  "pending the Cloudflare item" — the apex cannot meet `Perf ≥ 90` and the cause is not in
+  this codebase. The published performance budget applies to the **app**, measured on the
+  preview URL, where it is met (97 on the SWA origin). A gate on the apex would fail on day
+  one, for ever, for reasons no PR can fix. Reopening this needs a **plan upgrade** (Pro+
+  makes JS Detections a separate optional toggle), not a code change.
 - The previous `lighthouserc.js` was dead three ways — `module.exports` in an ESM package so
   it could not load, every assertion `"warn"` so it could not fail, and `url` plus
   `staticDistDir` together. `__tests__/infra/lighthouse-config.test.ts` guards all three, and
