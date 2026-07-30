@@ -55,7 +55,7 @@ they are no longer open.
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
 | **Cloudflare costs 42 Lighthouse points total** — 15 perf, 19 best-practices, 8 SEO, +298 ms TBT vs the identical build on the SWA origin | ⬜ Open — **all three need dashboard access this repo does not have**; quantify with `scripts/measure-cloudflare-cost.sh` |
-| **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ⬜ **Open, overdue** — plan written: `PLAN-014`. Target is **Node 22**, not 24; SWA has no `node:24` runtime                             |
+| **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ✅ **Done 2026-07-29 (PLAN-014)** — migrated to **22.22.0**, build *and* runtime; `apiRuntime` proven inert and removed                  |
 | Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
@@ -1960,3 +1960,82 @@ turns on.**
 `toolchain-versions.test.ts` does not cover: `staticwebapp.config.json` `platform.apiRuntime`.
 The guard scans `.nvmrc`, `package.json`, the Dockerfiles and the workflows, and never looks at
 that file. Closing the gap is part of PLAN-014 rather than a follow-up.
+
+---
+
+## Transparency report — PLAN-014, off end-of-life Node 20 (2026-07-29)
+
+**Outcome**: Node **22.22.0** across every declaration site, **build and runtime**. Node 20 had
+been EOL for 90 days. `platform.apiRuntime` is gone, because it was proven to do nothing.
+
+### Step 1's answer was a third possibility the plan did not enumerate
+
+The plan predicted two outcomes: `apiRuntime` is live → full migration, or inert →
+build-and-tooling only. Three single-variable preview deploys gave a better answer than either:
+
+| # | `apiRuntime` | `NODE_VERSION` (build) | → runtime |
+| --- | --- | --- | --- |
+| 1 | `node:22` | `20.20.0` | **20** |
+| 2 | `node:22` | `22.22.0` | **22** |
+| 3 | `node:20` | `22.22.0` | **22** |
+
+Observation 1 ruled out `apiRuntime` acting alone. Observation 2 showed the runtime moving with
+the build — but with both at 22 it could not distinguish *inert* from *must agree*. **Observation
+3 settled it**: runtime 22 while `apiRuntime` said `node:20`.
+
+So `apiRuntime` is **completely inert** for hybrid Next.js — a **fourth** silently-ignored
+`staticwebapp.config.json` key beside `globalHeaders`, `routes[].headers` and
+`responseOverrides` — and the runtime is driven **solely** by `NODE_VERSION`, the Oryx build
+version. **The migration therefore moves the runtime after all**, via a knob the plan had not
+identified.
+
+Stopping at observation 2 would have produced a true-sounding claim ("setting both moves the
+runtime") that left the actual mechanism unknown. The third cycle cost five minutes and is the
+difference between a fact and a correlation.
+
+### `apiRuntime` was removed, not updated
+
+It was the only key in the `platform` block, so the block is gone. Setting it to `node:22` would
+have been *worse* than leaving it at `node:20`: both are inert, and a value that agrees with
+reality reads as the thing causing it. Same reasoning that removed the ignored header keys rather
+than leaving them as a decoy. The three observations are recorded in the file's own `_comment`,
+where the next person to consider re-adding it will look.
+
+**The "eighth declaration site" is now deleted rather than guarded** — a better outcome than the
+plan's Step 3, which was going to teach the guard to check it. The guard instead asserts it stays
+**absent**.
+
+### The local half was proven before the plan was written
+
+`npm ci`, keytar's ABI-127 rebuild, type-check, unit tests, lint, build, and both E2E paths were
+all exercised on 22.22.0 during research. Re-run against the branch: **340 unit tests**, **32 E2E
+on the production-build CI path**, **160 E2E across five browsers**, type-check / lint / build
+clean.
+
+### Two guards fired during the migration, exactly as intended
+
+1. `toolchain-versions.test.ts` failed on the Oryx allow-list — it contained only Node 20
+   versions. Widened with Oryx's Node 22 list, *including a comment that Oryx's newest 22 is
+   `22.22.0` while the newest Node 22 release is `22.23.2`*, which Oryx does not carry. Node 24
+   is deliberately excluded: Oryx has `24.13.0` but SWA has no `node:24` runtime.
+2. `dependabot-config.test.ts` failed on `engines.startsWith("20.")` — a guard **I wrote
+   yesterday** that hardcoded the major and therefore failed on a completely correct change.
+   Rewritten to assert the invariant that matters (`.nvmrc` equals `engines`, and both pin an
+   exact patch) and to stop duplicating "which Node line is supported", which is asserted once in
+   `toolchain-versions.test.ts`. **Two tests asserting the same invariant means one of them is
+   the stale copy.**
+
+### `@azure/static-web-apps-cli` removed
+
+Referenced by no npm script, workflow, CI script, or source file, and the sole reason `keytar` —
+a deprecated node-gyp addon and the only ABI-coupled dependency here — was in the tree.
+**143 packages removed.** It would have been the most likely thing to break on the *next* Node
+bump, for reasons having nothing to do with this codebase.
+
+### What this does and does not buy
+
+Node 22 is EOL **2027-04-30**: roughly 9 months. That is the ceiling Azure Static Web Apps
+imposes, not a choice — there is no `node:24` runtime, and
+[Azure/static-web-apps#1724](https://github.com/Azure/static-web-apps/issues/1724) has been open
+since 2026-02-05 with no Microsoft response. Watch that issue; when `node:24` ships, the seven
+remaining sites and the Oryx allow-list are the whole change.

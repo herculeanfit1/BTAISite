@@ -91,9 +91,11 @@ describe("Node version is stated consistently", () => {
     }
   });
 
-  it("stays on the Node 20 LTS line this repo is built for", () => {
-    // CLAUDE.md: 18.x is incompatible and 23.x breaks the build.
-    expect(decls[0].version.startsWith("20.")).toBe(true);
+  it("stays on a Node line that Azure Static Web Apps can run", () => {
+    // Node 20 reached EOL 2026-04-30; migrated to 22 on 2026-07-29 (PLAN-014).
+    // 24 is deliberately NOT here: SWA has no node:24 runtime and Oryx's Node 24
+    // support is a single version. Widen this only when SWA ships node:24.
+    expect(decls[0].version.startsWith("22.")).toBe(true);
   });
 
   it("uses a version Azure's Oryx builder actually supports", () => {
@@ -113,19 +115,42 @@ describe("Node version is stated consistently", () => {
     // 2026-07-29. It is a snapshot, not an authority: when Oryx adds versions
     // this list goes stale in the safe direction (it rejects a version that
     // would now work), so widen it from a real build log rather than guessing.
-    const ORYX_NODE_20 = [
+    const ORYX_SUPPORTED = [
+      // Node 20 (kept for rollback: these are known-good if 22 ever has to be reverted)
       "20.9.0", "20.11.0", "20.11.1", "20.14.0", "20.15.1", "20.17.0",
       "20.18.0", "20.18.1", "20.18.3", "20.19.1", "20.19.3", "20.19.5",
       "20.19.6", "20.20.0",
+      // Node 22. NOTE the newest Node 22 release is 22.23.2 and Oryx does NOT
+      // carry it -- picking "latest" would fail the build exactly as 20.20.2 did.
+      "22.9.0", "22.13.0", "22.14.0", "22.15.0", "22.17.0", "22.20.0",
+      "22.21.1", "22.22.0",
+      // Node 24 is intentionally omitted. Oryx carries 24.13.0, but SWA has no
+      // node:24 runtime, so building on 24 would run on a mismatched runtime.
     ];
     const deployVersion = decls.find((d) =>
       d.where.includes("NODE_VERSION"),
     )?.version;
     expect(deployVersion, "no NODE_VERSION found for the deploy").toBeDefined();
     expect(
-      ORYX_NODE_20,
+      ORYX_SUPPORTED,
       `Oryx does not support ${deployVersion}; the SWA build will fail before it starts`,
     ).toContain(deployVersion);
+  });
+
+  it("declares no platform.apiRuntime, which is inert and therefore a decoy", () => {
+    // Proven inert 2026-07-29 by three preview deploys (PLAN-014 Step 1):
+    //   apiRuntime node:22 + build 20 -> runtime 20
+    //   apiRuntime node:22 + build 22 -> runtime 22
+    //   apiRuntime node:20 + build 22 -> runtime 22   <-- settles it
+    // The hybrid runtime's Node version comes solely from NODE_VERSION. A value
+    // that does nothing is worse than no value: it reads as the thing that pins
+    // the runtime. Removed for the same reason globalHeaders,
+    // routes[].headers and responseOverrides were.
+    const swa = JSON.parse(readFileSync("staticwebapp.config.json", "utf8"));
+    expect(
+      swa.platform?.apiRuntime,
+      "platform.apiRuntime is back. It does not pin the hybrid runtime -- change NODE_VERSION in cost-optimized-ci.yml instead.",
+    ).toBeUndefined();
   });
 });
 

@@ -17,10 +17,10 @@ while all three Dockerfiles had moved to 20.20 and nothing complained (`.npmrc` 
 `engine-strict=false`, so the mismatch was only a warning). Run `nvm use` (no argument — it
 reads `.nvmrc`).
 
-> ⚠️ **Node 20 reached end-of-life on 2026-04-30 and receives no security patches.** The repo
-> is still on it. Migrating to **Node 24** (Active LTS to 2028-04-30) is a tracked, overdue
-> item — see `docs/strategy/ROADMAP.md`. Oryx currently carries exactly one Node 24 version,
-> `24.13.0`, so there is no choice of patch.
+Migrated to **Node 22.22.0** on 2026-07-29 (PLAN-014), off end-of-life Node 20.
+**Not Node 24**: Azure Static Web Apps has no `node:24` runtime at all, so building on 24 would
+run on a mismatched runtime. Node 22 is EOL 2027-04-30, so this buys ~9 months; the real fix is
+SWA shipping `node:24` — watch [Azure/static-web-apps#1724](https://github.com/Azure/static-web-apps/issues/1724).
 
 The version is declared in **seven** places — `.nvmrc`, `package.json` `engines`, three
 Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`. Everything else uses
@@ -28,6 +28,13 @@ Dockerfiles, and two `NODE_VERSION` values in `cost-optimized-ci.yml`. Everythin
 if any of the seven disagree, if one floats instead of pinning an exact patch, or if a new
 hardcoded declaration appears. Change the version in all seven, or add a `node-version-file:`
 reference instead of an eighth literal.
+
+**`NODE_VERSION` in `cost-optimized-ci.yml` sets the RUNTIME too, not just the build.** Proven
+2026-07-29 by three preview deploys: `platform.apiRuntime` in `staticwebapp.config.json` is
+**completely inert** for hybrid Next.js (a fourth silently-ignored key, alongside
+`globalHeaders`, `routes[].headers` and `responseOverrides`) and has been removed. To change the
+runtime Node version, change `NODE_VERSION`. Do not re-add `apiRuntime` expecting it to pin
+anything.
 
 **The version is not a free choice — Azure's Oryx builder ships a fixed allow-list.**
 `20.20.2` is the latest Node 20 LTS and a perfectly real release, and Oryx rejects it:
@@ -37,8 +44,8 @@ Error: Platform 'nodejs' version '20.20.2' is unsupported.
 Oryx has found build steps, but identified unsupported platform versions. Failing build.
 ```
 
-The build dies *before it starts*, in ~30s. `20.20.0` is the newest 20.x Oryx carries. Before
-bumping Node, check the version against Oryx's list — the guard test holds a snapshot taken
+The build dies *before it starts*, in ~30s. Oryx's newest Node 22 is `22.22.0`, while the newest Node 22 release is `22.23.2` — which Oryx
+does **not** carry. Before bumping Node, check the version against Oryx's list — the guard test holds a snapshot taken
 from a real failing build, and the authoritative list is whatever the next failure prints.
 
 ```bash

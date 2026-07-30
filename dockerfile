@@ -1,5 +1,5 @@
 # Development Dockerfile for Next.js 15 application
-FROM node:20.20.0-alpine AS base
+FROM node:22.22.0-alpine AS base
 
 # Set environment variables
 ENV NODE_ENV=development
