@@ -54,9 +54,9 @@ they are no longer open.
 | SWA preview deploys failing — staging-environment cap reached, cleanup races the in-flight deploy                               | ✅ **Fixed 2026-07-29** — `cleanup-pr` now waits for in-flight runs before closing; ordering, not retrying                              |
 | Performance budgets documented in CLAUDE.md, measured by nothing                                                                | ✅ **Done 2026-07-28 (PLAN-013 Part 2)** — Lighthouse CI against the preview URL; a dead `lighthouserc.js` replaced                     |
 | Cloudflare beacon blocked by CSP — cost 26 best-practices points via one console error                                          | ✅ **Fixed 2026-07-28** — allow-listed; privacy policy corrected to disclose Cloudflare and drop a false Google Analytics claim         |
-| **Cloudflare costs 42 Lighthouse points total** — 15 perf, 19 best-practices, 8 SEO, +298 ms TBT vs the identical build on the SWA origin | ⬜ Open — **all three need dashboard access this repo does not have**; quantify with `scripts/measure-cloudflare-cost.sh` |
+| **Cloudflare Bot Management (JS Detections) costs 34 points** — 15 performance + 19 best-practices; `/cdn-cgi/challenge-platform/…/jsd/main.js`, 793 ms eval | ⬜ **Open — next up.** Dashboard-only; CSP cannot touch it (served same-origin). Measure with `scripts/measure-cloudflare-cost.sh` |
 | **Node 20 reached END OF LIFE on 2026-04-30** — the runtime has had no security patches for 90 days                             | ✅ **Done 2026-07-29 (PLAN-014)** — migrated to **22.22.0**, build *and* runtime; `apiRuntime` proven inert and removed                  |
-| Cloudflare merges an AI-crawler policy into `robots.txt`; Lighthouse rejects it as invalid (SEO 92)                              | ⬜ Open — deliberate Cloudflare feature; owner's call whether to keep it                                                                |
+| Cloudflare's AI-crawler policy costs 8 SEO points — the `Content-Signal:` line Lighthouse calls an unknown directive               | ⬜ Open — **recommend KEEPING.** It blocks GPTBot/ClaudeBot/Google-Extended et al from training on this content; 8 points is a poor trade |
 | Accessibility never assessed                                                                                                    | ✅ **Done 2026-07-28 (PLAN-013 Part 3)** — axe over 5 pages + dark mode; 57 blocking nodes → **0 critical, 0 serious**                  |
 | **Dependabot had never run — invalid config since the first commit (2025-05-25)**; 0 Dependabot PRs against 88 total              | ✅ **Fixed 2026-07-28** — `security-updates-only` removed, alerts enabled, guard test added                                             |
 | Dependency majors — the "Later" trigger (a real test gate exists) is now **met**                                                | ⬜ Open — still `ignore`d in dependabot.yml; releasing them is deliberate work, not a side effect                                       |
@@ -2039,3 +2039,41 @@ imposes, not a choice — there is no `node:24` runtime, and
 [Azure/static-web-apps#1724](https://github.com/Azure/static-web-apps/issues/1724) has been open
 since 2026-02-05 with no Microsoft response. Watch that issue; when `node:24` ships, the seven
 remaining sites and the Oryx allow-list are the whole change.
+
+---
+
+## Documentation reconciliation (2026-07-30)
+
+Swept `CLAUDE.md` against reality after PLAN-013, PLAN-014 and the CI work. **Four claims had
+gone stale**, all of them written during this effort — which is the point worth noting: docs
+rot fastest while the thing they describe is actively changing, and the author is the last
+person to notice.
+
+| Claim | Was | Now |
+| --- | --- | --- |
+| `Quality Gate / e2e` | "**advisory**, not a required check" | Required since 2026-07-29 (7 required contexts) |
+| `settleAndFreeze()` | "waits for every inline opacity to reach 0 or 1" | Freezes via `getAnimations()` — the wait-based version was replaced *because it never settled* |
+| Preview-deploy leak | described as a live bug | Fixed 2026-07-29; kept as a diagnostic with the `actions: read` and `gh api` 404 traps recorded |
+| Dependabot | not mentioned at all | Full section: 14 months of silence, why it was invisible, per-ecosystem `ignore`, alert scoping |
+
+The `settleAndFreeze` entry is the sharpest: the docs described the *mechanism that was
+removed for not working*, which would have sent the next reader to reproduce a known dead end.
+
+Verified rather than assumed: `npx playwright test --list` reports **160 tests in 3 files**, and
+the branch-protection API reports **7 required contexts including `Quality Gate / e2e`**.
+
+Also confirmed no stale references to the removed `@azure/static-web-apps-cli` outside
+`docs/archive/` (dated historical records, correctly left alone) and no npm script still invokes
+it.
+
+### Next up: Cloudflare Bot Management
+
+The two Cloudflare rows were split, because they are **two different decisions** wearing one
+label:
+
+- **Bot Management / JS Detections — 34 points** (15 performance + 19 best-practices). A
+  security-vs-speed trade. This is the actionable one.
+- **AI-crawler policy — 8 SEO points.** Recommend **keeping**. Those rules stop GPTBot,
+  ClaudeBot, Google-Extended and five others training on this content; trading that for 8
+  Lighthouse points is a poor deal, and the site's own `Allow: /` and `Sitemap:` survive inside
+  the merged file regardless.
