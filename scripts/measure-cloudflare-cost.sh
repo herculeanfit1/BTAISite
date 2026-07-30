@@ -28,6 +28,51 @@ RUNS="${RUNS:-3}"
 
 command -v npx >/dev/null || { echo "npx not found" >&2; exit 1; }
 
+# ---------------------------------------------------------------------------
+# Deterministic check: is JavaScript Detections being injected right now?
+#
+# Run this BEFORE reaching for the Lighthouse numbers. The scores are noisy --
+# the apex has swung 64 to 86 on unchanged code -- so they are a poor way to
+# answer a yes/no question. The JSD injection is a byte in the HTML, so it
+# answers deterministically and in one request.
+#
+# The failure mode this guards against: treating "grep found nothing" as
+# "Cloudflare is not injecting it", when the real cause was a request that
+# never succeeded. That is the cleanup-pr bug in a different costume, so
+# fetch-failed and not-present are reported as different states.
+jsd_check() { # $1=url  $2=label
+  local url="$1" label="$2" body status
+  body="$(curl -sS --max-time 20 -w '\n%{http_code}' "$url" 2>/dev/null)" || {
+    echo "  $label: FETCH FAILED -- this is not evidence of absence"; return 2; }
+  status="${body##*$'\n'}"
+  body="${body%$'\n'*}"
+  if [ "$status" != "200" ]; then
+    echo "  $label: HTTP $status -- not a usable sample"; return 2
+  fi
+  # Positive control: the response must look like this site at all, or a grep
+  # miss says nothing. An error page would also contain no JSD.
+  if ! printf '%s' "$body" | grep -q 'Bridging Trust'; then
+    echo "  $label: HTTP 200 but does not look like this site -- refusing to conclude"; return 2
+  fi
+  if printf '%s' "$body" | grep -q 'challenge-platform'; then
+    echo "  $label: JS Detections IS injected (challenge-platform present)"; return 0
+  fi
+  echo "  $label: JS Detections is NOT injected"; return 1
+}
+
+echo "JavaScript Detections presence (deterministic -- check this first):"
+jsd_check "$APEX" "apex  "; apex_jsd=$?
+jsd_check "$ORIGIN" "origin"; origin_jsd=$?
+if [ "$origin_jsd" = "0" ]; then
+  echo "  WARNING: the origin is also injecting JSD. It is not behind Cloudflare," >&2
+  echo "           so this comparison no longer isolates the edge." >&2
+fi
+echo
+
+if [ "${JSD_ONLY:-}" = "1" ]; then
+  exit $apex_jsd
+fi
+
 if [ -z "${CHROME_PATH:-}" ]; then
   CHROME_PATH="$(node -e "console.log(require('playwright').chromium.executablePath())" 2>/dev/null || true)"
   export CHROME_PATH
