@@ -131,14 +131,21 @@ describe("dependabot config", () => {
   });
 
   it("keeps the Docker pin consistent with engines and .nvmrc", () => {
-    // If these three ever disagree, the ignore rule above is guarding the
-    // wrong version and the mismatch should surface here rather than in a
-    // broken image.
+    // If these disagree, the ignore rule above is guarding the wrong version
+    // and the mismatch should surface here rather than in a broken image.
+    //
+    // This deliberately does NOT assert a particular major. It did -- hardcoded
+    // "20." -- and duly failed on the Node 22 migration for a version that was
+    // entirely correct. Two tests asserting the same invariant means one of them
+    // is the stale copy; which Node line is supported is asserted once, in
+    // toolchain-versions.test.ts, against Oryx's list and SWA's runtimes.
     const engines = JSON.parse(readFileSync("package.json", "utf8")).engines
       .node as string;
     const nvmrc = readFileSync(".nvmrc", "utf8").trim();
     expect(nvmrc).toBe(engines);
-    expect(engines.startsWith("20."), `engines pins ${engines}`).toBe(true);
+    expect(engines, "engines must pin an exact patch").toMatch(
+      /^\d+\.\d+\.\d+$/,
+    );
   });
 
   it("proves the unknown-key check can fail (guard against a vacuous pass)", () => {

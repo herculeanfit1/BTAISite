@@ -8,6 +8,12 @@
     "IGNORED:  globalHeaders, routes[].headers, responseOverrides. All three were present",
     "          and silently had no effect; the site served zero security headers as a",
     "          result. They have been removed rather than left as a decoy.",
+    "IGNORED:  platform.apiRuntime — proven inert 2026-07-29 by three preview deploys:",
+    "          apiRuntime node:22 + build 20 gave runtime 20; node:22 + build 22 gave 22;",
+    "          node:20 + build 22 ALSO gave 22. The hybrid runtime Node version comes",
+    "          solely from NODE_VERSION in cost-optimized-ci.yml (the Oryx build version).",
+    "          Removed rather than left as a decoy, same as the header keys above. Do not",
+    "          re-add it expecting it to pin the runtime; change NODE_VERSION instead.",
     "Response headers (CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)",
     "are now served from next.config.js headers(). Edit them there, not here.",
     "LOCALE REDIRECTS: /en /es /fr and their five sub-pages 301 to the canonical",
@@ -16,9 +22,6 @@
     "same mechanism proven to work above — NOT next.config.js redirects(), which the",
     "hybrid adapter ignores and which broke the entire route map when tried 2026-07-23."
   ],
-  "platform": {
-    "apiRuntime": "node:20"
-  },
   "routes": [
     {
       "route": "/api/*",
