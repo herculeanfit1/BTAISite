@@ -206,7 +206,7 @@ jobs:
       - name: Python — install tools
         if: steps.detect.outputs.type == 'python'
         run: |
-          pip install ruff==0.15.1 mypy==1.19.1
+          pip install ruff==0.16.4 mypy==1.19.1
           # Install project deps so mypy can resolve imports
           for req in requirements.txt requirements/*.txt */requirements.txt; do
             for f in $req; do
