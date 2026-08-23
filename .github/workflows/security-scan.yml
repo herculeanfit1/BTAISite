@@ -332,7 +332,7 @@ jobs:
       # not -- and this job is the REQUIRED "Gate on HIGH / CRITICAL" check, so
       # getting it wrong blocks every PR.
       - name: Download all SARIF artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: artifacts/
 
