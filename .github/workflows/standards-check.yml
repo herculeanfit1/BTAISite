@@ -1,5 +1,7 @@
 # Canonical CI workflow — copy to .github/workflows/standards-check.yml in each agent repo.
 # Auto-detects Node/Python/infra and runs the appropriate checks.
+# Manifests are found in subdirectories as well as at the root, and PowerShell
+# sources are linted wherever they appear, independently of the detected type.
 # Maintained by HerculeanOlympus. Do not edit per-repo copies; update the canonical copy here.
 
 name: Standards Check
@@ -10,25 +12,121 @@ on:
   push:
     branches: [main]
 
+# Cancel superseded runs on PR/feature refs; never cancel a run on main
+# (keeps the compliance gate complete for every commit that lands on main).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   standards:
     name: Standards Compliance
-    runs-on: ubuntu-latest
+    # Reads the repository variable CI_RUNNER_LINUX, falling back to
+    # ubuntu-latest when unset — so repos with a Tower self-hosted runner use
+    # it and every other repo is unaffected. Deliberately a variable rather
+    # than a hardcoded label: a job requesting a label no runner carries
+    # QUEUES FOREVER rather than failing, with nothing showing red. The
+    # fallback makes that state unreachable, and rollback is deleting one repo
+    # variable rather than a fleet-wide PR sweep during an incident.
+    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
       # ── Detect repo type ───────────────────────────────
+      # Root manifests take precedence — they define the repo's primary language.
+      # When there is none, search a few levels down before giving up: several
+      # repos keep their manifests in subdirectories (api/ + web/, a2a/) rather
+      # than at the root, and treating those as "infra" meant their code was
+      # never linted at all.
+      #
+      # PowerShell is detected independently of `type`, not as another branch of
+      # the same if/elif chain. A repo can be Node or infra and still ship .ps1,
+      # and PowerShell-only repos still want the infra YAML/JSON validation. So
+      # `powershell` is an orthogonal flag, and `type` keeps its old meaning.
       - name: Detect repo type
         id: detect
         run: |
-          if [ -f "package.json" ]; then
-            echo "type=node" >> "$GITHUB_OUTPUT"
-          elif [ -f "pyproject.toml" ]; then
-            echo "type=python" >> "$GITHUB_OUTPUT"
-          else
-            echo "type=infra" >> "$GITHUB_OUTPUT"
+          # Detect against TRACKED files, not the filesystem. `find` picks up
+          # whatever happens to be on disk — virtualenvs ship their own
+          # Activate.ps1, and repos use .venv/, venv/, venv_new/ interchangeably,
+          # so any name-based exclusion list is fragile. git ls-files is exact:
+          # it sees what the repo actually contains.
+          TRACKED=$(git ls-files)
+
+          # Vendored subtrees are tracked but not ours to lint. A repo declares
+          # them in .standardsignore (one path prefix per line, # for comments).
+          # Without this, a repo that vendors upstream source would suddenly have
+          # that upstream code installed and linted by this gate.
+          SKIP_LIST=""
+          if [ -f ".standardsignore" ]; then
+            SKIP_LIST=$(grep -vE '^[[:space:]]*(#|$)' .standardsignore \
+              | tr -d '\r' | sed 's#/*$##' | tr '\n' ' ')
+            [ -n "$SKIP_LIST" ] && echo "Honouring .standardsignore: $SKIP_LIST"
           fi
-          echo "Detected repo type: $(grep type "$GITHUB_OUTPUT" | cut -d= -f2)"
+
+          # Prefix match via awk index() rather than a built regex — the declared
+          # paths are literal strings, and escaping them into a regex is a portability
+          # trap (the obvious character class is valid in GNU sed and not in BSD sed).
+          not_skipped() {
+            awk -v skips="$SKIP_LIST" '
+              BEGIN { n = split(skips, a, " ") }
+              {
+                if ($0 ~ /(^|\/)(node_modules|vendor|dist|build)\//) next
+                for (i = 1; i <= n; i++)
+                  if (a[i] != "" && index($0, a[i] "/") == 1) next
+                print
+              }'
+          }
+
+          # Manifests at most two directories deep. Deeper than that is almost
+          # always a fixture or an example, not the project itself.
+          manifests() {
+            echo "$TRACKED" | grep -E "(^|/)$1\$" | awk -F/ 'NF<=3' | not_skipped | sort
+          }
+
+          NODE_MANIFESTS=$(manifests 'package\.json')
+          PY_MANIFESTS=$(manifests 'pyproject\.toml')
+          PS_FILES=$(echo "$TRACKED" | grep -E '\.(ps1|psm1)$' | not_skipped)
+
+          # Report anything dropped by the depth cap, so a skipped manifest is
+          # visible in the log rather than silently uncovered.
+          DEEP=$(echo "$TRACKED" | grep -E '(^|/)(package\.json|pyproject\.toml)$' | awk -F/ 'NF>3' | not_skipped)
+          [ -n "$DEEP" ] && echo "$DEEP" | sed 's/^/::warning::manifest deeper than 2 directories, not checked: /'
+
+          if [ -n "$NODE_MANIFESTS" ]; then
+            TYPE=node
+          elif [ -n "$PY_MANIFESTS" ]; then
+            TYPE=python
+          else
+            TYPE=infra
+          fi
+
+          # Directory lists, space-separated, for the per-manifest loops below.
+          # A root manifest has no "/" in its path, so dirname gives ".".
+          dirs_of() {
+            while IFS= read -r m; do
+              [ -z "$m" ] && continue
+              dirname "$m"
+            done | tr '\n' ' '
+          }
+          NODE_DIRS=$(echo "$NODE_MANIFESTS" | dirs_of)
+          PY_DIRS=$(echo "$PY_MANIFESTS" | dirs_of)
+          PRIMARY_NODE_MANIFEST=$(echo "$NODE_MANIFESTS" | head -1)
+
+          {
+            echo "type=$TYPE"
+            echo "node_dirs=$NODE_DIRS"
+            echo "py_dirs=$PY_DIRS"
+            echo "primary_node_manifest=$PRIMARY_NODE_MANIFEST"
+            if [ -n "$PS_FILES" ]; then echo "powershell=true"; else echo "powershell=false"; fi
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Detected repo type: $TYPE"
+          [ -n "$NODE_DIRS" ] && echo "  node manifests in: $NODE_DIRS"
+          [ -n "$PY_DIRS" ] && echo "  python manifests in: $PY_DIRS"
+          [ -n "$PS_FILES" ] && echo "  PowerShell sources present — PSScriptAnalyzer will run"
+          exit 0
 
       # ── Universal checks (all tiers) ──────────────────
       - name: Required files exist
@@ -103,99 +201,154 @@ jobs:
           done
 
       # ── Node.js checks ────────────────────────────────
+      # Every Node step loops over the detected manifest directories, so a repo
+      # that keeps package.json under api/ and web/ gets BOTH linted instead of
+      # neither. For a conventional root-manifest repo the loop runs once over ".".
+      # A linter config is accepted from the manifest's own directory or from the
+      # repo root, since monorepo-ish layouts commonly share one config.
       - name: Node — linter config exists
         if: steps.detect.outputs.type == 'node'
-        id: node-linter
         run: |
-          if [ -f "biome.json" ]; then
-            echo "linter=biome" >> "$GITHUB_OUTPUT"
-          elif [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
-            echo "linter=eslint" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error::Missing linter config (expected biome.json or eslint config)"
-            exit 1
-          fi
+          FAILED=0
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            if [ -f "$d/biome.json" ] || [ -f "biome.json" ] \
+               || [ -f "$d/eslint.config.js" ] || [ -f "$d/eslint.config.mjs" ] \
+               || [ -f "$d/.eslintrc.json" ] || [ -f "$d/.eslintrc.js" ] \
+               || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] \
+               || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
+              continue
+            fi
+            echo "::error::$d: missing linter config (expected biome.json or eslint config)"
+            FAILED=1
+          done
+          exit $FAILED
 
+      # `type` and `engines.node` are gated on the PRIMARY manifest only. A repo
+      # with a nested client/ or api/ package declares its runtime once; demanding
+      # engines.node on every sub-package is stricter than the standard intends
+      # and would fail repos that are compliant as written. Sub-manifests still
+      # get reported, as warnings, so the gap is visible without being fatal.
       - name: Node — package.json compliance
         if: steps.detect.outputs.type == 'node'
         run: |
           FAILED=0
-          TYPE=$(node -e "console.log(require('./package.json').type || '')")
-          if [ "$TYPE" != "module" ]; then
-            echo "::error::package.json missing \"type\": \"module\""
-            FAILED=1
-          fi
-          ENGINES=$(node -e "console.log(require('./package.json').engines?.node || '')")
-          if [ -z "$ENGINES" ]; then
-            echo "::error::package.json missing engines.node"
-            FAILED=1
-          fi
+          PRIMARY="${{ steps.detect.outputs.primary_node_manifest }}"
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            MANIFEST="$d/package.json"
+            [ "$d" = "." ] && MANIFEST="package.json"
+            if [ "$MANIFEST" = "$PRIMARY" ]; then LEVEL=error; else LEVEL=warning; fi
+
+            TYPE=$(node -e "console.log(require('$PWD/$MANIFEST').type || '')")
+            if [ "$TYPE" != "module" ]; then
+              echo "::${LEVEL}::$MANIFEST missing \"type\": \"module\""
+              [ "$LEVEL" = "error" ] && FAILED=1
+            fi
+            ENGINES=$(node -e "console.log(require('$PWD/$MANIFEST').engines?.node || '')")
+            if [ -z "$ENGINES" ]; then
+              echo "::${LEVEL}::$MANIFEST missing engines.node"
+              [ "$LEVEL" = "error" ] && FAILED=1
+            fi
+          done
           exit $FAILED
 
       - name: Node — op run wrapping
         if: steps.detect.outputs.type == 'node'
         run: |
-          node -e "
-            const pkg = require('./package.json');
-            const scripts = pkg.scripts || {};
-            const needsSecrets = Object.entries(scripts)
-              .filter(([k, v]) => v.includes('node ') && !k.match(/^(lint|format|check|biome|test|pre-commit)/))
-              .filter(([k, v]) => !v.includes('op run'))
-              .filter(([k]) => !scripts['op:' + k]);
-            if (needsSecrets.length > 0) {
-              console.log('::warning::Scripts without op run wrapping: ' + needsSecrets.map(([k]) => k).join(', '));
-            }
-          " 2>/dev/null || true
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            MANIFEST="$PWD/$d/package.json" node -e "
+              const pkg = require(process.env.MANIFEST);
+              const scripts = pkg.scripts || {};
+              const needsSecrets = Object.entries(scripts)
+                .filter(([k, v]) => v.includes('node ') && !k.match(/^(lint|format|check|biome|test|pre-commit)/))
+                .filter(([k, v]) => !v.includes('op run'))
+                .filter(([k]) => !scripts['op:' + k]);
+              if (needsSecrets.length > 0) {
+                console.log('::warning::' + process.env.MANIFEST + ': scripts without op run wrapping: ' + needsSecrets.map(([k]) => k).join(', '));
+              }
+            " 2>/dev/null || true
+          done
 
       - name: Node — package-lock committed
         if: steps.detect.outputs.type == 'node'
         run: |
-          DEPS=$(node -e "console.log(Object.keys(require('./package.json').dependencies || {}).length)" 2>/dev/null || echo "0")
-          if [ "$DEPS" -gt 0 ]; then
-            if ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-              echo "::warning::package-lock.json not committed"
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            LOCK="$d/package-lock.json"
+            [ "$d" = "." ] && LOCK="package-lock.json"
+            DEPS=$(node -e "console.log(Object.keys(require('$PWD/$d/package.json').dependencies || {}).length)" 2>/dev/null || echo "0")
+            if [ "$DEPS" -gt 0 ]; then
+              if ! git ls-files --error-unmatch "$LOCK" >/dev/null 2>&1; then
+                echo "::warning::$LOCK not committed"
+              fi
             fi
-          fi
+          done
 
       - name: Node — setup
         if: steps.detect.outputs.type == 'node'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version-file: 'package.json'
+          node-version-file: ${{ steps.detect.outputs.primary_node_manifest }}
 
       - name: Node — install dependencies
         if: steps.detect.outputs.type == 'node'
         env:
           npm_config_engine_strict: 'false'
         run: |
-          if [ -f "package-lock.json" ]; then
-            npm ci --no-audit --no-fund || npm ci --no-audit --no-fund --force
-          elif [ -f "yarn.lock" ]; then
-            yarn install --frozen-lockfile
-          else
-            npm install --no-audit --no-fund || npm install --no-audit --no-fund --force
-          fi
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            echo "── installing in $d ──"
+            ( cd "$d"
+              if [ -f "package-lock.json" ]; then
+                npm ci --no-audit --no-fund || npm ci --no-audit --no-fund --force
+              elif [ -f "yarn.lock" ]; then
+                yarn install --frozen-lockfile
+              else
+                npm install --no-audit --no-fund || npm install --no-audit --no-fund --force
+              fi
+            ) || exit 1
+          done
 
+      # When the linter config lives at the repo root it already governs the whole
+      # tree (Agora's biome.json includes "**", covering client/), so run it ONCE
+      # from the root. Descending per-directory would re-lint the same files and
+      # resolve the config's own include/exclude globs against the wrong base.
+      # Only fall back to per-directory runs when each manifest carries its own
+      # config — the api/ + web/ layout with no root config.
       - name: Node — run linter
         if: steps.detect.outputs.type == 'node'
         run: |
-          if [ "${{ steps.node-linter.outputs.linter }}" = "biome" ]; then
-            npx @biomejs/biome check .
+          run_linter() {
+            if [ -f "biome.json" ]; then
+              npx @biomejs/biome check .
+            else
+              npx eslint .
+            fi
+          }
+
+          if [ -f "biome.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] \
+             || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
+            echo "── linting from repo root (root config governs the tree) ──"
+            run_linter
           else
-            npx eslint .
+            FAILED=0
+            for d in ${{ steps.detect.outputs.node_dirs }}; do
+              echo "── linting $d ──"
+              ( cd "$d" && run_linter ) || FAILED=1
+            done
+            exit $FAILED
           fi
 
       # ── Python checks ──────────────────────────────────
       - name: Python — linter config exists
         if: steps.detect.outputs.type == 'python'
         run: |
-          if [ ! -f "pyproject.toml" ]; then
-            echo "::error::Missing pyproject.toml"
-            exit 1
-          fi
-          if ! grep -q "\[tool.ruff\]" pyproject.toml 2>/dev/null; then
-            echo "::warning::pyproject.toml missing [tool.ruff] section"
-          fi
+          for d in ${{ steps.detect.outputs.py_dirs }}; do
+            if [ ! -f "$d/pyproject.toml" ]; then
+              echo "::error::$d: missing pyproject.toml"
+              exit 1
+            fi
+            if ! grep -q "\[tool.ruff\]" "$d/pyproject.toml" 2>/dev/null; then
+              echo "::warning::$d/pyproject.toml missing [tool.ruff] section"
+            fi
+          done
 
       - name: Python — setup
         if: steps.detect.outputs.type == 'python'
@@ -207,8 +360,10 @@ jobs:
         if: steps.detect.outputs.type == 'python'
         run: |
           pip install ruff==0.16.4 mypy==1.19.1
-          # Install project deps so mypy can resolve imports
-          for req in requirements.txt requirements/*.txt */requirements.txt; do
+          # Install project deps so mypy can resolve imports.
+          # Globs cover: requirements.txt, requirements-*.txt (e.g. -dev, -prod),
+          # requirements/*.txt, and subdir/requirements.txt.
+          for req in requirements.txt requirements-*.txt requirements/*.txt */requirements.txt; do
             for f in $req; do
               [ -f "$f" ] && pip install -r "$f" 2>/dev/null || true
             done
@@ -217,30 +372,131 @@ jobs:
       - name: Python — ruff lint & format
         if: steps.detect.outputs.type == 'python'
         run: |
-          ruff check --extend-exclude '*.md' .
-          ruff format --check --extend-exclude '*.md' .
+          # `--extend-exclude '*.md'` keeps this gate on source only.
+          #
+          # ruff 0.16 formats Python code blocks inside Markdown by default. The
+          # ruff-pre-commit hooks do not and never have — all three declare
+          # `types_or: [python, pyi, jupyter]`. Without this flag the local hook passes
+          # and CI fails on documentation, which is a disagreement between the two, not
+          # a stronger gate.
+          #
+          # EXTEND, not `--exclude`. The bare flag REPLACES the exclude list instead of
+          # adding to it, discarding ruff's defaults (.venv, .git, node_modules, dist,
+          # build) AND any per-repo `[tool.ruff] exclude`. Measured 2026-08-22:
+          # `--exclude '*.md'` turned Citadel365 red with 13 files and SchedulEd with 1,
+          # and pulled a planted `.venv/lib/vendored.py` back into scope. Same replace-
+          # don't-merge trap as `--per-file-ignores` in the bandit step below.
+          FAILED=0
+          for d in ${{ steps.detect.outputs.py_dirs }}; do
+            echo "── ruff $d ──"
+            ( cd "$d" && ruff check --extend-exclude '*.md' . \
+                      && ruff format --check --extend-exclude '*.md' . ) || FAILED=1
+          done
+          exit $FAILED
 
       - name: Python — ruff security rules (bandit)
         if: steps.detect.outputs.type == 'python'
-        run: ruff check --select S --extend-exclude '*.md' .
+        run: |
+          # Exempt S101 (use of `assert`) in test files — pytest convention.
+          # Use --extend-per-file-ignores so per-repo pyproject.toml settings
+          # also apply (CLI --per-file-ignores alone would replace, not merge).
+          # `--extend-exclude '*.md'` is a no-op here — `ruff check` reports
+          # "No Python files found" on Markdown and never reads a fence, so a doc
+          # example cannot trip a security rule. Carried anyway so all three ruff
+          # invocations state the same scope; one bare invocation is how the next
+          # person concludes the rule is applied inconsistently and "fixes" it.
+          FAILED=0
+          for d in ${{ steps.detect.outputs.py_dirs }}; do
+            ( cd "$d" && ruff check --select S \
+              --extend-exclude '*.md' \
+              --extend-per-file-ignores 'tests/**:S101' \
+              --extend-per-file-ignores 'test/**:S101' \
+              --extend-per-file-ignores '**/test_*.py:S101' \
+              --extend-per-file-ignores '**/*_test.py:S101' \
+              --extend-per-file-ignores '**/conftest.py:S101' \
+              . ) || FAILED=1
+          done
+          exit $FAILED
 
       - name: Python — mypy strict
         if: steps.detect.outputs.type == 'python'
         run: |
-          mypy --strict . || {
-            EC=$?
-            # Exit code 2 = no files found (e.g. all excluded), treat as OK
-            [ $EC -eq 2 ] && echo "::warning::mypy found no files to check" && exit 0
-            exit $EC
-          }
+          FAILED=0
+          for d in ${{ steps.detect.outputs.py_dirs }}; do
+            echo "── mypy $d ──"
+            ( cd "$d" && mypy --strict . ) || {
+              EC=$?
+              # Exit code 2 = no files found (e.g. all excluded), treat as OK
+              if [ $EC -eq 2 ]; then
+                echo "::warning::$d: mypy found no files to check"
+              else
+                FAILED=1
+              fi
+            }
+          done
+          exit $FAILED
 
       # ── Dockerfile checks ────────────────────────────────
+      # Manual install + find loop instead of hadolint-action@v3.1.0:
+      # the action's recursive mode passes the literal glob `**/Dockerfile`
+      # to hadolint (which doesn't expand it), causing "file does not
+      # exist" errors when Dockerfiles live under non-root paths
+      # (e.g. `.devcontainer/Dockerfile`). Manual find is reliable.
       - name: Lint Dockerfiles (hadolint)
         if: hashFiles('**/Dockerfile') != ''
-        uses: hadolint/hadolint-action@v3.3.0
-        with:
-          recursive: true
-          failure-threshold: error
+        run: |
+          curl -sSfL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 \
+            -o /tmp/hadolint
+          chmod +x /tmp/hadolint
+          FAIL_MARKER=$(mktemp)
+          rm -f "$FAIL_MARKER"
+          find . -name 'Dockerfile' -not -path '*/node_modules/*' -not -path '*/.git/*' -print0 \
+            | while IFS= read -r -d '' f; do
+            /tmp/hadolint --failure-threshold error "$f" || touch "$FAIL_MARKER"
+          done
+          [ -f "$FAIL_MARKER" ] && { rm -f "$FAIL_MARKER"; exit 1; }
+          exit 0
+
+      # ── PowerShell checks ──────────────────────────────
+      # Deliberately keyed off `powershell`, not `type`. PowerShell-heavy repos
+      # carry no package.json or pyproject.toml, so they detect as `infra` — and
+      # the infra branch only validates YAML/JSON. Before this step their .ps1
+      # was never linted by any branch of this workflow, which meant the gate
+      # went green without reading the repo's actual code.
+      #
+      # Honours a repo-local PSScriptAnalyzerSettings.psd1 when present, so a
+      # repo can tune its own rule set without editing the canonical.
+      - name: PowerShell — PSScriptAnalyzer
+        if: steps.detect.outputs.powershell == 'true'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -Repository PSGallery
+
+          $params = @{ Path = '.'; Recurse = $true }
+          $settings = 'PSScriptAnalyzerSettings.psd1'
+          if (Test-Path $settings) {
+            Write-Host "Using repo settings: $settings"
+            $params['Settings'] = (Resolve-Path $settings).Path
+          } else {
+            Write-Host "::warning::No PSScriptAnalyzerSettings.psd1 — using PSScriptAnalyzer defaults"
+          }
+
+          $results = Invoke-ScriptAnalyzer @params |
+            Where-Object { $_.ScriptPath -notmatch '[\\/](node_modules|\.git|\.venv|vendor|dist|build)[\\/]' }
+
+          $errors   = @($results | Where-Object Severity -eq 'Error')
+          $warnings = @($results | Where-Object Severity -eq 'Warning')
+
+          foreach ($r in $results) {
+            $level = if ($r.Severity -eq 'Error') { 'error' } else { 'warning' }
+            Write-Host "::${level} file=$($r.ScriptPath),line=$($r.Line)::$($r.RuleName): $($r.Message)"
+          }
+
+          Write-Host "PSScriptAnalyzer: $($errors.Count) error(s), $($warnings.Count) warning(s)"
+          # Gate on Error only, matching how hadolint is gated (--failure-threshold error).
+          if ($errors.Count -gt 0) { exit 1 }
 
       # ── Infra checks ───────────────────────────────────
       - name: Infra — validate YAML/JSON
@@ -255,8 +511,13 @@ jobs:
               touch "$FAIL_MARKER"
             }
           done
+          # Skip JSONC-by-convention files: tsconfig*.json (TypeScript) and
+          # anything under .vscode/. These allow comments and trailing commas
+          # and will fail a strict json.load — they're not invalid, just JSONC.
           find . -name '*.json' -not -path '*/node_modules/*' -not -path '*/.git/*' \
-            -not -path '*/.devcontainer/*' -print0 | head -z -n 20 | while IFS= read -r -d '' f; do
+            -not -path '*/.devcontainer/*' -not -path '*/.vscode/*' \
+            -not -name 'tsconfig*.json' -not -name '*.jsonc' \
+            -print0 | head -z -n 20 | while IFS= read -r -d '' f; do
             python3 -c "import json; json.load(open('$f'))" 2>/dev/null || {
               echo "::error::Invalid JSON: $f"
               touch "$FAIL_MARKER"
