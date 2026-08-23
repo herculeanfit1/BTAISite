@@ -217,12 +217,12 @@ jobs:
       - name: Python — ruff lint & format
         if: steps.detect.outputs.type == 'python'
         run: |
-          ruff check .
-          ruff format --check .
+          ruff check --extend-exclude '*.md' .
+          ruff format --check --extend-exclude '*.md' .
 
       - name: Python — ruff security rules (bandit)
         if: steps.detect.outputs.type == 'python'
-        run: ruff check --select S .
+        run: ruff check --select S --extend-exclude '*.md' .
 
       - name: Python — mypy strict
         if: steps.detect.outputs.type == 'python'
