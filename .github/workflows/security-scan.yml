@@ -65,7 +65,7 @@ jobs:
         # licensed or the repo is made public.
         if: always()
         continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
@@ -157,7 +157,7 @@ jobs:
         # See scan-fs job for the rationale on continue-on-error.
         if: always()
         continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-config.sarif
           category: trivy-config
@@ -250,7 +250,7 @@ jobs:
         # See scan-fs job for the rationale on continue-on-error.
         if: always()
         continue-on-error: false  # Public repo: GHAS-equivalent code-scanning is available
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-secrets.sarif
           category: trivy-secrets
