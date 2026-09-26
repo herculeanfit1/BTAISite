@@ -352,9 +352,14 @@ plausibly still be in a browser tab. There is no longer any urgency or hazard in
   HubSpot API instead, which is arguably the better signal anyway. If a future session needs
   actual queue depth, that role has to be granted first (or use `--auth-mode key`).
 - **n8n API access:** direct LAN address + the "n8n External API" key header. **Host, port
-  and 1Password item are in the private runbook, not here** — this repo is public and that
+  and 1Password item are in the private runbook, not here** — this repo is public~~ and that
   address bypasses the Cloudflare Access gate that 302s the public `n8n.bridgingtrust.ai`
-  hostname. A different key in `.env` is a separate, empty user scope that returns 0
+  hostname~~.
+  _Corrected 2026-09-25: this hostname is the DEVELOPMENT n8n's public entry (needed for
+  OAuth/Gmail integrations during development); it was never behind Cloudflare Access and is
+  offline whenever the dev stack is down. Production n8n's public entry is
+  `n8n2.bridgingtrust.ai` behind Cloudflare Access._
+  A different key in `.env` is a separate, empty user scope that returns 0
   workflows.
   The access guide lives in **HerculeanInfra** (`docs/N8N_UNRAID_API_ACCESS_GUIDE.md`), not
   HerculeanN8NBuilder — the n8nbuilder CC asked, and that is the answer.
