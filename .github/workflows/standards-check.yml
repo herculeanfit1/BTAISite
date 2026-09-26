@@ -8,9 +8,23 @@ name: Standards Check
 
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
+
+# Explicit and minimal, so this gate never inherits an org- or repo-level default
+# (Infra PLAN-015 V9). This matters because the fleet is moving from personal
+# repos to the BridgingTrustAI org, and the two defaults DISAGREE: several
+# personal repos default to `write` while the org defaults to `read`. A workflow
+# with no block here would therefore have its GITHUB_TOKEN silently re-scoped by
+# a repo transfer — no commit, no diff, no annotation. Pinning it means the grant
+# is a property of this file rather than of whoever happens to own the repo.
+#
+# `contents: read` is the entire requirement. The only GITHUB_TOKEN consumer in
+# this workflow is actions/checkout; setup-node and setup-python do not use it,
+# and nothing here uploads SARIF, writes an issue, comments on a PR, or requests
+# an OIDC token. Widen this ONLY alongside a step that demonstrably needs it.
+permissions:
+  contents: read       # checkout
 
 # Cancel superseded runs on PR/feature refs; never cancel a run on main
 # (keeps the compliance gate complete for every commit that lands on main).
@@ -112,7 +126,40 @@ jobs:
           }
           NODE_DIRS=$(echo "$NODE_MANIFESTS" | dirs_of)
           PY_DIRS=$(echo "$PY_MANIFESTS" | dirs_of)
-          PRIMARY_NODE_MANIFEST=$(echo "$NODE_MANIFESTS" | head -1)
+
+          # The primary manifest is the one "Node — package.json compliance"
+          # treats as LEVEL=error; every other manifest is a warning, because
+          # demanding engines.node on every sub-package is stricter than the
+          # standard intends.
+          #
+          # This was `head -1`, and NODE_MANIFESTS arrives SORTED from
+          # git ls-files. So any directory sorting before the literal string
+          # "package.json" became "primary" and took the error level instead of
+          # the repo root: apps/, api/, client/ and frontend/ all do. Measured
+          # 2026-08-23 — three repos failing on a sub-package while their root
+          # was compliant: LaunchBrief (root >=20, errored on
+          # apps/api/package.json), AIStudyPlans (root >=20.19.1, errored on
+          # api/package.json), Agora (root >=20.0.0, errored on
+          # client/package.json).
+          #
+          # Root wins when present. Otherwise the SHALLOWEST manifest wins, tie
+          # broken alphabetically so the choice is deterministic rather than
+          # filesystem-order dependent. A repo with no root manifest still gets
+          # a real primary and still fails when that one is non-compliant —
+          # synod (frontend/package.json only, no engines) must keep failing.
+          # ---8<--- pick_primary (extracted by config/standards.test.js)
+          pick_primary() {
+            if printf '%s\n' "$1" | grep -qx 'package.json'; then
+              printf 'package.json\n'
+              return
+            fi
+            printf '%s\n' "$1" | awk 'NF' \
+              | awk -F/ '{ print NF "\t" $0 }' \
+              | sort -k1,1n -k2,2 \
+              | head -1 | cut -f2-
+          }
+          # --->8---
+          PRIMARY_NODE_MANIFEST=$(pick_primary "$NODE_MANIFESTS")
 
           {
             echo "type=$TYPE"
@@ -233,17 +280,54 @@ jobs:
         run: |
           FAILED=0
           PRIMARY="${{ steps.detect.outputs.primary_node_manifest }}"
+
+          # ─────────────────────────────────────────────────────────────────
+          # THESE SNIPPETS RUN BEFORE `Node — setup`, ON WHATEVER NODE THE
+          # RUNNER HAPPENS TO HAVE. Keep them pre-ES2020: no optional chaining
+          # (`?.`), no nullish coalescing (`??`), no modern builtins.
+          #
+          # Hosted runners ship a modern node, so a violation here is invisible
+          # until a self-hosted runner adopts this workflow. Tower's runner image
+          # carries system node v10.19.0 at /usr/bin/node, where `?.` is a
+          # SyntaxError — measured 2026-08-27, HerculeanInfra run 33126329305.
+          #
+          # THE ORDERING IS LOAD-BEARING. `Node — setup` resolves its version
+          # from `node-version-file: <primary manifest>` — the very field this
+          # step checks. Running setup first would make a repo that is MISSING
+          # engines.node fail at setup with an opaque action error, and this step
+          # would never run to say why. Do not "simplify" by moving setup above
+          # this.
+          #
+          # Interpreter failures are reported SEPARATELY from a missing field.
+          # GitHub's default shell is `bash -e {0}`, so a failing `node -e` in a
+          # bare assignment kills the step outright — loud, but illegible: a bare
+          # exit code 1 and a stack trace whose only tell is that `vm.js` is a
+          # Node 10-era path. Nothing said "your runner's node is ancient".
+          # ─────────────────────────────────────────────────────────────────
+          read_pkg_field() {
+            # $1 = absolute manifest path, $2 = JS expression over `pkg`
+            node -e "var pkg = require('$1'); console.log(($2) || '')"
+          }
+          node_fault() {
+            echo "::error::$1: node could not evaluate this manifest (node $(node --version 2>&1 | head -1)). This is a RUNNER TOOLCHAIN fault, not a compliance failure — do not edit the manifest in response. This step runs before \`Node — setup\`, so it uses the runner's system node."
+          }
+
           for d in ${{ steps.detect.outputs.node_dirs }}; do
             MANIFEST="$d/package.json"
             [ "$d" = "." ] && MANIFEST="package.json"
             if [ "$MANIFEST" = "$PRIMARY" ]; then LEVEL=error; else LEVEL=warning; fi
 
-            TYPE=$(node -e "console.log(require('$PWD/$MANIFEST').type || '')")
+            if ! TYPE=$(read_pkg_field "$PWD/$MANIFEST" "pkg.type"); then
+              node_fault "$MANIFEST"; FAILED=1; continue
+            fi
             if [ "$TYPE" != "module" ]; then
               echo "::${LEVEL}::$MANIFEST missing \"type\": \"module\""
               [ "$LEVEL" = "error" ] && FAILED=1
             fi
-            ENGINES=$(node -e "console.log(require('$PWD/$MANIFEST').engines?.node || '')")
+
+            if ! ENGINES=$(read_pkg_field "$PWD/$MANIFEST" "pkg.engines && pkg.engines.node"); then
+              node_fault "$MANIFEST"; FAILED=1; continue
+            fi
             if [ -z "$ENGINES" ]; then
               echo "::${LEVEL}::$MANIFEST missing engines.node"
               [ "$LEVEL" = "error" ] && FAILED=1
@@ -265,7 +349,7 @@ jobs:
               if (needsSecrets.length > 0) {
                 console.log('::warning::' + process.env.MANIFEST + ': scripts without op run wrapping: ' + needsSecrets.map(([k]) => k).join(', '));
               }
-            " 2>/dev/null || true
+            " 2>/dev/null || echo "::warning::$d/package.json: node could not evaluate this manifest (node $(node --version 2>&1 | head -1)) — op-run wrapping check SKIPPED. Runner toolchain fault, not a repo problem."
           done
 
       - name: Node — package-lock committed
@@ -274,7 +358,15 @@ jobs:
           for d in ${{ steps.detect.outputs.node_dirs }}; do
             LOCK="$d/package-lock.json"
             [ "$d" = "." ] && LOCK="package-lock.json"
-            DEPS=$(node -e "console.log(Object.keys(require('$PWD/$d/package.json').dependencies || {}).length)" 2>/dev/null || echo "0")
+            # `|| echo "0"` here used to convert ANY node failure into "this
+            # package has zero dependencies", silently skipping the lockfile
+            # check. Latent rather than firing — this snippet has no modern
+            # syntax, so it survives on Node 10 — but the failure mode was
+            # indistinguishable from a clean result. A skipped check now says so.
+            if ! DEPS=$(node -e "var pkg = require('$PWD/$d/package.json'); console.log(Object.keys(pkg.dependencies || {}).length)" 2>/dev/null); then
+              echo "::warning::$d/package.json: node could not evaluate this manifest (node $(node --version 2>&1 | head -1)) — lockfile check SKIPPED. Runner toolchain fault, not a repo problem."
+              continue
+            fi
             if [ "$DEPS" -gt 0 ]; then
               if ! git ls-files --error-unmatch "$LOCK" >/dev/null 2>&1; then
                 echo "::warning::$LOCK not committed"
@@ -306,35 +398,86 @@ jobs:
             ) || exit 1
           done
 
-      # When the linter config lives at the repo root it already governs the whole
-      # tree (Agora's biome.json includes "**", covering client/), so run it ONCE
-      # from the root. Descending per-directory would re-lint the same files and
-      # resolve the config's own include/exclude globs against the wrong base.
-      # Only fall back to per-directory runs when each manifest carries its own
-      # config — the api/ + web/ layout with no root config.
+      # A DIRECTORY'S OWN LINTER CONFIG WINS OVER A ROOT ONE. The root config is
+      # the fallback for directories that have none, not an override for those
+      # that do.
+      #
+      # This used to ask only "does a root config exist?" and, if so, lint the
+      # whole tree from the root with that single tool. That assumes one linter
+      # governs a repo, and it silently drops coverage when two divide the work.
+      #
+      # NameBridge, measured 2026-08-24: root biome.json (formatter AND linter
+      # enabled, and biome is not a dependency anywhere), while apps/web and
+      # apps/api each carry eslint.config.mjs with eslint, typescript-eslint,
+      # react-hooks and react-refresh. biome is the FORMATTER, eslint is the
+      # LINTER. The gate saw the root biome.json, ran `biome check .`, and NEVER
+      # ran eslint — so every typescript-eslint and react-hooks rule vanished.
+      # The danger is not a red PR; it is a green one with the coverage gone.
+      #
+      # Deleting the root biome.json is not the fix: .pre-commit-config.yaml
+      # pins @biomejs/biome@2.4.12 as a biome-check hook and would break.
+      #
+      # The root case is unchanged for repos that genuinely have one linter: a
+      # repo whose only config is at the root still gets exactly one run, from
+      # the root, because "." is itself a node_dir.
       - name: Node — run linter
         if: steps.detect.outputs.type == 'node'
         run: |
-          run_linter() {
-            if [ -f "biome.json" ]; then
-              npx @biomejs/biome check .
-            else
-              npx eslint .
-            fi
+          # ---8<--- linter_for (extracted by config/standards.test.js)
+          # Echoes "<tool>:<source>" for a directory — the tool that governs it
+          # and whether that came from its own config or the root's.
+          linter_for() {
+            d="$1"
+            [ -f "$d/biome.json" ] && { echo "biome:own"; return; }
+            for c in eslint.config.js eslint.config.mjs .eslintrc.json .eslintrc.js; do
+              [ -f "$d/$c" ] && { echo "eslint:own"; return; }
+            done
+            [ -f "biome.json" ] && { echo "biome:root"; return; }
+            for c in eslint.config.js eslint.config.mjs .eslintrc.json .eslintrc.js; do
+              [ -f "$c" ] && { echo "eslint:root"; return; }
+            done
+            echo "none:none"
+          }
+          # --->8---
+
+          run_in() {  # $1 = dir, $2 = tool
+            case "$2" in
+              biome)  ( cd "$1" && npx @biomejs/biome check . ) ;;
+              eslint) ( cd "$1" && npx eslint . ) ;;
+            esac
           }
 
-          if [ -f "biome.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] \
-             || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.js" ]; then
-            echo "── linting from repo root (root config governs the tree) ──"
-            run_linter
-          else
-            FAILED=0
-            for d in ${{ steps.detect.outputs.node_dirs }}; do
-              echo "── linting $d ──"
-              ( cd "$d" && run_linter ) || FAILED=1
-            done
-            exit $FAILED
+          FAILED=0
+          ROOT_TOOL="$(linter_for . | cut -d: -f1)"
+
+          # The root run is kept EXACTLY as it was, once, from the root. The old
+          # comment's reasoning still holds: a root config governs the whole tree
+          # (Agora's biome.json includes "**", covering client/), and descending
+          # into a subdirectory to re-run it would resolve that config's own
+          # include/exclude globs against the wrong base. This change does not
+          # touch that path.
+          if [ "$ROOT_TOOL" != "none" ]; then
+            echo "── $ROOT_TOOL from repo root (root config governs the tree) ──"
+            run_in . "$ROOT_TOOL" || FAILED=1
           fi
+
+          # Purely ADDITIVE: any directory carrying its OWN config is linted with
+          # it as well. That is the coverage the root-only run was dropping. A
+          # repo with a single root config reaches this loop and matches nothing,
+          # so its behaviour is byte-for-byte what it was.
+          for d in ${{ steps.detect.outputs.node_dirs }}; do
+            [ "$d" = "." ] && continue
+            sel="$(linter_for "$d")"
+            tool="${sel%%:*}"; src="${sel#*:}"
+            if [ "$src" = "own" ]; then
+              echo "── $tool (own config) in $d ──"
+              run_in "$d" "$tool" || FAILED=1
+            elif [ "$ROOT_TOOL" = "none" ]; then
+              echo "::error::$d: no linter config (expected biome.json or an eslint config)"
+              FAILED=1
+            fi
+          done
+          exit $FAILED
 
       # ── Python checks ──────────────────────────────────
       - name: Python — linter config exists
@@ -499,17 +642,65 @@ jobs:
           if ($errors.Count -gt 0) { exit 1 }
 
       # ── Infra checks ───────────────────────────────────
+      # The infra lane's YAML validator needs PyYAML, which is NOT part of any
+      # runner contract — it happens to be present on ubuntu-latest and is absent
+      # from Tower's org runner pool (measured 2026-08-29: Python 3.8.10, no
+      # `yaml` module). So it is installed here rather than inherited. See #167.
+      - name: Infra — setup Python
+        if: steps.detect.outputs.type == 'infra'
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Infra — install and ASSERT the YAML toolchain
+        if: steps.detect.outputs.type == 'infra'
+        run: |
+          python3 -m pip install pyyaml==6.0.2
+          # ASSERT what must be PRESENT; never infer it from the runner image.
+          # A successful `pip install` is not evidence that the `python3` the NEXT
+          # step resolves can import the module — different interpreter, different
+          # PATH, a user-site install the runner's python cannot see. This line
+          # closes that gap by importing with the same `python3` the validator
+          # uses, and it fails loudly when it cannot.
+          python3 -c 'import sys, yaml; print("PyYAML " + yaml.__version__ + " importable by " + sys.executable)'
+
       - name: Infra — validate YAML/JSON
         if: steps.detect.outputs.type == 'infra'
         run: |
+          # stderr is CAPTURED, not discarded (#167).
+          #
+          # This block used to end each interpreter call with `2>/dev/null || {
+          # echo "::error::Invalid YAML: $f" ... }`, which made two completely
+          # different failures produce one identical annotation:
+          #
+          #   * a genuine syntax error in the file  -> "Invalid YAML: <f>"
+          #   * `ModuleNotFoundError: No module named 'yaml'` on a runner without
+          #     PyYAML                              -> "Invalid YAML: <f>"
+          #
+          # The second is not a repo problem at all, and the annotation sent the
+          # reader to the wrong place. It never fired historically because only
+          # node-type repos had been flipped to self-hosted; HerculeanN8NBuilder
+          # (type=infra) was flipped 2026-08-29 and rolled back on this finding
+          # before its next push reached the step. The `Infra — setup Python`
+          # step above now removes the cause; this keeps the two distinguishable
+          # if any other toolchain gap appears.
+          #
+          # The annotation carries the LAST line of stderr, not the first 300 chars.
+          # A GitHub annotation is single-line, and a Python traceback puts the only
+          # part that identifies the failure -- `ModuleNotFoundError: No module named
+          # 'yaml'` vs `yaml.scanner.ScannerError: ...` -- on its LAST line. Taking a
+          # prefix instead spends the whole budget on the traceback header and drops
+          # exactly the text the two cases differ by. The full multi-line stderr is
+          # still written to the step log; only the annotation is condensed.
           FAIL_MARKER=$(mktemp)
           rm -f "$FAIL_MARKER"
           find . \( -name '*.yml' -o -name '*.yaml' \) -not -path '*/node_modules/*' -not -name '*.override.*' -print0 \
             | head -z -n 20 | while IFS= read -r -d '' f; do
-            python3 -c "import yaml; yaml.safe_load(open('$f'))" 2>/dev/null || {
-              echo "::error::Invalid YAML: $f"
+            if ! ERR=$(python3 -c "import yaml; yaml.safe_load(open('$f'))" 2>&1); then
+              printf '%s\n' "$ERR" >&2
+              echo "::error::Invalid YAML: $f — $(printf '%s' "$ERR" | tail -n 1 | cut -c1-300)"
               touch "$FAIL_MARKER"
-            }
+            fi
           done
           # Skip JSONC-by-convention files: tsconfig*.json (TypeScript) and
           # anything under .vscode/. These allow comments and trailing commas
@@ -518,10 +709,11 @@ jobs:
             -not -path '*/.devcontainer/*' -not -path '*/.vscode/*' \
             -not -name 'tsconfig*.json' -not -name '*.jsonc' \
             -print0 | head -z -n 20 | while IFS= read -r -d '' f; do
-            python3 -c "import json; json.load(open('$f'))" 2>/dev/null || {
-              echo "::error::Invalid JSON: $f"
+            if ! ERR=$(python3 -c "import json; json.load(open('$f'))" 2>&1); then
+              printf '%s\n' "$ERR" >&2
+              echo "::error::Invalid JSON: $f — $(printf '%s' "$ERR" | tail -n 1 | cut -c1-300)"
               touch "$FAIL_MARKER"
-            }
+            fi
           done
           [ -f "$FAIL_MARKER" ] && { rm -f "$FAIL_MARKER"; exit 1; }
           exit 0
