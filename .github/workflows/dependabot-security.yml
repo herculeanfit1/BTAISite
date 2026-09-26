@@ -16,7 +16,7 @@ jobs:
       # node-version-file, not a literal: this was the last hardcoded Node
       # version in the workflows and it had already drifted a full minor behind
       # .nvmrc before anyone noticed, because this workflow had never run.
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: 'npm'
